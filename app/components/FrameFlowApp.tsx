@@ -8,10 +8,47 @@ const ACTIONS_CFG = [
   { key: "sopralluogo", icon: "🔍", label: "Sopralluogo", desc: "Vai a vedere il cantiere", color: "#2563eb" },
   { key: "misure", icon: "📐", label: "Misure", desc: "Prendi le misure", color: "#d97706" },
   { key: "preventivo", icon: "💰", label: "Preventivo", desc: "Prepara preventivo", color: "#8b5cf6" },
-  { key: "riparazione", icon: "🛠️", label: "Riparazione", desc: "Intervento riparazione", color: "#dc2626" },
+  { key: "conferma", icon: "✍️", label: "Conferma Ordine", desc: "Firma conferma", color: "#059669" },
+  { key: "fattura", icon: "🧾", label: "Fattura", desc: "Genera fattura", color: "#f59e0b" },
   { key: "posa", icon: "🔧", label: "Posa in Opera", desc: "Installazione infissi", color: "#059669" },
+  { key: "riparazione", icon: "🛠️", label: "Riparazione", desc: "Intervento riparazione", color: "#dc2626" },
   { key: "followup", icon: "📞", label: "Richiama", desc: "Contatto follow-up", color: "#6b7280" },
 ];
+
+const WORKFLOW_NUOVO = [
+  { key: "sopralluogo", label: "Sopralluogo", icon: "🔍", color: "#2563eb" },
+  { key: "misure", label: "Misure", icon: "📐", color: "#d97706" },
+  { key: "preventivo", label: "Preventivo", icon: "💰", color: "#8b5cf6" },
+  { key: "conferma", label: "Conferma", icon: "✍️", color: "#059669" },
+  { key: "fattura", label: "Fattura", icon: "🧾", color: "#f59e0b" },
+  { key: "posa", label: "Posa", icon: "🔧", color: "#10b981" },
+];
+
+const WORKFLOW_RIP = [
+  { key: "sopralluogo", label: "Sopralluogo", icon: "🔍", color: "#2563eb" },
+  { key: "riparazione", label: "Riparazione", icon: "🛠️", color: "#dc2626" },
+  { key: "fattura", label: "Fattura", icon: "🧾", color: "#f59e0b" },
+];
+
+function getWorkflow(tipo: string) { return tipo === "riparazione" ? WORKFLOW_RIP : WORKFLOW_NUOVO; }
+function getPhaseIndex(tipo: string, fase: string) { return getWorkflow(tipo).findIndex(w => w.key === fase); }
+function canAdvance(pratica: any) {
+  const fase = pratica.fase || "sopralluogo";
+  if (fase === "sopralluogo") {
+    const act = pratica.actions?.find((a: any) => a.type === "sopralluogo");
+    return act ? act.tasks.every((t: any) => t.done) : false;
+  }
+  if (fase === "misure") return !!pratica.misure;
+  if (fase === "preventivo") return !!pratica.preventivo;
+  if (fase === "conferma") return !!pratica.confermaOrdine?.firmata;
+  if (fase === "riparazione") return !!pratica.riparazione;
+  if (fase === "fattura") return !!pratica.fattura;
+  if (fase === "posa") {
+    const act = pratica.actions?.find((a: any) => a.type === "posa");
+    return act ? act.tasks.every((t: any) => t.done) : false;
+  }
+  return false;
+}
 
 const STATUS: Record<string, {label:string;color:string;bg:string;icon:string}> = {
   da_fare: { label: "Da fare", color: "#ef4444", bg: "#fef2f2", icon: "🔴" },
@@ -379,10 +416,10 @@ function clientToDb(c: any, userId: string): any {
   return { id: c.id, user_id: userId, nome: c.nome||"", telefono: c.telefono||"", email: c.email||"", indirizzo: c.indirizzo||"", piva: c.piva||"", codice_fiscale: c.codiceFiscale||"", note: c.note||"" };
 }
 function dbToPratica(row: any): any {
-  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], createdAt: row.created_at };
+  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], createdAt: row.created_at };
 }
 function praticaToDb(p: any, userId: string): any {
-  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data||"", ora: p.ora||"", indirizzo: p.indirizzo||"", tipo: p.tipo||"sopralluogo", status: p.status||"da_fare", note: p.note||"", actions: p.actions||[], misure: p.misure||null, riparazione: p.riparazione||null, preventivo: p.preventivo||null, conferma_ordine: p.confermaOrdine||null, fattura: p.fattura||null, emails: p.emails||[] };
+  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data||"", ora: p.ora||"", indirizzo: p.indirizzo||"", tipo: p.tipo||"nuovo_infisso", fase: p.fase||"sopralluogo", status: p.status||"da_fare", note: p.note||"", actions: p.actions||[], misure: p.misure||null, riparazione: p.riparazione||null, preventivo: p.preventivo||null, conferma_ordine: p.confermaOrdine||null, fattura: p.fattura||null, emails: p.emails||[] };
 }
 function dbToNote(row: any): any {
   return { id: row.id, testo: row.testo, colore: row.colore, praticaId: row.pratica_id, updatedAt: row.updated_at, createdAt: row.created_at };
@@ -391,11 +428,45 @@ function noteToDb(n: any, userId: string): any {
   return { id: n.id, user_id: userId, testo: n.testo||"", colore: n.colore||"#fffbeb", pratica_id: n.praticaId||"", updated_at: new Date().toISOString() };
 }
 
+// ==================== DEFAULT SETTINGS ====================
+const DEFAULT_SISTEMI = [
+  { id: "alluminio", nome: "Alluminio", icon: "🔷" },
+  { id: "pvc", nome: "PVC", icon: "⬜" },
+  { id: "legno", nome: "Legno", icon: "🟫" },
+  { id: "ferro", nome: "Ferro", icon: "⬛" },
+  { id: "taglio_termico", nome: "Taglio Termico", icon: "🔶" },
+];
+const DEFAULT_CATEGORIE = [
+  { id: "finestre", nome: "Finestre", icon: "🪟" },
+  { id: "porte", nome: "Porte", icon: "🚪" },
+  { id: "portoncini", nome: "Portoncini", icon: "🏠" },
+  { id: "scorrevoli", nome: "Scorrevoli", icon: "↔️" },
+  { id: "tapparelle", nome: "Tapparelle", icon: "🔽" },
+  { id: "zanzariere", nome: "Zanzariere", icon: "🦟" },
+  { id: "cassonetti", nome: "Cassonetti", icon: "📦" },
+  { id: "persiane", nome: "Persiane", icon: "🏛️" },
+  { id: "inferriate", nome: "Inferriate", icon: "🔒" },
+  { id: "accessori", nome: "Accessori", icon: "🔧" },
+];
+const DEFAULT_COLORI: Record<string, string[]> = {
+  alluminio: ["Bianco RAL 9010","Avorio RAL 1013","Grigio RAL 7016","Marrone RAL 8017","Nero RAL 9005","Testa di Moro RAL 8019","Corten","Bronzo"],
+  pvc: ["Bianco","Avorio","Quercia","Noce","Ciliegio","Grigio","Antracite","Douglas"],
+  legno: ["Naturale","Noce","Castagno","Rovere","Mogano","Laccato Bianco","Laccato RAL"],
+  ferro: ["Grezzo","Verniciato Nero","Verniciato Grafite","Corten","Micaceo"],
+  taglio_termico: ["Bianco RAL 9010","Grigio RAL 7016","Nero RAL 9005","Bronzo","Corten","Bicolore"],
+};
+const DEFAULT_TIPOLOGIE = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino","Porta interna","Porta blindata","Tapparella","Zanzariera","Cassonetto","Persiana","Inferriata"];
+
+function emptyUserSettings() {
+  return { sistemi: [], categorie: [], colori: {}, listino: [], tipologie: [], azienda: { nome:"", email:"", telefono:"", indirizzo:"", piva:"", cf:"" }, setupCompleted: false };
+}
+
 async function loadFromSupabase(userId: string) {
-  const [cRes, pRes, nRes] = await Promise.all([
+  const [cRes, pRes, nRes, sRes] = await Promise.all([
     supabase.from("clients").select("*").eq("user_id", userId),
     supabase.from("pratiche").select("*").eq("user_id", userId),
     supabase.from("notes").select("*").eq("user_id", userId),
+    supabase.from("user_settings").select("*").eq("user_id", userId).single(),
   ]);
   const clients = (cRes.data||[]).map(dbToClient);
   const pratiche = (pRes.data||[]).map(dbToPratica);
@@ -404,7 +475,16 @@ async function loadFromSupabase(userId: string) {
     const m = p.numero?.match(/P-\d{4}-(\d{4})/);
     return m ? Math.max(max, parseInt(m[1])+1) : max;
   }, 1);
-  return { clients, pratiche, notes, nextSeq: maxSeq, settings: { nomeAzienda: "", emailAzienda: "", telefonoAzienda: "" } };
+  const userSettings = sRes.data ? {
+    sistemi: sRes.data.sistemi || [],
+    categorie: sRes.data.categorie || [],
+    colori: sRes.data.colori || {},
+    listino: sRes.data.listino || [],
+    tipologie: sRes.data.sistemi?.length > 0 ? (sRes.data.colori?._tipologie || DEFAULT_TIPOLOGIE) : DEFAULT_TIPOLOGIE,
+    azienda: sRes.data.azienda || {},
+    setupCompleted: sRes.data.setup_completed || false,
+  } : emptyUserSettings();
+  return { clients, pratiche, notes, nextSeq: maxSeq, settings: { nomeAzienda: "", emailAzienda: "", telefonoAzienda: "" }, userSettings };
 }
 
 // ==================== NOTIFICATION HELPER ====================
@@ -430,6 +510,7 @@ export default function FrameFlowApp() {
   const [authMsg, setAuthMsg] = useState("");
 
   const [db, setDb] = useState<any>({ clients: [], pratiche: [], notes: [], nextSeq: 1, settings: {} });
+  const [userSettings, setUserSettings] = useState<any>(emptyUserSettings());
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("dashboard");
   const [selPratica, setSelPratica] = useState<string|null>(null);
@@ -466,9 +547,10 @@ export default function FrameFlowApp() {
     setLoading(true);
     loadFromSupabase(user.id).then(data => {
       setDb(data);
+      if (data.userSettings) setUserSettings(data.userSettings);
+      if (data.userSettings && !data.userSettings.setupCompleted) setView("setup_wizard");
       setLoading(false);
     }).catch(() => {
-      // Fallback to localStorage
       setDb(loadData());
       setLoading(false);
     });
@@ -538,10 +620,16 @@ export default function FrameFlowApp() {
   function createPratica(clientId: string, indirizzo: string, tipo: string, data: string, ora: string, note: string) {
     const year = new Date().getFullYear();
     const numero = genPraticaNum(year, db.nextSeq);
+    const sopralluogoAction = {
+      id: gid(), type: "sopralluogo", createdAt: new Date().toISOString(),
+      status: "da_fare",
+      tasks: (TASKS["sopralluogo"]||[]).map((t: string)=>({id:gid(),text:t,done:false})),
+    };
     const p: any = {
       id: gid(), numero, clientId, indirizzo: indirizzo||"",
       tipo, data: data||today(), ora: ora||"09:00", note: note||"",
-      status: "da_fare", actions: [], misure: null, riparazione: null, preventivo: null,
+      fase: "sopralluogo",
+      status: "da_fare", actions: [sopralluogoAction], misure: null, riparazione: null, preventivo: null,
       confermaOrdine: null, fattura: null,
       emails: [], createdAt: new Date().toISOString(),
     };
@@ -586,6 +674,31 @@ export default function FrameFlowApp() {
     if (actionKey==="misure") { setMisureEdit(praticaId); setView("misure"); }
     else if (actionKey==="riparazione") { setRipEdit(praticaId); setView("riparazione"); }
     else if (actionKey==="preventivo") { setPrevEdit(praticaId); setView("preventivo"); }
+    else { setSelPratica(praticaId); setView("pratica"); }
+  }
+
+  function advancePhase(praticaId: string) {
+    const p = getPratica(praticaId);
+    if (!p || !canAdvance(p)) return;
+    const wf = getWorkflow(p.tipo);
+    const curIdx = getPhaseIndex(p.tipo, p.fase || "sopralluogo");
+    if (curIdx >= wf.length - 1) return; // already at last phase
+    const nextPhase = wf[curIdx + 1];
+    // Auto-create action for next phase if it has tasks
+    const hasAction = p.actions.find((a: any) => a.type === nextPhase.key);
+    let newActions = [...p.actions];
+    if (!hasAction && TASKS[nextPhase.key]) {
+      newActions.push({
+        id: gid(), type: nextPhase.key, createdAt: new Date().toISOString(),
+        status: "da_fare",
+        tasks: (TASKS[nextPhase.key]||[]).map((t: string)=>({id:gid(),text:t,done:false})),
+      });
+    }
+    updatePratica(praticaId, { fase: nextPhase.key, actions: newActions, status: "in_corso" });
+    // Auto-open the relevant form
+    if (nextPhase.key === "misure") { setMisureEdit(praticaId); setView("misure"); }
+    else if (nextPhase.key === "riparazione") { setRipEdit(praticaId); setView("riparazione"); }
+    else if (nextPhase.key === "preventivo") { setPrevEdit(praticaId); setView("preventivo"); }
     else { setSelPratica(praticaId); setView("pratica"); }
   }
 
@@ -670,6 +783,38 @@ export default function FrameFlowApp() {
     setDb((prev: any) => ({...prev, notes: (prev.notes||[]).filter((n: any)=>n.id!==id)}));
     if (user) { supabase.from("notes").delete().eq("id", id).then(({error}) => { if(error) console.error("deleteNote:", error); }); }
   }
+
+  async function saveUserSettingsToDb(newSettings: any) {
+    setUserSettings(newSettings);
+    if (!user) return;
+    const row = {
+      user_id: user.id,
+      sistemi: newSettings.sistemi || [],
+      categorie: newSettings.categorie || [],
+      colori: { ...newSettings.colori, _tipologie: newSettings.tipologie || [] },
+      listino: newSettings.listino || [],
+      azienda: newSettings.azienda || {},
+      setup_completed: newSettings.setupCompleted || false,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("user_settings").upsert(row, { onConflict: "user_id" });
+    if (error) console.error("saveUserSettings:", error);
+  }
+
+  // Dynamic lists from settings
+  const userSistemi = useMemo(() => userSettings.sistemi?.length > 0 ? userSettings.sistemi : DEFAULT_SISTEMI, [userSettings.sistemi]);
+  const userCategorie = useMemo(() => userSettings.categorie?.length > 0 ? userSettings.categorie : DEFAULT_CATEGORIE, [userSettings.categorie]);
+  const userTipologie = useMemo(() => userSettings.tipologie?.length > 0 ? userSettings.tipologie : DEFAULT_TIPOLOGIE, [userSettings.tipologie]);
+  const userColori = useMemo(() => {
+    const c: Record<string,string[]> = {};
+    userSistemi.forEach((s: any) => { c[s.id] = userSettings.colori?.[s.id] || DEFAULT_COLORI[s.id] || []; });
+    return c;
+  }, [userSettings.colori, userSistemi]);
+  const allColori = useMemo(() => {
+    const set = new Set<string>();
+    Object.values(userColori).forEach((arr: string[]) => arr.forEach(c => set.add(c)));
+    return Array.from(set);
+  }, [userColori]);
 
   // ── Computed ──
   const todayPratiche = useMemo(() => db.pratiche.filter((p: any)=>p.data===today()&&p.status!=="completato"), [db.pratiche]);
@@ -764,10 +909,20 @@ export default function FrameFlowApp() {
 
   if (loading) return <div style={S.loadWrap}><p style={{color:"#fff",fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>◈ FrameFlow</p></div>;
 
+  // ==================== SETUP WIZARD ====================
+  if (view==="setup_wizard") {
+    return <SetupWizard userSettings={userSettings} onComplete={(s: any)=>{saveUserSettingsToDb({...s,setupCompleted:true});setView("dashboard");}} onSkip={()=>{saveUserSettingsToDb({...userSettings,setupCompleted:true});setView("dashboard");}} />;
+  }
+
+  // ==================== SETTINGS ====================
+  if (view==="impostazioni") {
+    return <SettingsView userSettings={userSettings} onSave={(s: any)=>{saveUserSettingsToDb(s);setView("dashboard");}} onBack={()=>setView("dashboard")} />;
+  }
+
   // ==================== VIEWS ====================
   if (view==="misure" && misureEdit) {
     const p = getPratica(misureEdit); const c = getClient(p?.clientId);
-    return <MisureForm pratica={p} client={c} onSave={(d: any)=>saveMisure(misureEdit,d)} onBack={()=>{setMisureEdit(null);setSelPratica(misureEdit);setView("pratica");}} />;
+    return <MisureForm pratica={p} client={c} sistemi={userSistemi} tipologie={userTipologie} coloriMap={userColori} allColori={allColori} onSave={(d: any)=>saveMisure(misureEdit,d)} onBack={()=>{setMisureEdit(null);setSelPratica(misureEdit);setView("pratica");}} />;
   }
   if (view==="riparazione" && ripEdit) {
     const p = getPratica(ripEdit); const c = getClient(p?.clientId);
@@ -775,7 +930,7 @@ export default function FrameFlowApp() {
   }
   if (view==="preventivo" && prevEdit) {
     const p = getPratica(prevEdit); const c = getClient(p?.clientId);
-    return <PreventivoForm pratica={p} client={c} onSave={(d: any)=>savePreventivo(prevEdit,d)} onBack={()=>{setPrevEdit(null);setSelPratica(prevEdit);setView("pratica");}} />;
+    return <PreventivoForm pratica={p} client={c} userListino={userSettings.listino||[]} userCategorie={userCategorie} userSistemi={userSistemi} onSave={(d: any)=>savePreventivo(prevEdit,d)} onBack={()=>{setPrevEdit(null);setSelPratica(prevEdit);setView("pratica");}} />;
   }
   if (view==="email" && emailDraft) {
     const p = getPratica(emailDraft); const c = getClient(p?.clientId);
@@ -866,7 +1021,7 @@ export default function FrameFlowApp() {
     const c = getClient(selClient);
     return <NewPraticaView client={c} onCreate={(ind: string,tipo: string,data: string,ora: string,note: string)=>{
       const p = createPratica(selClient,ind,tipo,data,ora,note);
-      setSelClient(null); setActionPicker(p.id); setView("action_picker");
+      setSelClient(null); setSelPratica(p.id); setView("pratica");
     }} onBack={()=>{setSelClient(null);setView("client_pick");}} />;
   }
 
@@ -888,6 +1043,7 @@ export default function FrameFlowApp() {
       onConfirmOrder={(firma: string,note: string)=>confirmOrder(p.id,firma,note)}
       onGenerateFattura={()=>generateFattura(p.id)}
       onUpdateFattura={(data: any)=>updateFattura(p.id,data)}
+      onAdvancePhase={()=>advancePhase(p.id)}
     />;
   }
 
@@ -1005,6 +1161,7 @@ export default function FrameFlowApp() {
           </div>
           <div style={{display:"flex",gap:8}}>
             <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Esci">🚪</button>
+            <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Impostazioni">⚙️</button>
             <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}}>🔍</button>
             <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ Nuova</button>
           </div>
@@ -1642,6 +1799,270 @@ export default function FrameFlowApp() {
 }
 
 // ==================== BOTTOM NAV ====================
+// ==================== SETUP WIZARD ====================
+function SetupWizard({ userSettings, onComplete, onSkip }: any) {
+  const [step, setStep] = useState(0);
+  const [sistemi, setSistemi] = useState<any[]>(userSettings.sistemi?.length > 0 ? userSettings.sistemi : []);
+  const [categorie, setCategorie] = useState<any[]>(userSettings.categorie?.length > 0 ? userSettings.categorie : []);
+  const [colori, setColori] = useState<Record<string,string[]>>(userSettings.colori || {});
+  const [tipologie, setTipologie] = useState<string[]>(userSettings.tipologie?.length > 0 ? userSettings.tipologie : []);
+  const [azienda, setAzienda] = useState(userSettings.azienda || { nome:"", email:"", telefono:"", indirizzo:"", piva:"" });
+  const [customSistema, setCustomSistema] = useState("");
+  const [customColore, setCustomColore] = useState("");
+  const [customTipologia, setCustomTipologia] = useState("");
+  const [customCategoria, setCustomCategoria] = useState("");
+  const [selectedSistemaForColors, setSelectedSistemaForColors] = useState("");
+
+  function toggleSistema(s: any) {
+    const exists = sistemi.find((x: any) => x.id === s.id);
+    if (exists) setSistemi(sistemi.filter((x: any) => x.id !== s.id));
+    else setSistemi([...sistemi, s]);
+  }
+  function toggleCategoria(c: any) {
+    const exists = categorie.find((x: any) => x.id === c.id);
+    if (exists) setCategorie(categorie.filter((x: any) => x.id !== c.id));
+    else setCategorie([...categorie, c]);
+  }
+  function toggleColore(matId: string, col: string) {
+    const cur = colori[matId] || [];
+    if (cur.includes(col)) setColori({...colori, [matId]: cur.filter(c => c !== col)});
+    else setColori({...colori, [matId]: [...cur, col]});
+  }
+  function toggleTipologia(t: string) {
+    if (tipologie.includes(t)) setTipologie(tipologie.filter(x => x !== t));
+    else setTipologie([...tipologie, t]);
+  }
+  function addCustomSistema() {
+    if (!customSistema.trim()) return;
+    const id = customSistema.trim().toLowerCase().replace(/\s+/g,"_");
+    if (!sistemi.find((s: any) => s.id === id)) setSistemi([...sistemi, {id, nome: customSistema.trim(), icon:"🔹"}]);
+    setCustomSistema("");
+  }
+  function addCustomColore(matId: string) {
+    if (!customColore.trim()) return;
+    const cur = colori[matId] || [];
+    if (!cur.includes(customColore.trim())) setColori({...colori, [matId]: [...cur, customColore.trim()]});
+    setCustomColore("");
+  }
+  function addCustomTipologia() {
+    if (!customTipologia.trim()) return;
+    if (!tipologie.includes(customTipologia.trim())) setTipologie([...tipologie, customTipologia.trim()]);
+    setCustomTipologia("");
+  }
+
+  const steps = [
+    { title: "Benvenuto!", icon: "👋" },
+    { title: "Materiali", icon: "🔷" },
+    { title: "Colori", icon: "🎨" },
+    { title: "Prodotti", icon: "🪟" },
+    { title: "Tipologie", icon: "📋" },
+    { title: "La tua azienda", icon: "🏢" },
+  ];
+
+  return (
+    <div style={{...S.container,background:"linear-gradient(180deg,#1e293b 0%,#0f172a 100%)"}}>
+      <div style={{padding:"30px 20px 16px",textAlign:"center"}}>
+        <div style={{fontSize:38}}>{steps[step].icon}</div>
+        <h1 style={{fontSize:22,fontWeight:900,color:"#fff",margin:"8px 0 4px"}}>{steps[step].title}</h1>
+        <div style={{display:"flex",gap:6,justifyContent:"center",margin:"16px 0"}}>{steps.map((_,i)=><div key={i} style={{width:i===step?24:8,height:8,borderRadius:4,background:i<=step?"#ff6b35":"rgba(255,255,255,0.2)",transition:"all 0.3s"}} />)}</div>
+      </div>
+      <div style={{flex:1,background:"#fff",borderRadius:"24px 24px 0 0",padding:20,overflow:"auto"}}>
+        {step===0 && (
+          <div style={{textAlign:"center",padding:"20px 0"}}>
+            <p style={{fontSize:16,color:"#374151",lineHeight:1.6,marginBottom:20}}>Configura FrameFlow per la tua attività. Scegli i materiali, i colori e i prodotti che usi di più.</p>
+            <p style={{fontSize:14,color:"#64748b",marginBottom:30}}>Puoi sempre modificare queste impostazioni dopo dal tasto ⚙️</p>
+            <button onClick={()=>setStep(1)} style={{...S.saveBtn,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",fontSize:18}}>Iniziamo! →</button>
+            <button onClick={onSkip} style={{...S.saveBtn,background:"transparent",color:"#64748b",boxShadow:"none",marginTop:8,fontSize:14}}>Salta per ora</button>
+          </div>
+        )}
+        {step===1 && (<>
+          <p style={{fontSize:14,color:"#64748b",marginBottom:16}}>Seleziona i materiali che tratti nella tua attività:</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
+            {DEFAULT_SISTEMI.map(s=><button key={s.id} onClick={()=>toggleSistema(s)} style={{...S.pill,padding:"12px 18px",fontSize:14,background:sistemi.find((x: any)=>x.id===s.id)?"#ff6b35":"#f3f4f6",color:sistemi.find((x: any)=>x.id===s.id)?"#fff":"#374151",fontWeight:700,borderRadius:14}}>{s.icon} {s.nome}</button>)}
+          </div>
+          <div style={{display:"flex",gap:8,marginTop:16}}>
+            <input value={customSistema} onChange={e=>setCustomSistema(e.target.value)} placeholder="Aggiungi materiale..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCustomSistema()} />
+            <button onClick={addCustomSistema} style={{...S.pill,background:"#ff6b35",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
+          </div>
+          {sistemi.filter((s: any)=>!DEFAULT_SISTEMI.find(d=>d.id===s.id)).map((s: any)=><div key={s.id} style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"#f0f9ff",borderRadius:10}}><span>{s.icon} {s.nome}</span><button onClick={()=>setSistemi(sistemi.filter((x: any)=>x.id!==s.id))} style={{marginLeft:"auto",background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          <div style={{marginTop:20,display:"flex",gap:10}}>
+            <button onClick={()=>setStep(0)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
+            <button onClick={()=>{if(!selectedSistemaForColors && sistemi.length>0) setSelectedSistemaForColors(sistemi[0].id); setStep(2);}} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Avanti →</button>
+          </div>
+        </>)}
+        {step===2 && (<>
+          <p style={{fontSize:14,color:"#64748b",marginBottom:12}}>Per ogni materiale, seleziona o aggiungi i colori disponibili:</p>
+          {sistemi.length===0 ? <p style={{color:"#ef4444",fontWeight:600}}>Torna indietro e seleziona almeno un materiale</p> : <>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+              {sistemi.map((s: any)=><button key={s.id} onClick={()=>setSelectedSistemaForColors(s.id)} style={{...S.pill,padding:"10px 14px",background:selectedSistemaForColors===s.id?"#ff6b35":"#f3f4f6",color:selectedSistemaForColors===s.id?"#fff":"#374151",fontWeight:700,borderRadius:12}}>{s.icon} {s.nome}</button>)}
+            </div>
+            {selectedSistemaForColors && <>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {(DEFAULT_COLORI[selectedSistemaForColors]||[]).map((c: string)=><button key={c} onClick={()=>toggleColore(selectedSistemaForColors,c)} style={{...S.pill,padding:"10px 14px",background:(colori[selectedSistemaForColors]||[]).includes(c)?"#059669":"#f3f4f6",color:(colori[selectedSistemaForColors]||[]).includes(c)?"#fff":"#374151",fontWeight:600,borderRadius:10}}>{c}</button>)}
+              </div>
+              {(colori[selectedSistemaForColors]||[]).filter(c=>!(DEFAULT_COLORI[selectedSistemaForColors]||[]).includes(c)).map(c=><div key={c} style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:6,padding:"6px 12px",background:"#ecfdf5",borderRadius:8,marginRight:6}}><span style={{fontSize:13}}>{c}</span><button onClick={()=>toggleColore(selectedSistemaForColors,c)} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer"}}>×</button></div>)}
+              <div style={{display:"flex",gap:8,marginTop:12}}>
+                <input value={customColore} onChange={e=>setCustomColore(e.target.value)} placeholder="Aggiungi colore..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCustomColore(selectedSistemaForColors)} />
+                <button onClick={()=>addCustomColore(selectedSistemaForColors)} style={{...S.pill,background:"#059669",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
+              </div>
+              <button onClick={()=>{const all = DEFAULT_COLORI[selectedSistemaForColors]||[]; setColori({...colori,[selectedSistemaForColors]:all});}} style={{marginTop:8,background:"none",border:"none",color:"#ff6b35",fontSize:13,fontWeight:700,cursor:"pointer"}}>Seleziona tutti i predefiniti</button>
+            </>}
+          </>}
+          <div style={{marginTop:20,display:"flex",gap:10}}>
+            <button onClick={()=>setStep(1)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
+            <button onClick={()=>setStep(3)} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Avanti →</button>
+          </div>
+        </>)}
+        {step===3 && (<>
+          <p style={{fontSize:14,color:"#64748b",marginBottom:12}}>Seleziona le categorie di prodotti che offri:</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
+            {DEFAULT_CATEGORIE.map(c=><button key={c.id} onClick={()=>toggleCategoria(c)} style={{...S.pill,padding:"12px 18px",fontSize:14,background:categorie.find((x: any)=>x.id===c.id)?"#8b5cf6":"#f3f4f6",color:categorie.find((x: any)=>x.id===c.id)?"#fff":"#374151",fontWeight:700,borderRadius:14}}>{c.icon} {c.nome}</button>)}
+          </div>
+          <div style={{display:"flex",gap:8,marginTop:16}}>
+            <input value={customCategoria} onChange={e=>setCustomCategoria(e.target.value)} placeholder="Aggiungi categoria..." style={{...S.input,flex:1}} onKeyDown={e=>{if(e.key==="Enter"&&customCategoria.trim()){const id=customCategoria.trim().toLowerCase().replace(/\s+/g,"_");if(!categorie.find((c: any)=>c.id===id)){setCategorie([...categorie,{id,nome:customCategoria.trim(),icon:"📦"}]);}setCustomCategoria("");}}} />
+            <button onClick={()=>{if(customCategoria.trim()){const id=customCategoria.trim().toLowerCase().replace(/\s+/g,"_");if(!categorie.find((c: any)=>c.id===id)){setCategorie([...categorie,{id,nome:customCategoria.trim(),icon:"📦"}]);}setCustomCategoria("");}}} style={{...S.pill,background:"#8b5cf6",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
+          </div>
+          <div style={{marginTop:20,display:"flex",gap:10}}>
+            <button onClick={()=>setStep(2)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
+            <button onClick={()=>setStep(4)} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Avanti →</button>
+          </div>
+        </>)}
+        {step===4 && (<>
+          <p style={{fontSize:14,color:"#64748b",marginBottom:12}}>Seleziona le tipologie infisso che usi nelle misure:</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {DEFAULT_TIPOLOGIE.map(t=><button key={t} onClick={()=>toggleTipologia(t)} style={{...S.pill,padding:"10px 14px",background:tipologie.includes(t)?"#2563eb":"#f3f4f6",color:tipologie.includes(t)?"#fff":"#374151",fontWeight:600,borderRadius:10}}>{t}</button>)}
+          </div>
+          <div style={{display:"flex",gap:8,marginTop:12}}>
+            <input value={customTipologia} onChange={e=>setCustomTipologia(e.target.value)} placeholder="Aggiungi tipologia..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCustomTipologia()} />
+            <button onClick={addCustomTipologia} style={{...S.pill,background:"#2563eb",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
+          </div>
+          {tipologie.filter(t=>!DEFAULT_TIPOLOGIE.includes(t)).map(t=><div key={t} style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:6,padding:"6px 12px",background:"#eff6ff",borderRadius:8,marginRight:6}}><span style={{fontSize:13}}>{t}</span><button onClick={()=>setTipologie(tipologie.filter(x=>x!==t))} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer"}}>×</button></div>)}
+          <div style={{marginTop:20,display:"flex",gap:10}}>
+            <button onClick={()=>setStep(3)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
+            <button onClick={()=>setStep(5)} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Avanti →</button>
+          </div>
+        </>)}
+        {step===5 && (<>
+          <p style={{fontSize:14,color:"#64748b",marginBottom:12}}>Inserisci i dati della tua azienda (appariranno nei documenti):</p>
+          <Field label="Nome Azienda" value={azienda.nome} onChange={(v: string)=>setAzienda({...azienda,nome:v})} placeholder="Es. Serramenti Rossi SRL" />
+          <Field label="Telefono" value={azienda.telefono} onChange={(v: string)=>setAzienda({...azienda,telefono:v})} placeholder="Numero" type="tel" />
+          <Field label="Email" value={azienda.email} onChange={(v: string)=>setAzienda({...azienda,email:v})} placeholder="info@azienda.it" type="email" />
+          <Field label="Indirizzo" value={azienda.indirizzo} onChange={(v: string)=>setAzienda({...azienda,indirizzo:v})} placeholder="Via, Città" />
+          <Field label="P.IVA" value={azienda.piva} onChange={(v: string)=>setAzienda({...azienda,piva:v})} placeholder="01234567890" />
+          <div style={{marginTop:20,display:"flex",gap:10}}>
+            <button onClick={()=>setStep(4)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
+            <button onClick={()=>onComplete({sistemi,categorie,colori,tipologie,listino:userSettings.listino||[],azienda})} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",fontSize:16}}>✅ Completa Setup</button>
+          </div>
+        </>)}
+      </div>
+    </div>
+  );
+}
+
+// ==================== SETTINGS VIEW ====================
+function SettingsView({ userSettings, onSave, onBack }: any) {
+  const [tab, setTab] = useState("materiali");
+  const [sistemi, setSistemi] = useState<any[]>(userSettings.sistemi?.length > 0 ? userSettings.sistemi : [...DEFAULT_SISTEMI]);
+  const [categorie, setCategorie] = useState<any[]>(userSettings.categorie?.length > 0 ? userSettings.categorie : [...DEFAULT_CATEGORIE]);
+  const [colori, setColori] = useState<Record<string,string[]>>(userSettings.colori || {...DEFAULT_COLORI});
+  const [tipologie, setTipologie] = useState<string[]>(userSettings.tipologie?.length > 0 ? userSettings.tipologie : [...DEFAULT_TIPOLOGIE]);
+  const [listino, setListino] = useState<any[]>(userSettings.listino || []);
+  const [azienda, setAzienda] = useState(userSettings.azienda || {});
+  const [customInput, setCustomInput] = useState("");
+  const [selMat, setSelMat] = useState(sistemi[0]?.id || "");
+  const [listinoForm, setListinoForm] = useState<any>(null);
+
+  function removeSistema(id: string) { setSistemi(sistemi.filter((s: any) => s.id !== id)); }
+  function addSistema() { if(!customInput.trim()) return; const id=customInput.trim().toLowerCase().replace(/\s+/g,"_"); if(!sistemi.find((s: any)=>s.id===id)) setSistemi([...sistemi,{id,nome:customInput.trim(),icon:"🔹"}]); setCustomInput(""); }
+  function removeCategoria(id: string) { setCategorie(categorie.filter((c: any) => c.id !== id)); }
+  function addCategoria() { if(!customInput.trim()) return; const id=customInput.trim().toLowerCase().replace(/\s+/g,"_"); if(!categorie.find((c: any)=>c.id===id)) setCategorie([...categorie,{id,nome:customInput.trim(),icon:"📦"}]); setCustomInput(""); }
+  function addColore(matId: string, col: string) { if(!col.trim()) return; const cur=colori[matId]||[]; if(!cur.includes(col.trim())) setColori({...colori,[matId]:[...cur,col.trim()]}); setCustomInput(""); }
+  function removeColore(matId: string, col: string) { setColori({...colori,[matId]:(colori[matId]||[]).filter(c=>c!==col)}); }
+  function addTipologia() { if(!customInput.trim()||tipologie.includes(customInput.trim())) return; setTipologie([...tipologie,customInput.trim()]); setCustomInput(""); }
+  function removeTipologia(t: string) { setTipologie(tipologie.filter(x=>x!==t)); }
+  function addListinoItem() { if(!listinoForm?.descrizione?.trim()) return; setListino([...listino,{...listinoForm,id:gid()}]); setListinoForm(null); }
+  function removeListinoItem(id: string) { setListino(listino.filter((l: any)=>l.id!==id)); }
+
+  const tabs = [
+    {key:"materiali",label:"Materiali",icon:"🔷"},
+    {key:"colori",label:"Colori",icon:"🎨"},
+    {key:"tipologie",label:"Tipologie",icon:"📋"},
+    {key:"prodotti",label:"Categorie",icon:"🪟"},
+    {key:"listino",label:"Listino",icon:"💰"},
+    {key:"azienda",label:"Azienda",icon:"🏢"},
+  ];
+
+  return (
+    <div style={S.container}>
+      <div style={{...S.secHdr,background:"linear-gradient(135deg,#475569,#334155)",boxShadow:"0 4px 14px rgba(71,85,105,0.3)"}}>
+        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,listino,azienda,setupCompleted:true})} style={{...S.backBtn,color:"#fff"}}>← Salva</button>
+        <h2 style={{...S.secTitle,color:"#fff"}}>⚙️ Impostazioni</h2>
+      </div>
+      <div style={{display:"flex",gap:4,padding:"12px 12px 0",overflowX:"auto",flexShrink:0}}>
+        {tabs.map(t=><button key={t.key} onClick={()=>{setTab(t.key);setCustomInput("");}} style={{padding:"8px 12px",borderRadius:12,border:"none",background:tab===t.key?"#ff6b35":"#f3f4f6",color:tab===t.key?"#fff":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{t.icon} {t.label}</button>)}
+      </div>
+      <div style={{padding:16,flex:1,overflow:"auto"}}>
+        {tab==="materiali" && (<>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>I materiali/sistemi che tratti:</p>
+          {sistemi.map((s: any)=><div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:12,marginBottom:8}}><span style={{fontSize:20}}>{s.icon}</span><span style={{flex:1,fontWeight:700,fontSize:15}}>{s.nome}</span><button onClick={()=>removeSistema(s.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:20,cursor:"pointer"}}>×</button></div>)}
+          <div style={{display:"flex",gap:8,marginTop:12}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuovo materiale..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addSistema()} /><button onClick={addSistema} style={{...S.pill,background:"#ff6b35",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
+        </>)}
+        {tab==="colori" && (<>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Colori per ogni materiale:</p>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+            {sistemi.map((s: any)=><button key={s.id} onClick={()=>setSelMat(s.id)} style={{...S.pill,padding:"10px 14px",background:selMat===s.id?"#ff6b35":"#f3f4f6",color:selMat===s.id?"#fff":"#374151",fontWeight:700,borderRadius:12}}>{s.icon} {s.nome}</button>)}
+          </div>
+          {selMat && <>
+            {(colori[selMat]||[]).map((c: string)=><div key={c} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#f0f9ff",borderRadius:10,marginBottom:6,marginRight:6}}><span style={{fontSize:13,fontWeight:600}}>{c}</span><button onClick={()=>removeColore(selMat,c)} style={{background:"none",border:"none",color:"#ef4444",fontSize:16,cursor:"pointer"}}>×</button></div>)}
+            <div style={{display:"flex",gap:8,marginTop:8}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuovo colore..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addColore(selMat,customInput)} /><button onClick={()=>addColore(selMat,customInput)} style={{...S.pill,background:"#059669",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
+          </>}
+        </>)}
+        {tab==="tipologie" && (<>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Tipologie infisso per le misure:</p>
+          {tipologie.map(t=><div key={t} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#f8fafc",borderRadius:10,marginBottom:6}}><span style={{flex:1,fontSize:14,fontWeight:600}}>{t}</span><button onClick={()=>removeTipologia(t)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          <div style={{display:"flex",gap:8,marginTop:10}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuova tipologia..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addTipologia()} /><button onClick={addTipologia} style={{...S.pill,background:"#2563eb",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
+        </>)}
+        {tab==="prodotti" && (<>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Categorie di prodotti che offri:</p>
+          {categorie.map((c: any)=><div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:12,marginBottom:8}}><span style={{fontSize:20}}>{c.icon}</span><span style={{flex:1,fontWeight:700,fontSize:15}}>{c.nome}</span><button onClick={()=>removeCategoria(c.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:20,cursor:"pointer"}}>×</button></div>)}
+          <div style={{display:"flex",gap:8,marginTop:12}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuova categoria..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCategoria()} /><button onClick={addCategoria} style={{...S.pill,background:"#8b5cf6",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
+        </>)}
+        {tab==="listino" && (<>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Il tuo listino prezzi (usato nei preventivi):</p>
+          {listino.length===0 && <div style={{textAlign:"center",padding:30,color:"#94a3b8"}}><p style={{fontSize:14}}>Nessun articolo nel listino</p></div>}
+          {listino.map((l: any)=><div key={l.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:12,marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:700}}>{l.descrizione}</div><div style={{fontSize:12,color:"#64748b"}}>{l.categoria||"—"} · {l.tipo==="mq"?"€/mq":"€/pz"}</div></div><div style={{fontWeight:800,color:"#059669",fontSize:15}}>€{(l.prezzo||0).toFixed(2)}</div><button onClick={()=>removeListinoItem(l.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          {listinoForm ? (
+            <div style={{padding:16,background:"#fffbeb",borderRadius:14,border:"2px solid #f59e0b",marginTop:12}}>
+              <Field label="Descrizione" value={listinoForm.descrizione||""} onChange={(v: string)=>setListinoForm({...listinoForm,descrizione:v})} placeholder="Es. Finestra 2 ante PVC" />
+              <div style={{display:"flex",gap:8}}>
+                <div style={{flex:1}}><label style={S.fLabel}>Prezzo (€)</label><input type="number" value={listinoForm.prezzo||""} onChange={e=>setListinoForm({...listinoForm,prezzo:parseFloat(e.target.value)||0})} style={S.input} placeholder="0.00" /></div>
+                <div style={{flex:1}}><label style={S.fLabel}>Tipo</label><select value={listinoForm.tipo||"pezzo"} onChange={e=>setListinoForm({...listinoForm,tipo:e.target.value})} style={S.input}><option value="pezzo">€/pezzo</option><option value="mq">€/mq</option><option value="ml">€/ml</option></select></div>
+              </div>
+              <div style={{flex:1}}><label style={S.fLabel}>Categoria</label><select value={listinoForm.categoria||""} onChange={e=>setListinoForm({...listinoForm,categoria:e.target.value})} style={S.input}><option value="">—</option>{categorie.map((c: any)=><option key={c.id} value={c.nome}>{c.nome}</option>)}</select></div>
+              <div style={{display:"flex",gap:8,marginTop:10}}>
+                <button onClick={()=>setListinoForm(null)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>Annulla</button>
+                <button onClick={addListinoItem} disabled={!listinoForm.descrizione?.trim()} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#f59e0b,#d97706)",opacity:listinoForm.descrizione?.trim()?1:0.5}}>💾 Aggiungi</button>
+              </div>
+            </div>
+          ) : <button onClick={()=>setListinoForm({descrizione:"",prezzo:0,tipo:"pezzo",categoria:""})} style={{...S.saveBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",marginTop:12}}>+ Aggiungi Articolo al Listino</button>}
+        </>)}
+        {tab==="azienda" && (<>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Dati aziendali (appaiono nei documenti):</p>
+          <Field label="Nome Azienda" value={azienda.nome||""} onChange={(v: string)=>setAzienda({...azienda,nome:v})} placeholder="Serramenti Rossi SRL" />
+          <Field label="Telefono" value={azienda.telefono||""} onChange={(v: string)=>setAzienda({...azienda,telefono:v})} placeholder="Numero" type="tel" />
+          <Field label="Email" value={azienda.email||""} onChange={(v: string)=>setAzienda({...azienda,email:v})} placeholder="info@azienda.it" type="email" />
+          <Field label="Indirizzo" value={azienda.indirizzo||""} onChange={(v: string)=>setAzienda({...azienda,indirizzo:v})} placeholder="Via, Città" />
+          <Field label="P.IVA" value={azienda.piva||""} onChange={(v: string)=>setAzienda({...azienda,piva:v})} placeholder="01234567890" />
+          <Field label="Codice Fiscale" value={azienda.cf||""} onChange={(v: string)=>setAzienda({...azienda,cf:v})} placeholder="RSSMRA80A01H501U" />
+        </>)}
+      </div>
+      <div style={{padding:"12px 16px 24px",borderTop:"1px solid #e2e8f0"}}>
+        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,listino,azienda,setupCompleted:true})} style={{...S.saveBtn,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",width:"100%"}}>💾 Salva Impostazioni</button>
+      </div>
+    </div>
+  );
+}
+
 function BottomNav({ items, active, onNav }: any) {
   return (
     <div style={S.bottomNav}>
@@ -1658,6 +2079,7 @@ function BottomNav({ items, active, onNav }: any) {
 // ==================== NEW PRATICA ====================
 function NewPraticaView({ client, onCreate, onBack }: any) {
   const [ind, setInd] = useState(client?.indirizzo||"");
+  const [tipo, setTipo] = useState("nuovo_infisso");
   const [data, setData] = useState(today());
   const [ora, setOra] = useState("09:00");
   const [note, setNote] = useState("");
@@ -1666,11 +2088,26 @@ function NewPraticaView({ client, onCreate, onBack }: any) {
       <div style={S.secHdr}><button onClick={onBack} style={S.backBtn}>← Indietro</button><h2 style={S.secTitle}>Nuova Pratica</h2></div>
       <div style={{padding:20}}>
         <div style={S.clientBox}><div style={S.clientAvatar}>{client?.nome?.charAt(0)?.toUpperCase()}</div><div><div style={{fontSize:16,fontWeight:700,color:"#0f172a"}}>{client?.nome}</div>{client?.telefono && <div style={{fontSize:13,color:"#64748b"}}>{client.telefono}</div>}</div></div>
+        <div style={{marginBottom:16}}>
+          <label style={S.fLabel}>Tipo Pratica</label>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setTipo("nuovo_infisso")} style={{flex:1,padding:"16px 12px",borderRadius:16,border:tipo==="nuovo_infisso"?"3px solid #ff6b35":"2px solid #e2e8f0",background:tipo==="nuovo_infisso"?"#fff7ed":"#fff",cursor:"pointer",textAlign:"center"}}>
+              <div style={{fontSize:28}}>🪟</div>
+              <div style={{fontSize:14,fontWeight:800,color:tipo==="nuovo_infisso"?"#ff6b35":"#374151",marginTop:4}}>Nuovo Infisso</div>
+              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Sopralluogo → Misure → Preventivo → Conferma → Fattura → Posa</div>
+            </button>
+            <button onClick={()=>setTipo("riparazione")} style={{flex:1,padding:"16px 12px",borderRadius:16,border:tipo==="riparazione"?"3px solid #dc2626":"2px solid #e2e8f0",background:tipo==="riparazione"?"#fef2f2":"#fff",cursor:"pointer",textAlign:"center"}}>
+              <div style={{fontSize:28}}>🛠️</div>
+              <div style={{fontSize:14,fontWeight:800,color:tipo==="riparazione"?"#dc2626":"#374151",marginTop:4}}>Riparazione</div>
+              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Sopralluogo → Riparazione → Fattura</div>
+            </button>
+          </div>
+        </div>
         <Field label="Indirizzo Cantiere" value={ind} onChange={setInd} placeholder="Via, numero, città" />
         <div style={{display:"flex",gap:12}}><Field label="Data" value={data} onChange={setData} type="date" style={{flex:1}} /><Field label="Ora" value={ora} onChange={setOra} type="time" style={{flex:1}} /></div>
         <Field label="Note" value={note} onChange={setNote} placeholder="Note pratica..." textarea />
-        <div style={S.infoNote}>ℹ️ Numero pratica generato automaticamente.</div>
-        <button onClick={()=>onCreate(ind,"sopralluogo",data,ora,note)} style={S.saveBtn}>Crea Pratica →</button>
+        <div style={S.infoNote}>ℹ️ La pratica inizierà dalla fase Sopralluogo.</div>
+        <button onClick={()=>onCreate(ind,tipo,data,ora,note)} style={{...S.saveBtn,background:tipo==="riparazione"?"linear-gradient(135deg,#ef4444,#dc2626)":"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Crea Pratica →</button>
       </div>
     </div>
   );
@@ -1748,7 +2185,7 @@ function SignaturePad({ onSave, onCancel }: any) {
 }
 
 // ==================== PRATICA DETAIL ====================
-function PraticaDetail({ pratica: p, client: c, onBack, onDelete, onAddAction, onToggleTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura }: any) {
+function PraticaDetail({ pratica: p, client: c, onBack, onDelete, onAddAction, onToggleTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase }: any) {
   const sc = STATUS[p.status];
   const totalT = p.actions.reduce((s: number,a: any)=>s+a.tasks.length,0);
   const doneT = p.actions.reduce((s: number,a: any)=>s+a.tasks.filter((t: any)=>t.done).length,0);
@@ -1778,138 +2215,54 @@ function PraticaDetail({ pratica: p, client: c, onBack, onDelete, onAddAction, o
           </div>
         </div>
 
-        {/* ===== FLUSSO COMMERCIALE ===== */}
-        {hasPreventivo && (
-          <div style={{background:"linear-gradient(135deg,#1e293b,#334155)",borderRadius:18,padding:18,marginBottom:18,color:"#fff"}}>
-            <h3 style={{fontSize:16,fontWeight:900,margin:"0 0 14px",letterSpacing:"-0.3px"}}>🔄 Flusso Commerciale</h3>
-            {/* Step indicators */}
-            <div style={{display:"flex",gap:4,marginBottom:16}}>
-              {[{l:"Preventivo",done:true,icon:"💰"},{l:"Conferma",done:hasConferma,icon:"✍️"},{l:"Fattura",done:hasFattura,icon:"🧾"},{l:"Pagamento",done:p.fattura?.statoPagamento==="pagato",icon:"💰"}].map((step,i) => (
-                <div key={i} style={{flex:1,textAlign:"center"}}>
-                  <div style={{width:36,height:36,borderRadius:"50%",background:step.done?"#059669":"rgba(255,255,255,0.15)",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,transition:"all 0.3s"}}>{step.done?"✅":step.icon}</div>
-                  <div style={{fontSize:10,fontWeight:700,color:step.done?"#4ade80":"rgba(255,255,255,0.5)"}}>{step.l}</div>
+        {/* ===== WORKFLOW STEPPER ===== */}
+        {(() => {
+          const wf = getWorkflow(p.tipo);
+          const curIdx = getPhaseIndex(p.tipo, p.fase || "sopralluogo");
+          const canAdv = canAdvance(p);
+          const isComplete = curIdx >= wf.length - 1 && canAdv;
+          return (
+            <div style={{background:"linear-gradient(135deg,#1e293b,#334155)",borderRadius:18,padding:18,marginBottom:18,color:"#fff"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <h3 style={{fontSize:16,fontWeight:900,margin:0,letterSpacing:"-0.3px"}}>{p.tipo==="riparazione"?"🛠️ Riparazione":"🪟 Nuovo Infisso"}</h3>
+                {isComplete && <span style={{background:"#059669",padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:800}}>✅ COMPLETATO</span>}
+              </div>
+              <div style={{display:"flex",gap:2,marginBottom:16}}>
+                {wf.map((phase: any,i: number) => {
+                  const isDone = i < curIdx || (i === curIdx && canAdv);
+                  const isCurrent = i === curIdx;
+                  return (
+                    <div key={phase.key} style={{flex:1,textAlign:"center"}}>
+                      <div style={{width:38,height:38,borderRadius:"50%",background:isDone?"#059669":isCurrent?phase.color:"rgba(255,255,255,0.1)",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,border:isCurrent?"3px solid "+phase.color:"3px solid transparent",transition:"all 0.3s",boxShadow:isCurrent?"0 0 12px "+phase.color+"40":"none"}}>{isDone?"✅":phase.icon}</div>
+                      <div style={{fontSize:9,fontWeight:800,color:isCurrent?"#fff":isDone?"#4ade80":"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:"0.3px"}}>{phase.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              {!isComplete && (
+                <div style={{background:"rgba(255,255,255,0.08)",borderRadius:14,padding:14}}>
+                  <div style={{fontSize:15,fontWeight:800,marginBottom:8}}>{wf[curIdx]?.icon} Fase: {wf[curIdx]?.label}</div>
+                  {p.fase==="sopralluogo" && (() => { const act=p.actions?.find((a: any)=>a.type==="sopralluogo"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}</>); })()}
+                  {p.fase==="misure" && (<div>{p.misure?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Misure compilate</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Vani: {p.misure.vani?.length||0}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda misure.</p>}<button onClick={onOpenMisure} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>📐 {p.misure?"Modifica":"Compila"} Misure</button></div>)}
+                  {p.fase==="preventivo" && (<div>{p.preventivo?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Preventivo compilato</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Totale: € {(p.preventivo.totaleFinale||0).toFixed(2)}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Prepara il preventivo.</p>}<button onClick={onOpenPrev} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#a855f7,#8b5cf6)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>💰 {p.preventivo?"Modifica":"Compila"} Preventivo</button></div>)}
+                  {p.fase==="conferma" && (<div>{p.confermaOrdine?.firmata?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Ordine confermato</div>{p.confermaOrdine.firmaImg&&<img src={p.confermaOrdine.firmaImg} alt="Firma" style={{height:40,borderRadius:6,background:"#fff",padding:3,marginTop:6}} />}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Raccogli la firma del cliente.</p><div style={{marginBottom:10}}><input value={orderNote} onChange={(e: any)=>setOrderNote(e.target.value)} placeholder="Note ordine..." style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} /></div>{!showSignPad?<button onClick={()=>setShowSignPad(true)} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}>✍️ Firma Conferma</button>:<SignaturePad onSave={(img: string)=>{onConfirmOrder(img,orderNote);setShowSignPad(false);}} onCancel={()=>setShowSignPad(false)} />}</>)}</div>)}
+                  {p.fase==="riparazione" && (<div>{p.riparazione?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Riparazione compilata</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>{p.riparazione.problema||"—"}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda riparazione.</p>}<button onClick={onOpenRip} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#ef4444,#dc2626)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>🛠️ {p.riparazione?"Modifica":"Compila"} Riparazione</button></div>)}
+                  {p.fase==="fattura" && (<div>{p.fattura?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Fattura {p.fattura.numero}</span><span style={{fontSize:11,padding:"2px 8px",borderRadius:8,background:p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",fontWeight:700}}>{p.fattura.statoPagamento==="pagato"?"Pagata":p.fattura.statoPagamento==="acconto"?"Acconto":"Non Pagata"}</span></div><div style={{fontSize:20,fontWeight:900,color:"#4ade80",marginTop:6}}>€ {(p.preventivo?.totaleFinale||p.riparazione?.costoStimato||0).toFixed?.(2)||"0.00"}</div><div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>📄 PDF</button><button onClick={()=>{setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||""});setShowPaymentEdit(true);}} style={{flex:1,padding:"10px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}>💰 Pagamento</button></div>{showPaymentEdit&&(<div style={{background:"rgba(255,255,255,0.1)",borderRadius:14,padding:14,marginTop:10}}><div style={{display:"flex",gap:6,marginBottom:12}}>{[{k:"non_pagato",l:"❌ Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:"✅ Pagata",c:"#059669"}].map(s=><button key={s.k} onClick={()=>setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:12,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>)}</div>{payForm.stato==="acconto"&&<div style={{marginBottom:10}}><input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} /></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{["Bonifico","Contanti","Assegno","Carta","Ri.Ba."].map(m=><button key={m} onClick={()=>setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:10,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#ff6b35":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>)}</div><div style={{display:"flex",gap:8}}><button onClick={()=>setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button><button onClick={()=>{onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo});setShowPaymentEdit(false);}} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}>💾 Salva</button></div></div>)}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Genera la fattura.</p><button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer"}}>🧾 Genera Fattura</button></>)}</div>)}
+                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}</>); })()}
+                  {canAdv && curIdx < wf.length-1 && <button onClick={onAdvancePhase} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 14px rgba(5,150,105,0.4)"}}>✅ Avanza a: {wf[curIdx+1].icon} {wf[curIdx+1].label} →</button>}
+                  {!canAdv && <div style={{marginTop:10,padding:"10px 14px",background:"rgba(255,255,255,0.05)",borderRadius:10,fontSize:12,color:"rgba(255,255,255,0.5)",textAlign:"center",fontWeight:600}}>🔒 Completa questa fase per avanzare</div>}
                 </div>
-              ))}
+              )}
             </div>
+          );
+        })()}
 
-            {/* STEP 1: Conferma Ordine */}
-            {!hasConferma && (
-              <div style={{background:"rgba(255,255,255,0.08)",borderRadius:14,padding:14}}>
-                <div style={{fontSize:14,fontWeight:800,marginBottom:8}}>✍️ Prossimo: Conferma d'Ordine</div>
-                <p style={{fontSize:12,color:"rgba(255,255,255,0.7)",margin:"0 0 10px"}}>Il cliente accetta il preventivo? Raccogli la firma per confermare.</p>
-                <div style={{marginBottom:10}}>
-                  <label style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",display:"block",marginBottom:4}}>Note ordine (opzionale)</label>
-                  <input value={orderNote} onChange={(e: any) => setOrderNote(e.target.value)} placeholder="Es: consegna entro 6 settimane..." style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} />
-                </div>
-                {!showSignPad ? (
-                  <button onClick={() => setShowSignPad(true)} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 14px rgba(5,150,105,0.4)"}}>✍️ Firma Conferma d'Ordine</button>
-                ) : (
-                  <SignaturePad onSave={(img: string) => { onConfirmOrder(img, orderNote); setShowSignPad(false); }} onCancel={() => setShowSignPad(false)} />
-                )}
-              </div>
-            )}
+        <div style={S.statusChanger}><span style={S.statusLbl}>Stato:</span><div style={{display:"flex",gap:6,flex:1}}>{Object.entries(STATUS).map(([k,v])=><button key={k} onClick={()=>onStatusChange(k)} style={{...S.statusTgl,background:p.status===k?v.color:"transparent",color:p.status===k?"#fff":v.color,border:"2px solid "+v.color}}>{v.label}</button>)}</div></div>
 
-            {/* Conferma OK - mostra riepilogo */}
-            {hasConferma && (
-              <div style={{background:"rgba(5,150,105,0.2)",borderRadius:14,padding:14,marginBottom:hasFattura?0:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                  <span style={{fontSize:20}}>✅</span>
-                  <span style={{fontSize:14,fontWeight:800}}>Ordine Confermato</span>
-                  <span style={{fontSize:11,color:"rgba(255,255,255,0.6)",marginLeft:"auto"}}>{new Date(p.confermaOrdine.dataConferma).toLocaleDateString("it-IT")}</span>
-                </div>
-                {p.confermaOrdine.firmaImg && <img src={p.confermaOrdine.firmaImg} alt="Firma" style={{height:50,borderRadius:8,background:"#fff",padding:4,marginTop:4}} />}
-                <div style={{display:"flex",gap:8,marginTop:10}}>
-                  <button onClick={() => exportConfermaOrdine(p,c)} style={{flex:1,padding:"8px",borderRadius:10,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>📄 PDF Conferma</button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 2: Genera Fattura */}
-            {hasConferma && !hasFattura && (
-              <div style={{background:"rgba(255,255,255,0.08)",borderRadius:14,padding:14,marginTop:10}}>
-                <div style={{fontSize:14,fontWeight:800,marginBottom:8}}>🧾 Prossimo: Genera Fattura</div>
-                <p style={{fontSize:12,color:"rgba(255,255,255,0.7)",margin:"0 0 10px"}}>Crea la fattura di cortesia con numerazione automatica. Poi la carichi su Aruba/Fatture in Cloud per l'invio SDI.</p>
-                <button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 14px rgba(251,191,36,0.4)"}}>🧾 Genera Fattura</button>
-              </div>
-            )}
-
-            {/* STEP 3: Fattura + Pagamento */}
-            {hasFattura && (
-              <div style={{background:"rgba(255,255,255,0.08)",borderRadius:14,padding:14,marginTop:10}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <div>
-                    <div style={{fontSize:16,fontWeight:900}}>{p.fattura.numero}</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.6)"}}>{new Date(p.fattura.data).toLocaleDateString("it-IT")}</div>
-                  </div>
-                  <span style={{padding:"6px 14px",borderRadius:12,fontSize:12,fontWeight:800,
-                    background: p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",
-                    color:"#fff"
-                  }}>
-                    {p.fattura.statoPagamento==="pagato"?"✅ Pagata":p.fattura.statoPagamento==="acconto"?`⏳ Acconto €${(p.fattura.acconto||0).toFixed(0)}`:"❌ Non Pagata"}
-                  </span>
-                </div>
-                <div style={{fontSize:22,fontWeight:900,color:"#4ade80",marginBottom:10}}>€ {(p.preventivo?.totaleFinale||0).toFixed(2)}</div>
-                
-                {/* Payment tracking */}
-                {!showPaymentEdit ? (
-                  <div style={{display:"flex",gap:8}}>
-                    <button onClick={() => exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>📄 PDF Fattura</button>
-                    <button onClick={() => { setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||"",note:p.fattura.note||""}); setShowPaymentEdit(true); }} style={{flex:1,padding:"10px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}>💰 Aggiorna Pagamento</button>
-                  </div>
-                ) : (
-                  <div style={{background:"rgba(255,255,255,0.1)",borderRadius:14,padding:14}}>
-                    <div style={{fontSize:13,fontWeight:800,marginBottom:10}}>💰 Stato Pagamento</div>
-                    <div style={{display:"flex",gap:6,marginBottom:12}}>
-                      {[{k:"non_pagato",l:"❌ Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:"✅ Pagata",c:"#059669"}].map(s => (
-                        <button key={s.k} onClick={() => setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:12,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>
-                      ))}
-                    </div>
-                    {payForm.stato==="acconto" && (
-                      <div style={{marginBottom:10}}>
-                        <label style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.6)",display:"block",marginBottom:4}}>Importo Acconto (€)</label>
-                        <input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} />
-                      </div>
-                    )}
-                    <div style={{marginBottom:10}}>
-                      <label style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.6)",display:"block",marginBottom:4}}>Metodo di Pagamento</label>
-                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                        {["Bonifico","Contanti","Assegno","Carta","Ri.Ba.","Altro"].map(m => (
-                          <button key={m} onClick={() => setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:10,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#ff6b35":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div style={{display:"flex",gap:8,marginTop:12}}>
-                      <button onClick={() => setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button>
-                      <button onClick={() => { onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo,note:payForm.note}); setShowPaymentEdit(false); }} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}>💾 Salva</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div style={S.statusChanger}><span style={S.statusLbl}>Stato:</span><div style={{display:"flex",gap:6,flex:1}}>{Object.entries(STATUS).map(([k,v])=><button key={k} onClick={()=>onStatusChange(k)} style={{...S.statusTgl,background:p.status===k?v.color:"transparent",color:p.status===k?"#fff":v.color,border:`2px solid ${v.color}`}}>{v.label}</button>)}</div></div>
-        {totalT>0 && <ProgressBar progress={prog} done={doneT} total={totalT} />}
-        {p.actions.length>0 && <div><h3 style={S.sectionTitle}>Azioni ({p.actions.length})</h3>
-          {p.actions.map((act: any)=>{
-            const cfg = ACTIONS_CFG.find(a=>a.key===act.type)||{icon:"📋",label:act.type,color:"#6b7280"};
-            const asc = STATUS[act.status]; const aprog = getProgress(act.tasks);
-            return (<div key={act.id} style={{...S.actionBlock,borderLeft:`4px solid ${cfg.color}`}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:15,fontWeight:700}}>{cfg.icon} {cfg.label}</span><span style={{fontSize:12,fontWeight:600,color:asc.color,background:asc.bg,padding:"3px 10px",borderRadius:12}}>{asc.label}</span></div>
-              {act.type==="misure" && <button onClick={onOpenMisure} style={S.openFormBtn}>📐 {p.misure?"Modifica":"Apri"} Scheda Misure →</button>}
-              {act.type==="riparazione" && <button onClick={onOpenRip} style={{...S.openFormBtn,background:"#fef2f2",color:"#dc2626"}}>🛠️ {p.riparazione?"Modifica":"Apri"} Scheda Riparazione →</button>}
-              {act.type==="preventivo" && <button onClick={onOpenPrev} style={{...S.openFormBtn,background:"#f5f3ff",color:"#8b5cf6"}}>💰 {p.preventivo?"Modifica":"Apri"} Preventivo →</button>}
-              <ProgressBar progress={aprog} done={act.tasks.filter((t: any)=>t.done).length} total={act.tasks.length} small />
-              {act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}
-            </div>);
-          })}
-        </div>}
-        {p.misure && <div style={S.dataSummary}><h4 style={S.dataSumTitle}>📐 Misure</h4><p style={S.dataSumLine}>Vani: {p.misure.vani?.length||0} · Sistema: {p.misure.sistema||"—"}</p><button onClick={onOpenMisure} style={{...S.openFormBtn,marginTop:6}}>Apri →</button></div>}
-        {p.riparazione && <div style={{...S.dataSummary,borderLeftColor:"#dc2626"}}><h4 style={{...S.dataSumTitle,color:"#dc2626"}}>🛠️ Riparazione</h4><p style={S.dataSumLine}>Problema: {p.riparazione.problema||"—"}</p><button onClick={onOpenRip} style={{...S.openFormBtn,marginTop:6,background:"#fef2f2",color:"#dc2626"}}>Apri →</button></div>}
-        {p.preventivo && <div style={{...S.dataSummary,borderLeftColor:"#8b5cf6"}}><h4 style={{...S.dataSumTitle,color:"#8b5cf6"}}>💰 Preventivo</h4><p style={S.dataSumLine}>Prodotti: {p.preventivo.prodotti?.length||0} · Totale: € {(p.preventivo.totaleFinale||0).toFixed(2)}</p><button onClick={onOpenPrev} style={{...S.openFormBtn,marginTop:6,background:"#f5f3ff",color:"#8b5cf6"}}>Apri →</button></div>}
+        {p.misure && <div style={S.dataSummary}><h4 style={S.dataSumTitle}>📐 Misure</h4><p style={S.dataSumLine}>Vani: {p.misure.vani?.length||0}</p><button onClick={onOpenMisure} style={{...S.openFormBtn,marginTop:6}}>Apri →</button></div>}
+        {p.riparazione && <div style={{...S.dataSummary,borderLeftColor:"#dc2626"}}><h4 style={{...S.dataSumTitle,color:"#dc2626"}}>🛠️ Riparazione</h4><p style={S.dataSumLine}>{p.riparazione.problema||"—"}</p><button onClick={onOpenRip} style={{...S.openFormBtn,marginTop:6,background:"#fef2f2",color:"#dc2626"}}>Apri →</button></div>}
+        {p.preventivo && <div style={{...S.dataSummary,borderLeftColor:"#8b5cf6"}}><h4 style={{...S.dataSumTitle,color:"#8b5cf6"}}>💰 Preventivo</h4><p style={S.dataSumLine}>€ {(p.preventivo.totaleFinale||0).toFixed(2)}</p><button onClick={onOpenPrev} style={{...S.openFormBtn,marginTop:6,background:"#f5f3ff",color:"#8b5cf6"}}>Apri →</button></div>}
         {(p.emails||[]).length>0 && <div style={{marginTop:16}}><h3 style={S.sectionTitle}>✉️ Email ({p.emails.length})</h3>{p.emails.map((e: any)=><div key={e.id} style={S.emailCard}><div style={{fontSize:13,fontWeight:600,color:"#0f172a"}}>{e.oggetto}</div><div style={{fontSize:12,color:"#64748b"}}>A: {e.destinatario} · {new Date(e.sentAt).toLocaleString("it-IT")}</div></div>)}</div>}
-        <button onClick={onAddAction} style={S.addActionBtn}>+ Aggiungi Azione</button>
         <button onClick={onOpenEmail} style={S.sendEmailBtn}>✉️ Invia Email</button>
         <div style={{marginTop:16,padding:14,background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0"}}>
           <h4 style={{fontSize:14,fontWeight:700,color:"#0f172a",margin:"0 0 10px"}}>🖨️ Esporta / Stampa</h4>
@@ -1928,18 +2281,21 @@ function PraticaDetail({ pratica: p, client: c, onBack, onDelete, onAddAction, o
 }
 
 // ==================== MISURE FORM ====================
-function MisureForm({ pratica, client, onSave, onBack }: any) {
+function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori, onSave, onBack }: any) {
   const m = pratica?.misure;
   const [cantiere, setCantiere] = useState(m?.cantiere||client?.nome||"");
   const [indirizzo, setIndirizzo] = useState(m?.indirizzo||pratica?.indirizzo||"");
   const [sistema, setSistema] = useState(m?.sistema||"");
+  const [materialeId, setMaterialeId] = useState(m?.materialeId||"");
   const [coloreInt, setColoreInt] = useState(m?.coloreInt||"Bianco");
   const [coloreEst, setColoreEst] = useState(m?.coloreEst||"Bianco");
   const [piano, setPiano] = useState(m?.piano||"");
   const [noteGen, setNoteGen] = useState(m?.noteGen||"");
   const [vani, setVani] = useState(m?.vani||[makeVano()]);
-  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",note:"",photos:{}}; }
+  const coloriPerMat = materialeId && coloriMap[materialeId] ? coloriMap[materialeId] : allColori || [];
+  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",note:"",photos:{}}; }
   function uv(i: number,f: string,v: any) { const n=[...vani]; n[i]={...n[i],[f]:v}; setVani(n); }
+  const useTipologie = tipologie?.length > 0 ? tipologie : SISTEMI;
   return (
     <div style={S.container}>
       <div style={{...S.secHdr,background:"linear-gradient(135deg,#f59e0b,#d97706)",boxShadow:"0 4px 14px rgba(245,158,11,0.3)"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>📐 Scheda Misure</h2></div>
@@ -1948,15 +2304,19 @@ function MisureForm({ pratica, client, onSave, onBack }: any) {
         <Field label="Cantiere" value={cantiere} onChange={setCantiere} placeholder="Rif. cantiere" />
         <Field label="Indirizzo" value={indirizzo} onChange={setIndirizzo} placeholder="Indirizzo" />
         <div style={{display:"flex",gap:12}}>
-          <div style={{flex:1}}><label style={S.fLabel}>Sistema</label><select value={sistema} onChange={(e: any)=>setSistema(e.target.value)} style={S.input}><option value="">—</option>{SISTEMI.map(s=><option key={s}>{s}</option>)}</select></div>
+          <div style={{flex:1}}><label style={S.fLabel}>Materiale</label><select value={materialeId} onChange={(e: any)=>setMaterialeId(e.target.value)} style={S.input}><option value="">— Seleziona —</option>{(sistemi||DEFAULT_SISTEMI).map((s: any)=><option key={s.id} value={s.id}>{s.icon} {s.nome}</option>)}</select></div>
           <div style={{flex:1}}><label style={S.fLabel}>Piano</label><select value={piano} onChange={(e: any)=>setPiano(e.target.value)} style={S.input}><option value="">—</option>{["Terra","1°","2°","3°","4°","5°"].map(p=><option key={p}>{p}</option>)}</select></div>
         </div>
-        <div style={{display:"flex",gap:12}}><Field label="Colore Int." value={coloreInt} onChange={setColoreInt} style={{flex:1}} /><Field label="Colore Est." value={coloreEst} onChange={setColoreEst} style={{flex:1}} /></div>
+        <div style={{display:"flex",gap:12}}>
+          <div style={{flex:1}}><label style={S.fLabel}>Colore Int.</label><select value={coloreInt} onChange={(e: any)=>setColoreInt(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreInt==="__custom"&&<input value="" onChange={(e: any)=>setColoreInt(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+          <div style={{flex:1}}><label style={S.fLabel}>Colore Est.</label><select value={coloreEst} onChange={(e: any)=>setColoreEst(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreEst==="__custom"&&<input value="" onChange={(e: any)=>setColoreEst(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+        </div>
         <h3 style={{...S.sectionTitle,marginTop:20}}>Vani ({vani.length})</h3>
         {vani.map((v: any,i: number)=>(
           <div key={v.id} style={S.vanoCard}>
             <div style={S.vanoHdr}><span style={S.vanoNum}>{i+1}</span><span style={{fontSize:15,fontWeight:700,flex:1}}>Vano {i+1}</span>{vani.length>1 && <button onClick={()=>setVani(vani.filter((_: any,j: number)=>j!==i))} style={S.vanoRm}>×</button>}</div>
             <Field label="Ambiente" value={v.ambiente} onChange={(val: string)=>uv(i,"ambiente",val)} placeholder="Soggiorno, Camera..." />
+            <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>Tipologia</label><select value={v.sistema||sistema} onChange={(e: any)=>uv(i,"sistema",e.target.value)} style={S.input}><option value="">—</option>{useTipologie.map((s: string)=><option key={s}>{s}</option>)}</select></div>
             <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
             <div style={S.fGroup}><label style={S.fLabel}>Apertura</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{APERTURE.map(a=><button key={a} onClick={()=>uv(i,"apertura",a)} style={{...S.pill,background:v.apertura===a?"#d97706":"#f3f4f6",color:v.apertura===a?"#fff":"#6b7280"}}>{a}</button>)}</div></div>
             <div style={S.fGroup}><label style={S.fLabel}>Foto</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{PHOTO_TYPES.map(p=><div key={p.k} style={{...S.photoPH,background:v.photos[p.k]?"#ecfdf5":"#f8fafc",borderColor:v.photos[p.k]?"#059669":"#d1d5db"}}><span style={{fontSize:14}}>{p.i}</span><span style={{fontSize:9,fontWeight:600,color:"#64748b"}}>{p.l}</span></div>)}</div></div>
@@ -1965,7 +2325,7 @@ function MisureForm({ pratica, client, onSave, onBack }: any) {
         ))}
         <button onClick={()=>setVani([...vani,makeVano()])} style={S.addVanoBtn}>+ Aggiungi Vano</button>
         <Field label="Note Generali" value={noteGen} onChange={setNoteGen} placeholder="Note generali..." textarea />
-        <button onClick={()=>onSave({cantiere,indirizzo,sistema,coloreInt,coloreEst,piano,noteGen,vani})} style={{...S.saveBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",boxShadow:"0 4px 14px rgba(245,158,11,0.3)"}}>💾 Salva Misure</button>
+        <button onClick={()=>onSave({cantiere,indirizzo,sistema,materialeId,coloreInt,coloreEst,piano,noteGen,vani})} style={{...S.saveBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",boxShadow:"0 4px 14px rgba(245,158,11,0.3)"}}>💾 Salva Misure</button>
         {pratica?.misure && <button onClick={()=>exportMisure(pratica,client)} style={{...S.saveBtn,background:"#fff",color:"#d97706",border:"2px solid #d97706",boxShadow:"none",marginTop:8}}>🖨️ Stampa / PDF Misure</button>}
       </div>
     </div>
@@ -2004,7 +2364,7 @@ function RipForm({ pratica, client, onSave, onBack }: any) {
 }
 
 // ==================== PREVENTIVO FORM ====================
-function PreventivoForm({ pratica, client, onSave, onBack }: any) {
+function PreventivoForm({ pratica, client, userListino, userCategorie, userSistemi, onSave, onBack }: any) {
   const prev = pratica?.preventivo;
   const m = pratica?.misure;
   
@@ -2014,7 +2374,7 @@ function PreventivoForm({ pratica, client, onSave, onBack }: any) {
   const [condizioni, setCondizioni] = useState(prev?.condizioni || "Preventivo valido 30 giorni. Prezzi IVA esclusa. Tempi di consegna: 4-6 settimane dall'ordine. Posa in opera inclusa salvo diversa indicazione.");
   const [validita, setValidita] = useState(prev?.validita || "30");
   const [noteP, setNoteP] = useState(prev?.noteP || "");
-  const [listino, setListino] = useState<any[]>(prev?.listino || []);
+  const [listino, setListino] = useState<any[]>(prev?.listino || userListino || []);
   const [showListino, setShowListino] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
