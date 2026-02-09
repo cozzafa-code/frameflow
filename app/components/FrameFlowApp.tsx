@@ -2,6 +2,47 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "../lib/supabase";
 
+// ==================== PHOTO UTILITIES ====================
+async function compressImage(file: File, maxWidth = 1200): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ratio = Math.min(maxWidth / img.width, 1);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject("Compress failed"), "image/jpeg", 0.7);
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadPhotoToStorage(file: File, userId: string, folder: string): Promise<string | null> {
+  try {
+    const compressed = await compressImage(file);
+    const path = `${userId}/${folder}/${Date.now()}_${Math.random().toString(36).substr(2,5)}.jpg`;
+    const { error } = await supabase.storage.from("photos").upload(path, compressed, { contentType: "image/jpeg", upsert: true });
+    if (error) { console.error("Upload error:", error); return null; }
+    const { data } = supabase.storage.from("photos").getPublicUrl(path);
+    return data.publicUrl;
+  } catch (err) { console.error("Photo upload failed:", err); return null; }
+}
+
+async function deletePhotoFromStorage(url: string) {
+  try {
+    const parts = url.split("/photos/");
+    if (parts[1]) { const path = decodeURIComponent(parts[1]); await supabase.storage.from("photos").remove([path]); }
+  } catch (err) { console.error("Delete photo failed:", err); }
+}
+
 const STORAGE_KEY = "frameflow-v4";
 
 const ACTIONS_CFG = [
@@ -416,10 +457,11 @@ function clientToDb(c: any, userId: string): any {
   return { id: c.id, user_id: userId, nome: c.nome||"", telefono: c.telefono||"", email: c.email||"", indirizzo: c.indirizzo||"", piva: c.piva||"", codice_fiscale: c.codiceFiscale||"", note: c.note||"" };
 }
 function dbToPratica(row: any): any {
-  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], createdAt: row.created_at };
+  const photos = row.photos || {};
+  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], createdAt: row.created_at };
 }
 function praticaToDb(p: any, userId: string): any {
-  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data||"", ora: p.ora||"", indirizzo: p.indirizzo||"", tipo: p.tipo||"nuovo_infisso", fase: p.fase||"sopralluogo", status: p.status||"da_fare", note: p.note||"", actions: p.actions||[], misure: p.misure||null, riparazione: p.riparazione||null, preventivo: p.preventivo||null, conferma_ordine: p.confermaOrdine||null, fattura: p.fattura||null, emails: p.emails||[] };
+  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data||"", ora: p.ora||"", indirizzo: p.indirizzo||"", tipo: p.tipo||"nuovo_infisso", fase: p.fase||"sopralluogo", status: p.status||"da_fare", note: p.note||"", actions: p.actions||[], misure: p.misure||null, riparazione: p.riparazione||null, preventivo: p.preventivo||null, conferma_ordine: p.confermaOrdine||null, fattura: p.fattura||null, emails: p.emails||[], photos: { sopralluogo: p.fotoSopralluogo||[], posaInizio: p.fotoPosaInizio||[], posaFine: p.fotoPosaFine||[] } };
 }
 function dbToNote(row: any): any {
   return { id: row.id, testo: row.testo, colore: row.colore, praticaId: row.pratica_id, updatedAt: row.updated_at, createdAt: row.created_at };
@@ -922,11 +964,11 @@ export default function FrameFlowApp() {
   // ==================== VIEWS ====================
   if (view==="misure" && misureEdit) {
     const p = getPratica(misureEdit); const c = getClient(p?.clientId);
-    return <MisureForm pratica={p} client={c} sistemi={userSistemi} tipologie={userTipologie} coloriMap={userColori} allColori={allColori} onSave={(d: any)=>saveMisure(misureEdit,d)} onBack={()=>{setMisureEdit(null);setSelPratica(misureEdit);setView("pratica");}} />;
+    return <MisureForm pratica={p} client={c} sistemi={userSistemi} tipologie={userTipologie} coloriMap={userColori} allColori={allColori} userId={user?.id} onSave={(d: any)=>saveMisure(misureEdit,d)} onBack={()=>{setMisureEdit(null);setSelPratica(misureEdit);setView("pratica");}} />;
   }
   if (view==="riparazione" && ripEdit) {
     const p = getPratica(ripEdit); const c = getClient(p?.clientId);
-    return <RipForm pratica={p} client={c} onSave={(d: any)=>saveRiparazione(ripEdit,d)} onBack={()=>{setRipEdit(null);setSelPratica(ripEdit);setView("pratica");}} />;
+    return <RipForm pratica={p} client={c} userId={user?.id} onSave={(d: any)=>saveRiparazione(ripEdit,d)} onBack={()=>{setRipEdit(null);setSelPratica(ripEdit);setView("pratica");}} />;
   }
   if (view==="preventivo" && prevEdit) {
     const p = getPratica(prevEdit); const c = getClient(p?.clientId);
@@ -1030,7 +1072,7 @@ export default function FrameFlowApp() {
     const p = getPratica(selPratica);
     if (!p) { setView("dashboard"); return null; }
     const c = getClient(p.clientId);
-    return <PraticaDetail pratica={p} client={c}
+    return <PraticaDetail pratica={p} client={c} userId={user?.id}
       onBack={()=>{setSelPratica(null);setView("pratiche");}}
       onDelete={()=>{if(confirm("Eliminare pratica "+p.numero+"?"))deletePratica(p.id);}}
       onAddAction={()=>{setActionPicker(p.id);setView("action_picker");}}
@@ -1044,6 +1086,7 @@ export default function FrameFlowApp() {
       onGenerateFattura={()=>generateFattura(p.id)}
       onUpdateFattura={(data: any)=>updateFattura(p.id,data)}
       onAdvancePhase={()=>advancePhase(p.id)}
+      onUpdatePratica={(data: any)=>updatePratica(p.id,data)}
     />;
   }
 
@@ -2185,7 +2228,7 @@ function SignaturePad({ onSave, onCancel }: any) {
 }
 
 // ==================== PRATICA DETAIL ====================
-function PraticaDetail({ pratica: p, client: c, onBack, onDelete, onAddAction, onToggleTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase }: any) {
+function PraticaDetail({ pratica: p, client: c, userId, onBack, onDelete, onAddAction, onToggleTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica }: any) {
   const sc = STATUS[p.status];
   const totalT = p.actions.reduce((s: number,a: any)=>s+a.tasks.length,0);
   const doneT = p.actions.reduce((s: number,a: any)=>s+a.tasks.filter((t: any)=>t.done).length,0);
@@ -2242,13 +2285,13 @@ function PraticaDetail({ pratica: p, client: c, onBack, onDelete, onAddAction, o
               {!isComplete && (
                 <div style={{background:"rgba(255,255,255,0.08)",borderRadius:14,padding:14}}>
                   <div style={{fontSize:15,fontWeight:800,marginBottom:8}}>{wf[curIdx]?.icon} Fase: {wf[curIdx]?.label}</div>
-                  {p.fase==="sopralluogo" && (() => { const act=p.actions?.find((a: any)=>a.type==="sopralluogo"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}</>); })()}
+                  {p.fase==="sopralluogo" && (() => { const act=p.actions?.find((a: any)=>a.type==="sopralluogo"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}{userId && <div style={{marginTop:12}}><PhotoGallery photos={p.fotoSopralluogo||[]} label="📸 Foto Sopralluogo" userId={userId} folder={`sopralluogo/${p.id}`} onUpdate={(photos: string[])=>onUpdatePratica({fotoSopralluogo:photos})} /></div>}</>); })()}
                   {p.fase==="misure" && (<div>{p.misure?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Misure compilate</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Vani: {p.misure.vani?.length||0}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda misure.</p>}<button onClick={onOpenMisure} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>📐 {p.misure?"Modifica":"Compila"} Misure</button></div>)}
                   {p.fase==="preventivo" && (<div>{p.preventivo?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Preventivo compilato</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Totale: € {(p.preventivo.totaleFinale||0).toFixed(2)}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Prepara il preventivo.</p>}<button onClick={onOpenPrev} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#a855f7,#8b5cf6)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>💰 {p.preventivo?"Modifica":"Compila"} Preventivo</button></div>)}
                   {p.fase==="conferma" && (<div>{p.confermaOrdine?.firmata?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Ordine confermato</div>{p.confermaOrdine.firmaImg&&<img src={p.confermaOrdine.firmaImg} alt="Firma" style={{height:40,borderRadius:6,background:"#fff",padding:3,marginTop:6}} />}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Raccogli la firma del cliente.</p><div style={{marginBottom:10}}><input value={orderNote} onChange={(e: any)=>setOrderNote(e.target.value)} placeholder="Note ordine..." style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} /></div>{!showSignPad?<button onClick={()=>setShowSignPad(true)} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}>✍️ Firma Conferma</button>:<SignaturePad onSave={(img: string)=>{onConfirmOrder(img,orderNote);setShowSignPad(false);}} onCancel={()=>setShowSignPad(false)} />}</>)}</div>)}
                   {p.fase==="riparazione" && (<div>{p.riparazione?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Riparazione compilata</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>{p.riparazione.problema||"—"}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda riparazione.</p>}<button onClick={onOpenRip} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#ef4444,#dc2626)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>🛠️ {p.riparazione?"Modifica":"Compila"} Riparazione</button></div>)}
                   {p.fase==="fattura" && (<div>{p.fattura?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Fattura {p.fattura.numero}</span><span style={{fontSize:11,padding:"2px 8px",borderRadius:8,background:p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",fontWeight:700}}>{p.fattura.statoPagamento==="pagato"?"Pagata":p.fattura.statoPagamento==="acconto"?"Acconto":"Non Pagata"}</span></div><div style={{fontSize:20,fontWeight:900,color:"#4ade80",marginTop:6}}>€ {(p.preventivo?.totaleFinale||p.riparazione?.costoStimato||0).toFixed?.(2)||"0.00"}</div><div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>📄 PDF</button><button onClick={()=>{setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||""});setShowPaymentEdit(true);}} style={{flex:1,padding:"10px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}>💰 Pagamento</button></div>{showPaymentEdit&&(<div style={{background:"rgba(255,255,255,0.1)",borderRadius:14,padding:14,marginTop:10}}><div style={{display:"flex",gap:6,marginBottom:12}}>{[{k:"non_pagato",l:"❌ Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:"✅ Pagata",c:"#059669"}].map(s=><button key={s.k} onClick={()=>setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:12,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>)}</div>{payForm.stato==="acconto"&&<div style={{marginBottom:10}}><input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} /></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{["Bonifico","Contanti","Assegno","Carta","Ri.Ba."].map(m=><button key={m} onClick={()=>setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:10,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#ff6b35":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>)}</div><div style={{display:"flex",gap:8}}><button onClick={()=>setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button><button onClick={()=>{onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo});setShowPaymentEdit(false);}} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}>💾 Salva</button></div></div>)}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Genera la fattura.</p><button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer"}}>🧾 Genera Fattura</button></>)}</div>)}
-                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}</>); })()}
+                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}{userId && <><div style={{marginTop:12}}><PhotoGallery photos={p.fotoPosaInizio||[]} label="📸 Foto Inizio Lavori" userId={userId} folder={`posa/${p.id}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaInizio:photos})} /></div><PhotoGallery photos={p.fotoPosaFine||[]} label="📸 Foto Fine Lavori" userId={userId} folder={`posa/${p.id}/fine`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaFine:photos})} /></>}</>); })()}
                   {canAdv && curIdx < wf.length-1 && <button onClick={onAdvancePhase} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 14px rgba(5,150,105,0.4)"}}>✅ Avanza a: {wf[curIdx+1].icon} {wf[curIdx+1].label} →</button>}
                   {!canAdv && <div style={{marginTop:10,padding:"10px 14px",background:"rgba(255,255,255,0.05)",borderRadius:10,fontSize:12,color:"rgba(255,255,255,0.5)",textAlign:"center",fontWeight:600}}>🔒 Completa questa fase per avanzare</div>}
                 </div>
@@ -2281,7 +2324,7 @@ function PraticaDetail({ pratica: p, client: c, onBack, onDelete, onAddAction, o
 }
 
 // ==================== MISURE FORM ====================
-function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori, onSave, onBack }: any) {
+function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori, userId, onSave, onBack }: any) {
   const m = pratica?.misure;
   const [cantiere, setCantiere] = useState(m?.cantiere||client?.nome||"");
   const [indirizzo, setIndirizzo] = useState(m?.indirizzo||pratica?.indirizzo||"");
@@ -2319,7 +2362,7 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
             <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>Tipologia</label><select value={v.sistema||sistema} onChange={(e: any)=>uv(i,"sistema",e.target.value)} style={S.input}><option value="">—</option>{useTipologie.map((s: string)=><option key={s}>{s}</option>)}</select></div>
             <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
             <div style={S.fGroup}><label style={S.fLabel}>Apertura</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{APERTURE.map(a=><button key={a} onClick={()=>uv(i,"apertura",a)} style={{...S.pill,background:v.apertura===a?"#d97706":"#f3f4f6",color:v.apertura===a?"#fff":"#6b7280"}}>{a}</button>)}</div></div>
-            <div style={S.fGroup}><label style={S.fLabel}>Foto</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{PHOTO_TYPES.map(p=><div key={p.k} style={{...S.photoPH,background:v.photos[p.k]?"#ecfdf5":"#f8fafc",borderColor:v.photos[p.k]?"#059669":"#d1d5db"}}><span style={{fontSize:14}}>{p.i}</span><span style={{fontSize:9,fontWeight:600,color:"#64748b"}}>{p.l}</span></div>)}</div></div>
+            <div style={S.fGroup}><label style={S.fLabel}>Foto Vano</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{PHOTO_TYPES.map(p=><PhotoCapture key={p.k} url={v.photos[p.k]} label={p.l} icon={p.i} onCapture={async(file: File)=>{if(!userId)return;const url=await uploadPhotoToStorage(file,userId,`misure/${pratica?.id}/${v.id}`);if(url){const photos={...v.photos,[p.k]:url};uv(i,"photos",photos);}}} onDelete={async()=>{if(v.photos[p.k])await deletePhotoFromStorage(v.photos[p.k]);const photos={...v.photos};delete photos[p.k];uv(i,"photos",photos);}} />)}</div></div>
             <Field label="Note" value={v.note} onChange={(val: string)=>uv(i,"note",val)} placeholder="Note vano..." />
           </div>
         ))}
@@ -2333,7 +2376,7 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
 }
 
 // ==================== RIPARAZIONE ====================
-function RipForm({ pratica, client, onSave, onBack }: any) {
+function RipForm({ pratica, client, userId, onSave, onBack }: any) {
   const r = pratica?.riparazione;
   const [problema, setProblema] = useState(r?.problema||"");
   const [descrizione, setDescrizione] = useState(r?.descrizione||"");
@@ -2343,6 +2386,8 @@ function RipForm({ pratica, client, onSave, onBack }: any) {
   const [ricambi, setRicambi] = useState(r?.ricambi||"");
   const [costoStimato, setCostoStimato] = useState(r?.costoStimato||"");
   const [noteRip, setNoteRip] = useState(r?.noteRip||"");
+  const [fotoDanno, setFotoDanno] = useState<string[]>(r?.fotoDanno||[]);
+  const [fotoRiparazione, setFotoRiparazione] = useState<string[]>(r?.fotoRiparazione||[]);
   return (
     <div style={S.container}>
       <div style={{...S.secHdr,background:"linear-gradient(135deg,#ef4444,#dc2626)",boxShadow:"0 4px 14px rgba(239,68,68,0.3)"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>🛠️ Scheda Riparazione</h2></div>
@@ -2351,12 +2396,14 @@ function RipForm({ pratica, client, onSave, onBack }: any) {
         <div style={S.fGroup}><label style={S.fLabel}>Urgenza</label><div style={{display:"flex",gap:8}}>{URGENZE.map(u=><button key={u.k} onClick={()=>setUrgenza(u.k)} style={{...S.urgBtn,background:urgenza===u.k?u.c:"#f3f4f6",color:urgenza===u.k?"#fff":"#6b7280"}}>{u.i} {u.l}</button>)}</div></div>
         <div style={S.fGroup}><label style={S.fLabel}>Tipo Problema</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{PROBLEMI.map(p=><button key={p} onClick={()=>setProblema(p)} style={{...S.pill,background:problema===p?"#dc2626":"#f3f4f6",color:problema===p?"#fff":"#6b7280"}}>{p}</button>)}</div></div>
         <Field label="Descrizione" value={descrizione} onChange={setDescrizione} placeholder="Dettagli problema..." textarea rows={4} />
+        {userId && <PhotoGallery photos={fotoDanno} label="📸 Foto Danno" userId={userId} folder={`riparazione/${pratica?.id}/danno`} onUpdate={setFotoDanno} />}
         <Field label="Tipo Infisso" value={tipoInfisso} onChange={setTipoInfisso} placeholder="es. Finestra 2 ante PVC" />
         <Field label="Materiale" value={materiale} onChange={setMateriale} placeholder="PVC, Alluminio, Legno..." />
         <Field label="Ricambi" value={ricambi} onChange={setRicambi} placeholder="Pezzi necessari..." textarea />
         <Field label="Costo Stimato (€)" value={costoStimato} onChange={setCostoStimato} type="number" placeholder="0.00" />
+        {userId && <PhotoGallery photos={fotoRiparazione} label="📸 Foto Dopo Intervento" userId={userId} folder={`riparazione/${pratica?.id}/dopo`} onUpdate={setFotoRiparazione} />}
         <Field label="Note" value={noteRip} onChange={setNoteRip} placeholder="Altre note..." textarea />
-        <button onClick={()=>onSave({problema,descrizione,urgenza,tipoInfisso,materiale,ricambi,costoStimato,noteRip})} style={{...S.saveBtn,background:"linear-gradient(135deg,#ef4444,#dc2626)",boxShadow:"0 4px 14px rgba(239,68,68,0.3)"}}>💾 Salva Riparazione</button>
+        <button onClick={()=>onSave({problema,descrizione,urgenza,tipoInfisso,materiale,ricambi,costoStimato,noteRip,fotoDanno,fotoRiparazione})} style={{...S.saveBtn,background:"linear-gradient(135deg,#ef4444,#dc2626)",boxShadow:"0 4px 14px rgba(239,68,68,0.3)"}}>💾 Salva Riparazione</button>
         {pratica?.riparazione && <button onClick={()=>exportRiparazione(pratica,client)} style={{...S.saveBtn,background:"#fff",color:"#dc2626",border:"2px solid #dc2626",boxShadow:"none",marginTop:8}}>🖨️ Stampa / PDF Riparazione</button>}
       </div>
     </div>
@@ -2680,6 +2727,82 @@ function NoteEditor({ note, onSave, onBack }: any) {
 }
 
 // ==================== SHARED ====================
+// ==================== PHOTO CAPTURE ====================
+function PhotoCapture({ url, label, icon, onCapture, onDelete }: any) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const handleFile = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try { await onCapture(file); } catch(err) { console.error(err); }
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+  if (url) return (
+    <div style={{position:"relative",width:76,height:76,borderRadius:14,overflow:"hidden",border:"2.5px solid #059669",flexShrink:0}}>
+      <img src={url} alt={label} style={{width:"100%",height:"100%",objectFit:"cover"}} />
+      <button onClick={(e)=>{e.stopPropagation();onDelete?.();}} style={{position:"absolute",top:2,right:2,width:22,height:22,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,0.55)",padding:"2px 0",textAlign:"center"}}><span style={{fontSize:8,fontWeight:700,color:"#fff",textTransform:"uppercase"}}>{label}</span></div>
+    </div>
+  );
+  return (
+    <div>
+      <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{display:"none"}} />
+      <button onClick={()=>inputRef.current?.click()} disabled={uploading} style={{width:76,height:76,borderRadius:14,border:"2.5px dashed #cbd5e1",background:uploading?"#f1f5f9":"#f8fafc",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:uploading?"wait":"pointer",opacity:uploading?0.6:1}}>
+        {uploading ? <span style={{fontSize:18}}>⏳</span> : <span style={{fontSize:16}}>{icon||"📷"}</span>}
+        <span style={{fontSize:8,fontWeight:700,color:"#94a3b8",textTransform:"uppercase"}}>{uploading?"Carico...":label}</span>
+      </button>
+    </div>
+  );
+}
+
+// Photo gallery for a phase (sopralluogo, posa, riparazione)
+function PhotoGallery({ photos, label, userId, folder, onUpdate }: any) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const photoList: string[] = photos || [];
+  const handleFiles = async (e: any) => {
+    const files = Array.from(e.target.files || []) as File[];
+    if (!files.length) return;
+    setUploading(true);
+    const newPhotos = [...photoList];
+    for (const file of files) {
+      const url = await uploadPhotoToStorage(file, userId, folder);
+      if (url) newPhotos.push(url);
+    }
+    onUpdate(newPhotos);
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+  const removePhoto = async (idx: number) => {
+    const url = photoList[idx];
+    if (url) await deletePhotoFromStorage(url);
+    const updated = photoList.filter((_: any, i: number) => i !== idx);
+    onUpdate(updated);
+  };
+  return (
+    <div style={{marginBottom:16}}>
+      <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:8}}>{label}</label>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+        {photoList.map((url: string, i: number) => (
+          <div key={i} style={{position:"relative",width:76,height:76,borderRadius:14,overflow:"hidden",border:"2.5px solid #059669"}}>
+            <img src={url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} />
+            <button onClick={()=>removePhoto(i)} style={{position:"absolute",top:2,right:2,width:22,height:22,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+          </div>
+        ))}
+        <div>
+          <input ref={inputRef} type="file" accept="image/*" capture="environment" multiple onChange={handleFiles} style={{display:"none"}} />
+          <button onClick={()=>inputRef.current?.click()} disabled={uploading} style={{width:76,height:76,borderRadius:14,border:"2.5px dashed #cbd5e1",background:uploading?"#f1f5f9":"#f8fafc",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:uploading?"wait":"pointer"}}>
+            {uploading ? <span style={{fontSize:18}}>⏳</span> : <span style={{fontSize:22}}>📷</span>}
+            <span style={{fontSize:9,fontWeight:700,color:"#94a3b8"}}>{uploading?"Carico...":"+ Foto"}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Field({ label, value, onChange, placeholder, type, style, autoFocus, textarea, rows }: any) {
   return (<div style={{...S.fGroup,...style}}><label style={S.fLabel}>{label}</label>
     {textarea ? <textarea value={value} onChange={(e: any)=>onChange(e.target.value)} placeholder={placeholder} style={S.textarea} rows={rows||3} />
