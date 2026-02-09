@@ -182,6 +182,7 @@ function exportMisure(pratica: any, client: any) {
         <div class="vano-field"><div class="lbl">Quantità</div><div class="val">${v.q||"1"}</div></div>
         <div class="vano-field"><div class="lbl">Apertura</div><div class="val">${v.apertura||"—"}</div></div>
         <div class="vano-field"><div class="lbl">Sistema</div><div class="val">${v.sistema||m.sistema||"—"}</div></div>
+        <div class="vano-field"><div class="lbl">Vetro</div><div class="val">${v.vetro||m.vetro||"—"}</div></div>
         <div class="vano-field"><div class="lbl">Foto</div><div class="val">${Object.values(v.photos||{}).filter(Boolean).length}/6</div></div>
       </div>
       ${v.note?`<div class="note-box">📝 ${v.note}</div>`:""}
@@ -203,6 +204,7 @@ function exportMisure(pratica: any, client: any) {
       <div class="info-row"><span class="info-label">Sistema</span><span class="info-val">${m.sistema||"—"}</span></div>
       <div class="info-row"><span class="info-label">Colore Int.</span><span class="info-val">${m.coloreInt||"—"}</span></div>
       <div class="info-row"><span class="info-label">Colore Est.</span><span class="info-val">${m.coloreEst||"—"}</span></div>
+      <div class="info-row"><span class="info-label">Vetro</span><span class="info-val">${m.vetro||"—"}</span></div>
       <div class="info-row"><span class="info-label">N° Vani</span><span class="info-val">${(m.vani||[]).length}</span></div>
     </div>
     <h3 style="font-size:15px;font-weight:700;margin-bottom:10px">DETTAGLIO VANI</h3>
@@ -498,9 +500,16 @@ const DEFAULT_COLORI: Record<string, string[]> = {
   taglio_termico: ["Bianco RAL 9010","Grigio RAL 7016","Nero RAL 9005","Bronzo","Corten","Bicolore"],
 };
 const DEFAULT_TIPOLOGIE = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino","Porta interna","Porta blindata","Tapparella","Zanzariera","Cassonetto","Persiana","Inferriata","Vetrata composta","Vetrata fissa","Lamiera","Sopraluce","Sottoluce","Pannello fisso"];
+const DEFAULT_VETRI = [
+  "4/16/4 Basso Emissivo","4/20/4 Basso Emissivo","4/16/4 Standard","4/12/4/12/4 Triplo",
+  "33.1/16/4 Basso Emissivo","44.2/16/4 Antisfondamento","33.1/14/33.1 Stratificato",
+  "Vetro Singolo 4mm","Vetro Singolo 6mm","Vetro Temperato 8mm","Vetro Temperato 10mm",
+  "Satinato 4/16/4","Opaco 4/16/4","Specchiato","Vetro Stampato","Vetro Retinato",
+  "Vetrocamera Fonoisolante","Vetro Blindato","Pannello Pieno","Pannello Tamburato",
+];
 
 function emptyUserSettings() {
-  return { sistemi: [], categorie: [], colori: {}, listino: [], tipologie: [], azienda: { nome:"", email:"", telefono:"", indirizzo:"", piva:"", cf:"" }, setupCompleted: false };
+  return { sistemi: [], categorie: [], colori: {}, listino: [], tipologie: [], vetri: [], azienda: { nome:"", email:"", telefono:"", indirizzo:"", piva:"", cf:"" }, setupCompleted: false };
 }
 
 async function loadFromSupabase(userId: string) {
@@ -523,6 +532,7 @@ async function loadFromSupabase(userId: string) {
     colori: sRes.data.colori || {},
     listino: sRes.data.listino || [],
     tipologie: sRes.data.sistemi?.length > 0 ? (sRes.data.colori?._tipologie || DEFAULT_TIPOLOGIE) : DEFAULT_TIPOLOGIE,
+    vetri: sRes.data.colori?._vetri || DEFAULT_VETRI,
     azienda: sRes.data.azienda || {},
     setupCompleted: sRes.data.setup_completed || false,
   } : emptyUserSettings();
@@ -683,12 +693,16 @@ export default function FrameFlowApp() {
     if (isNew) {
       c.id = gid(); c.createdAt = new Date().toISOString();
     }
-    const clients = isNew ? [...db.clients, c] : db.clients.map((x: any)=>x.id===c.id?c:x);
-    setDb((prev: any) => ({...prev, clients}));
-    // Sync to Supabase
+    setDb((prev: any) => {
+      const clients = isNew ? [...prev.clients, c] : prev.clients.map((x: any)=>x.id===c.id?c:x);
+      return {...prev, clients};
+    });
     if (user) {
       const row = clientToDb(c, user.id);
-      supabase.from("clients").upsert(row).then(({error}) => { if(error) console.error("saveClient:", error); });
+      if (org?.id) row.org_id = org.id;
+      supabase.from("clients").upsert(row).then(({error}) => { 
+        if(error) { console.error("saveClient:", error); alert("⚠️ Errore salvataggio cliente: " + error.message); }
+      });
     }
     return c;
   }
@@ -712,27 +726,34 @@ export default function FrameFlowApp() {
     setDb((prev: any) => ({...prev, pratiche: [...prev.pratiche, p], nextSeq: prev.nextSeq+1}));
     if (user) {
       const row = praticaToDb(p, user.id);
-      supabase.from("pratiche").insert(row).then(({error}) => { if(error) console.error("createPratica:", error); });
+      supabase.from("pratiche").insert(row).then(({error}) => { 
+        if(error) { console.error("createPratica:", error); alert("⚠️ Errore creazione pratica: " + error.message); }
+      });
     }
     return p;
   }
 
   function updatePratica(id: string, updates: any) {
     let updatedP: any = null;
-    const pratiche = db.pratiche.map((p: any) => {
-      if (p.id !== id) return p;
-      updatedP = {...p, ...updates};
-      return updatedP;
+    setDb((prev: any) => {
+      const pratiche = prev.pratiche.map((p: any) => {
+        if (p.id !== id) return p;
+        updatedP = {...p, ...updates};
+        return updatedP;
+      });
+      return {...prev, pratiche};
     });
-    setDb((prev: any) => ({...prev, pratiche}));
-    if (user && updatedP) {
-      try {
-        const row = praticaToDb(updatedP, user.id);
-        supabase.from("pratiche").update(row).eq("id", id).then(({error}) => { 
-          if(error) console.error("updatePratica:", error.message, error.details);
-        });
-      } catch(e) { console.error("updatePratica serialize error:", e); }
-    }
+    // Save to Supabase after state update
+    setTimeout(() => {
+      if (user && updatedP) {
+        try {
+          const row = praticaToDb(updatedP, user.id);
+          supabase.from("pratiche").update(row).eq("id", id).then(({error}) => { 
+            if(error) { console.error("updatePratica:", error.message, error.details); alert("⚠️ Errore salvataggio: " + error.message); }
+          });
+        } catch(e) { console.error("updatePratica serialize error:", e); }
+      }
+    }, 50);
   }
 
   function deletePratica(id: string) {
@@ -871,7 +892,7 @@ export default function FrameFlowApp() {
       user_id: user.id,
       sistemi: newSettings.sistemi || [],
       categorie: newSettings.categorie || [],
-      colori: { ...newSettings.colori, _tipologie: newSettings.tipologie || [] },
+      colori: { ...newSettings.colori, _tipologie: newSettings.tipologie || [], _vetri: newSettings.vetri || [] },
       listino: newSettings.listino || [],
       azienda: newSettings.azienda || {},
       setup_completed: newSettings.setupCompleted || false,
@@ -945,6 +966,7 @@ export default function FrameFlowApp() {
   const userSistemi = useMemo(() => userSettings.sistemi?.length > 0 ? userSettings.sistemi : DEFAULT_SISTEMI, [userSettings.sistemi]);
   const userCategorie = useMemo(() => userSettings.categorie?.length > 0 ? userSettings.categorie : DEFAULT_CATEGORIE, [userSettings.categorie]);
   const userTipologie = useMemo(() => userSettings.tipologie?.length > 0 ? userSettings.tipologie : DEFAULT_TIPOLOGIE, [userSettings.tipologie]);
+  const userVetri = useMemo(() => userSettings.vetri?.length > 0 ? userSettings.vetri : DEFAULT_VETRI, [userSettings.vetri]);
   const userColori = useMemo(() => {
     const c: Record<string,string[]> = {};
     userSistemi.forEach((s: any) => { c[s.id] = userSettings.colori?.[s.id] || DEFAULT_COLORI[s.id] || []; });
@@ -1062,7 +1084,7 @@ export default function FrameFlowApp() {
   // ==================== VIEWS ====================
   if (view==="misure" && misureEdit) {
     const p = getPratica(misureEdit); const c = getClient(p?.clientId);
-    return <MisureForm pratica={p} client={c} sistemi={userSistemi} tipologie={userTipologie} coloriMap={userColori} allColori={allColori} userId={user?.id} onSave={(d: any)=>saveMisure(misureEdit,d)} onBack={()=>{setMisureEdit(null);setSelPratica(misureEdit);setView("pratica");}} />;
+    return <MisureForm pratica={p} client={c} sistemi={userSistemi} tipologie={userTipologie} vetri={userVetri} coloriMap={userColori} allColori={allColori} userId={user?.id} onSave={(d: any)=>saveMisure(misureEdit,d)} onBack={()=>{setMisureEdit(null);setSelPratica(misureEdit);setView("pratica");}} />;
   }
   if (view==="riparazione" && ripEdit) {
     const p = getPratica(ripEdit); const c = getClient(p?.clientId);
@@ -2315,6 +2337,7 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
   const [categorie, setCategorie] = useState<any[]>(userSettings.categorie?.length > 0 ? userSettings.categorie : [...DEFAULT_CATEGORIE]);
   const [colori, setColori] = useState<Record<string,string[]>>(userSettings.colori || {...DEFAULT_COLORI});
   const [tipologie, setTipologie] = useState<string[]>(userSettings.tipologie?.length > 0 ? userSettings.tipologie : [...DEFAULT_TIPOLOGIE]);
+  const [vetri, setVetri] = useState<string[]>(userSettings.vetri?.length > 0 ? userSettings.vetri : [...DEFAULT_VETRI]);
   const [listino, setListino] = useState<any[]>(userSettings.listino || []);
   const [azienda, setAzienda] = useState(userSettings.azienda || {});
   const [customInput, setCustomInput] = useState("");
@@ -2329,6 +2352,8 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
   function removeColore(matId: string, col: string) { setColori({...colori,[matId]:(colori[matId]||[]).filter(c=>c!==col)}); }
   function addTipologia() { if(!customInput.trim()||tipologie.includes(customInput.trim())) return; setTipologie([...tipologie,customInput.trim()]); setCustomInput(""); }
   function removeTipologia(t: string) { setTipologie(tipologie.filter(x=>x!==t)); }
+  function addVetro() { if(!customInput.trim()||vetri.includes(customInput.trim())) return; setVetri([...vetri,customInput.trim()]); setCustomInput(""); }
+  function removeVetro(v: string) { setVetri(vetri.filter(x=>x!==v)); }
   function addListinoItem() { if(!listinoForm?.descrizione?.trim()) return; setListino([...listino,{...listinoForm,id:gid()}]); setListinoForm(null); }
   function removeListinoItem(id: string) { setListino(listino.filter((l: any)=>l.id!==id)); }
 
@@ -2336,6 +2361,7 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
     {key:"materiali",label:"Materiali",icon:"🔷"},
     {key:"colori",label:"Colori",icon:"🎨"},
     {key:"tipologie",label:"Tipologie",icon:"📋"},
+    {key:"vetri",label:"Vetri",icon:"🔲"},
     {key:"prodotti",label:"Categorie",icon:"🪟"},
     {key:"listino",label:"Listino",icon:"💰"},
     {key:"azienda",label:"Azienda",icon:"🏢"},
@@ -2344,7 +2370,7 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
   return (
     <div style={S.container}>
       <div style={{...S.secHdr,background:"linear-gradient(135deg,#475569,#334155)",boxShadow:"0 4px 14px rgba(71,85,105,0.3)"}}>
-        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,listino,azienda,setupCompleted:true})} style={{...S.backBtn,color:"#fff"}}>← Salva</button>
+        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,vetri,listino,azienda,setupCompleted:true})} style={{...S.backBtn,color:"#fff"}}>← Salva</button>
         <h2 style={{...S.secTitle,color:"#fff"}}>⚙️ Impostazioni</h2>
       </div>
       <div style={{display:"flex",gap:4,padding:"12px 12px 0",overflowX:"auto",flexShrink:0}}>
@@ -2370,6 +2396,11 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Tipologie infisso per le misure:</p>
           {tipologie.map(t=><div key={t} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#f8fafc",borderRadius:10,marginBottom:6}}><span style={{flex:1,fontSize:14,fontWeight:600}}>{t}</span><button onClick={()=>removeTipologia(t)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
           <div style={{display:"flex",gap:8,marginTop:10}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuova tipologia..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addTipologia()} /><button onClick={addTipologia} style={{...S.pill,background:"#2563eb",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
+        </>)}
+        {tab==="vetri" && (<>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Tipi di vetro disponibili:</p>
+          {vetri.map(v=><div key={v} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#f8fafc",borderRadius:10,marginBottom:6}}><span style={{flex:1,fontSize:14,fontWeight:600}}>{v}</span><button onClick={()=>removeVetro(v)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          <div style={{display:"flex",gap:8,marginTop:10}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuovo tipo vetro (es. 4/20/4 BE)..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addVetro()} /><button onClick={addVetro} style={{...S.pill,background:"#0891b2",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
         </>)}
         {tab==="prodotti" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Categorie di prodotti che offri:</p>
@@ -2406,7 +2437,7 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
         </>)}
       </div>
       <div style={{padding:"12px 16px 24px",borderTop:"1px solid #e2e8f0"}}>
-        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,listino,azienda,setupCompleted:true})} style={{...S.saveBtn,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",width:"100%"}}>💾 Salva Impostazioni</button>
+        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,vetri,listino,azienda,setupCompleted:true})} style={{...S.saveBtn,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",width:"100%"}}>💾 Salva Impostazioni</button>
       </div>
     </div>
   );
@@ -2664,61 +2695,125 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, on
 
 // ==================== VETRATA DESIGNER ====================
 function VetrataDesigner({ design, onChange }: any) {
-  const d = design || { panels: [{ type: "DX" }] };
-  const panels = d.panels || [{ type: "DX" }];
-  const panelTypes = [
-    { key: "DX", label: "DX", icon: "→", desc: "Apertura destra" },
-    { key: "SX", label: "SX", icon: "←", desc: "Apertura sinistra" },
-    { key: "Fisso", label: "F", icon: "▪", desc: "Fisso" },
-    { key: "Vasistas", label: "V", icon: "↑", desc: "Vasistas" },
-    { key: "A/R", label: "A/R", icon: "↕", desc: "Anta/Ribalta" },
-    { key: "Sopraluce", label: "SL", icon: "△", desc: "Sopraluce" },
+  // Data: { columns: [{ cells: [{ apertura: "DX" }] }] }
+  const TIPI = [
+    { key: "DX", icon: "→", color: "#2563eb" },
+    { key: "SX", icon: "←", color: "#2563eb" },
+    { key: "Fisso", icon: "■", color: "#64748b" },
+    { key: "Vasistas", icon: "↑", color: "#d97706" },
+    { key: "A/R", icon: "↕", color: "#059669" },
+    { key: "Sopraluce", icon: "△", color: "#8b5cf6" },
+    { key: "Sottoluce", icon: "▽", color: "#8b5cf6" },
   ];
-  function setPanel(idx: number, type: string) {
-    const np = [...panels]; np[idx] = { ...np[idx], type }; onChange({ ...d, panels: np });
+  const d = design?.columns ? design : { columns: [{ cells: [{ apertura: "Fisso" }] }] };
+  const columns = d.columns;
+  
+  function emit(cols: any[]) { onChange({ columns: cols }); }
+  
+  // MONTANTE: add vertical divider = add a new column
+  function addMontante() {
+    if (columns.length >= 6) return;
+    emit([...columns, { cells: [{ apertura: "Fisso" }] }]);
   }
-  function addPanel() { onChange({ ...d, panels: [...panels, { type: "Fisso" }] }); }
-  function removePanel(idx: number) { if (panels.length > 1) onChange({ ...d, panels: panels.filter((_: any, i: number) => i !== idx) }); }
-  // Visual preview
-  const totalW = panels.length * 70;
+  function removeMontante(colIdx: number) {
+    if (columns.length <= 1) return;
+    emit(columns.filter((_: any, i: number) => i !== colIdx));
+  }
+  
+  // TRAVERSO: add horizontal divider in a column = add a cell
+  function addTraverso(colIdx: number) {
+    if (columns[colIdx].cells.length >= 4) return;
+    const cols = [...columns];
+    cols[colIdx] = { cells: [...cols[colIdx].cells, { apertura: "Fisso" }] };
+    emit(cols);
+  }
+  function removeTraverso(colIdx: number, cellIdx: number) {
+    if (columns[colIdx].cells.length <= 1) return;
+    const cols = [...columns];
+    cols[colIdx] = { cells: cols[colIdx].cells.filter((_: any, i: number) => i !== cellIdx) };
+    emit(cols);
+  }
+  
+  // APERTURA: cycle type on click
+  function cycleApertura(colIdx: number, cellIdx: number) {
+    const cur = columns[colIdx].cells[cellIdx].apertura;
+    const keys = TIPI.map(t => t.key);
+    const next = keys[(keys.indexOf(cur) + 1) % keys.length];
+    const cols = columns.map((col: any, ci: number) => {
+      if (ci !== colIdx) return col;
+      return { cells: col.cells.map((cell: any, ri: number) => ri === cellIdx ? { ...cell, apertura: next } : cell) };
+    });
+    emit(cols);
+  }
+  
+  // Compute max rows for equal height
+  const maxRows = Math.max(...columns.map((c: any) => c.cells.length));
+  
+  // Summary string
+  const summary = columns.map((col: any, ci: number) => 
+    col.cells.map((cell: any) => cell.apertura).join("+")
+  ).join(" | ");
+  
   return (
     <div style={{marginBottom:12}}>
-      <label style={{fontSize:11,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:8}}>✏️ Schema Vetrata</label>
-      {/* Visual preview */}
-      <div style={{background:"#f8fafc",borderRadius:14,padding:16,border:"1.5px solid #d1d5db",marginBottom:10}}>
-        <div style={{display:"flex",justifyContent:"center",alignItems:"stretch",border:"3px solid #374151",borderRadius:4,minHeight:100,overflow:"hidden",maxWidth:Math.min(totalW, 340),margin:"0 auto"}}>
-          {panels.map((p: any, i: number) => {
-            const t = panelTypes.find(pt => pt.key === p.type) || panelTypes[0];
-            const isLast = i === panels.length - 1;
-            return (
-              <div key={i} style={{flex:1,minWidth:50,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:8,borderRight:isLast?"none":"2px solid #374151",position:"relative",background:p.type==="Fisso"?"#e2e8f0":"#fff",cursor:"pointer"}} onClick={()=>{const types = panelTypes.map(pt=>pt.key);const curIdx = types.indexOf(p.type);setPanel(i, types[(curIdx+1)%types.length]);}}>
-                {/* Arrow/indicator */}
-                <div style={{fontSize:28,fontWeight:900,color:"#374151",lineHeight:1}}>{t.icon}</div>
-                <div style={{fontSize:11,fontWeight:800,color:"#6366f1",marginTop:4}}>{t.label}</div>
-                {panels.length > 1 && <button onClick={(e)=>{e.stopPropagation();removePanel(i);}} style={{position:"absolute",top:2,right:2,width:18,height:18,borderRadius:"50%",background:"#ef4444",border:"none",color:"#fff",fontSize:10,cursor:"pointer",lineHeight:1}}>×</button>}
+      <label style={{fontSize:11,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:8}}>✏️ Schema Infisso</label>
+      <div style={{background:"#f8fafc",borderRadius:14,padding:12,border:"1.5px solid #d1d5db"}}>
+        
+        {/* VISUAL PREVIEW */}
+        <div style={{display:"flex",border:"4px solid #1e293b",borderRadius:3,minHeight:120,overflow:"hidden",maxWidth:340,margin:"0 auto",background:"#fff"}}>
+          {columns.map((col: any, ci: number) => (
+            <div key={ci} style={{flex:1,display:"flex",flexDirection:"column",borderRight:ci<columns.length-1?"3px solid #1e293b":"none",position:"relative",minWidth:44}}>
+              {col.cells.map((cell: any, ri: number) => {
+                const tipo = TIPI.find(t => t.key === cell.apertura) || TIPI[2];
+                return (
+                  <div key={ri} onClick={()=>cycleApertura(ci,ri)} style={{
+                    flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                    borderBottom:ri<col.cells.length-1?"2px solid #1e293b":"none",
+                    cursor:"pointer",padding:4,minHeight:Math.max(40, 120/maxRows),
+                    background:cell.apertura==="Fisso"?"#e2e8f0":"#fff",
+                    transition:"background 0.15s",
+                  }}>
+                    <div style={{fontSize:Math.max(16,24-columns.length*2),fontWeight:900,color:tipo.color,lineHeight:1}}>{tipo.icon}</div>
+                    <div style={{fontSize:Math.max(8,10-columns.length),fontWeight:800,color:tipo.color,marginTop:2}}>{cell.apertura}</div>
+                  </div>
+                );
+              })}
+              {/* Remove column button */}
+              {columns.length > 1 && (
+                <button onClick={(e)=>{e.stopPropagation();removeMontante(ci);}} style={{position:"absolute",top:-2,right:-2,width:16,height:16,borderRadius:"50%",background:"#ef4444",border:"none",color:"#fff",fontSize:9,cursor:"pointer",lineHeight:1,zIndex:2}}>×</button>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {/* CONTROLS */}
+        <div style={{marginTop:10,display:"flex",gap:6,justifyContent:"center",flexWrap:"wrap"}}>
+          <button onClick={addMontante} disabled={columns.length>=6} style={{padding:"5px 12px",borderRadius:8,border:"1.5px solid #1e293b",background:"#fff",color:"#1e293b",fontSize:11,fontWeight:700,cursor:columns.length<6?"pointer":"default",opacity:columns.length<6?1:0.4}}>┃ + Montante</button>
+          {columns.map((_: any, ci: number) => (
+            <button key={ci} onClick={()=>addTraverso(ci)} disabled={columns[ci].cells.length>=4} style={{padding:"5px 12px",borderRadius:8,border:"1.5px solid #d97706",background:"#fffbeb",color:"#92400e",fontSize:11,fontWeight:700,cursor:columns[ci].cells.length<4?"pointer":"default",opacity:columns[ci].cells.length<4?1:0.4}}>━ Traverso Col.{ci+1}</button>
+          ))}
+        </div>
+        
+        {/* CELL LIST + REMOVE TRAVERSO */}
+        <div style={{marginTop:8,display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
+          {columns.map((col: any, ci: number) => 
+            col.cells.map((cell: any, ri: number) => (
+              <div key={`${ci}-${ri}`} style={{display:"inline-flex",alignItems:"center",gap:3,padding:"3px 8px",borderRadius:6,background:"#eff6ff",fontSize:10,fontWeight:700,color:"#4338ca"}}>
+                C{ci+1}R{ri+1}: {cell.apertura}
+                {col.cells.length > 1 && <button onClick={()=>removeTraverso(ci,ri)} style={{background:"none",border:"none",color:"#ef4444",fontSize:12,cursor:"pointer",padding:0,lineHeight:1}}>×</button>}
               </div>
-            );
-          })}
+            ))
+          )}
         </div>
-        <div style={{textAlign:"center",marginTop:8}}>
-          <button onClick={addPanel} style={{padding:"6px 16px",borderRadius:10,border:"1.5px dashed #6366f1",background:"#eff6ff",color:"#4338ca",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Aggiungi anta</button>
-        </div>
-        <p style={{fontSize:10,color:"#94a3b8",textAlign:"center",marginTop:6}}>Tocca un pannello per cambiare tipo (DX → SX → F → V → A/R → SL)</p>
-      </div>
-      {/* Panel list */}
-      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-        {panels.map((p: any, i: number) => (
-          <div key={i} style={{padding:"4px 10px",borderRadius:8,background:"#eff6ff",fontSize:11,fontWeight:700,color:"#4338ca"}}>
-            {i+1}: {p.type}
-          </div>
-        ))}
+        
+        <p style={{fontSize:9,color:"#94a3b8",textAlign:"center",marginTop:6}}>Tocca una cella per cambiare apertura · {summary}</p>
       </div>
     </div>
   );
 }
 
 // ==================== MISURE FORM ====================
-function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori, userId, onSave, onBack }: any) {
+function MisureForm({ pratica, client, sistemi, tipologie, vetri, coloriMap, allColori, userId, onSave, onBack }: any) {
   const m = pratica?.misure;
   const [cantiere, setCantiere] = useState(m?.cantiere||client?.nome||"");
   const [indirizzo, setIndirizzo] = useState(m?.indirizzo||pratica?.indirizzo||"");
@@ -2726,11 +2821,12 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
   const [materialeId, setMaterialeId] = useState(m?.materialeId||"");
   const [coloreInt, setColoreInt] = useState(m?.coloreInt||"Bianco");
   const [coloreEst, setColoreEst] = useState(m?.coloreEst||"Bianco");
+  const [vetro, setVetro] = useState(m?.vetro||"");
   const [piano, setPiano] = useState(m?.piano||"");
   const [noteGen, setNoteGen] = useState(m?.noteGen||"");
   const [vani, setVani] = useState(m?.vani||[makeVano()]);
   const coloriPerMat = materialeId && coloriMap[materialeId] ? coloriMap[materialeId] : allColori || [];
-  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",note:"",photos:{},altroColore:false,coloreIntVano:"",coloreEstVano:"",design:{panels:[{type:"DX"}]}}; }
+  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",vetro:"",note:"",photos:{},altroColore:false,coloreIntVano:"",coloreEstVano:"",design:{columns:[{cells:[{apertura:"DX"}]}]}}; }
   function uv(i: number,f: string,v: any) { const n=[...vani]; n[i]={...n[i],[f]:v}; setVani(n); }
   const useTipologie = tipologie?.length > 0 ? tipologie : SISTEMI;
   return (
@@ -2751,6 +2847,15 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
             <div style={{flex:1}}><label style={S.fLabel}>Colore Int. (default)</label><select value={coloreInt} onChange={(e: any)=>setColoreInt(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreInt==="__custom"&&<input value="" onChange={(e: any)=>setColoreInt(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
             <div style={{flex:1}}><label style={S.fLabel}>Colore Est. (default)</label><select value={coloreEst} onChange={(e: any)=>setColoreEst(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreEst==="__custom"&&<input value="" onChange={(e: any)=>setColoreEst(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
           </div>
+          <div style={{marginTop:8}}>
+            <label style={S.fLabel}>🔲 Vetro (default)</label>
+            <select value={vetro} onChange={(e: any)=>setVetro(e.target.value)} style={S.input}>
+              <option value="">— Seleziona vetro —</option>
+              {(vetri||DEFAULT_VETRI).map((v: string)=><option key={v}>{v}</option>)}
+              <option value="__custom">+ Personalizzato</option>
+            </select>
+            {vetro==="__custom"&&<input value="" onChange={(e: any)=>setVetro(e.target.value)} placeholder="Inserisci vetro..." style={{...S.input,marginTop:4}} autoFocus />}
+          </div>
         </div>
         <h3 style={{...S.sectionTitle,marginTop:20}}>Vani ({vani.length})</h3>
         {vani.map((v: any,i: number)=>(
@@ -2758,6 +2863,7 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
             <div style={S.vanoHdr}><span style={S.vanoNum}>{i+1}</span><span style={{fontSize:15,fontWeight:700,flex:1}}>Vano {i+1}</span>{vani.length>1 && <button onClick={()=>setVani(vani.filter((_: any,j: number)=>j!==i))} style={S.vanoRm}>×</button>}</div>
             <Field label="Ambiente" value={v.ambiente} onChange={(val: string)=>uv(i,"ambiente",val)} placeholder="Soggiorno, Camera..." />
             <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>Tipologia</label><select value={v.sistema||sistema} onChange={(e: any)=>uv(i,"sistema",e.target.value)} style={S.input}><option value="">—</option>{useTipologie.map((s: string)=><option key={s}>{s}</option>)}</select></div>
+            <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>🔲 Vetro</label><select value={v.vetro||vetro} onChange={(e: any)=>uv(i,"vetro",e.target.value)} style={S.input}><option value="">{vetro ? `Default: ${vetro}` : "— Seleziona —"}</option>{(vetri||DEFAULT_VETRI).map((vt: string)=><option key={vt}>{vt}</option>)}<option value="__custom">+ Personalizzato</option></select>{v.vetro==="__custom"&&<input onChange={(e: any)=>uv(i,"vetro",e.target.value)} placeholder="Vetro personalizzato..." style={{...S.input,marginTop:4}} autoFocus />}</div>
             <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q.tà" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
             <div style={S.fGroup}><label style={S.fLabel}>Apertura</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{APERTURE.map(a=><button key={a} onClick={()=>uv(i,"apertura",a)} style={{...S.pill,background:v.apertura===a?"#d97706":"#f3f4f6",color:v.apertura===a?"#fff":"#6b7280"}}>{a}</button>)}</div></div>
             {/* DISEGNO VETRATA */}
@@ -2781,7 +2887,7 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
         ))}
         <button onClick={()=>setVani([...vani,makeVano()])} style={S.addVanoBtn}>+ Aggiungi Vano</button>
         <Field label="Note Generali" value={noteGen} onChange={setNoteGen} placeholder="Note generali..." textarea />
-        <button onClick={()=>onSave({cantiere,indirizzo,sistema,materialeId,coloreInt,coloreEst,piano,noteGen,vani})} style={{...S.saveBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",boxShadow:"0 4px 14px rgba(245,158,11,0.3)"}}>💾 Salva Misure</button>
+        <button onClick={()=>onSave({cantiere,indirizzo,sistema,materialeId,coloreInt,coloreEst,vetro,piano,noteGen,vani})} style={{...S.saveBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",boxShadow:"0 4px 14px rgba(245,158,11,0.3)"}}>💾 Salva Misure</button>
         {pratica?.misure && <button onClick={()=>exportMisure(pratica,client)} style={{...S.saveBtn,background:"#fff",color:"#d97706",border:"2px solid #d97706",boxShadow:"none",marginTop:8}}>🖨️ Stampa / PDF Misure</button>}
       </div>
     </div>
@@ -2853,6 +2959,7 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
         sistema: "",
         coloreInt: v.altroColore ? (v.coloreIntVano||"") : (m.coloreInt||""),
         coloreEst: v.altroColore ? (v.coloreEstVano||"") : (m.coloreEst||""),
+        vetro: v.vetro || m.vetro || "",
         tipoPrezzo: "mq",
         tipoPrezzoLabel: "€/mq",
         larghezza: v.l || "",
@@ -2869,7 +2976,7 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
   function addProdotto() {
     setProdotti([...prodotti, {
       id: gid(), descrizione: "", ambiente: "", tipologia: "", sistema: "",
-      coloreInt: "", coloreEst: "", tipoPrezzo: "pezzo",
+      coloreInt: "", coloreEst: "", vetro: "", tipoPrezzo: "pezzo",
       tipoPrezzoLabel: "€/pezzo", larghezza: "", altezza: "", mq: 0,
       quantita: 1, prezzoUnitario: 0, totale: 0,
     }]);
@@ -3015,6 +3122,7 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
                 <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Int.</label><input value={p.coloreInt||""} onChange={(e: any)=>updateProdotto(i,"coloreInt",e.target.value)} placeholder="es. Bianco RAL 9010" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
                 <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Est.</label><input value={p.coloreEst||""} onChange={(e: any)=>updateProdotto(i,"coloreEst",e.target.value)} placeholder="es. Grigio RAL 7016" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
               </div>
+              <div style={{marginTop:6}}><label style={{...S.fLabel,fontSize:10}}>🔲 Vetro</label><input value={p.vetro||""} onChange={(e: any)=>updateProdotto(i,"vetro",e.target.value)} placeholder="es. 4/16/4 Basso Emissivo" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
             </div>
             
             {/* Tipo Prezzo */}
