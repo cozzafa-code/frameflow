@@ -2336,7 +2336,7 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
   const [noteGen, setNoteGen] = useState(m?.noteGen||"");
   const [vani, setVani] = useState(m?.vani||[makeVano()]);
   const coloriPerMat = materialeId && coloriMap[materialeId] ? coloriMap[materialeId] : allColori || [];
-  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",note:"",photos:{}}; }
+  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",note:"",photos:{},altroColore:false,coloreIntVano:"",coloreEstVano:""}; }
   function uv(i: number,f: string,v: any) { const n=[...vani]; n[i]={...n[i],[f]:v}; setVani(n); }
   const useTipologie = tipologie?.length > 0 ? tipologie : SISTEMI;
   return (
@@ -2346,13 +2346,17 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
         <div style={S.praticaRef}>{pratica?.numero} · {client?.nome}</div>
         <Field label="Cantiere" value={cantiere} onChange={setCantiere} placeholder="Rif. cantiere" />
         <Field label="Indirizzo" value={indirizzo} onChange={setIndirizzo} placeholder="Indirizzo" />
-        <div style={{display:"flex",gap:12}}>
-          <div style={{flex:1}}><label style={S.fLabel}>Materiale</label><select value={materialeId} onChange={(e: any)=>setMaterialeId(e.target.value)} style={S.input}><option value="">— Seleziona —</option>{(sistemi||DEFAULT_SISTEMI).map((s: any)=><option key={s.id} value={s.id}>{s.icon} {s.nome}</option>)}</select></div>
-          <div style={{flex:1}}><label style={S.fLabel}>Piano</label><select value={piano} onChange={(e: any)=>setPiano(e.target.value)} style={S.input}><option value="">—</option>{["Terra","1°","2°","3°","4°","5°"].map(p=><option key={p}>{p}</option>)}</select></div>
-        </div>
-        <div style={{display:"flex",gap:12}}>
-          <div style={{flex:1}}><label style={S.fLabel}>Colore Int.</label><select value={coloreInt} onChange={(e: any)=>setColoreInt(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreInt==="__custom"&&<input value="" onChange={(e: any)=>setColoreInt(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
-          <div style={{flex:1}}><label style={S.fLabel}>Colore Est.</label><select value={coloreEst} onChange={(e: any)=>setColoreEst(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreEst==="__custom"&&<input value="" onChange={(e: any)=>setColoreEst(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+        {/* === DATI GENERALI IN ALTO === */}
+        <div style={{background:"linear-gradient(135deg,#fffbeb,#fef3c7)",borderRadius:16,padding:16,marginBottom:16,border:"2px solid #f59e0b"}}>
+          <h4 style={{fontSize:14,fontWeight:800,color:"#92400e",margin:"0 0 12px"}}>⚙️ Impostazioni Commessa</h4>
+          <div style={{display:"flex",gap:12}}>
+            <div style={{flex:1}}><label style={S.fLabel}>Materiale</label><select value={materialeId} onChange={(e: any)=>setMaterialeId(e.target.value)} style={S.input}><option value="">— Seleziona —</option>{(sistemi||DEFAULT_SISTEMI).map((s: any)=><option key={s.id} value={s.id}>{s.icon} {s.nome}</option>)}</select></div>
+            <div style={{flex:1}}><label style={S.fLabel}>Piano</label><select value={piano} onChange={(e: any)=>setPiano(e.target.value)} style={S.input}><option value="">—</option>{["Terra","1°","2°","3°","4°","5°","6°","7°","8°","9°","10°","11°","12°","13°"].map(p=><option key={p}>{p}</option>)}</select></div>
+          </div>
+          <div style={{display:"flex",gap:12}}>
+            <div style={{flex:1}}><label style={S.fLabel}>Colore Int. (default)</label><select value={coloreInt} onChange={(e: any)=>setColoreInt(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreInt==="__custom"&&<input value="" onChange={(e: any)=>setColoreInt(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+            <div style={{flex:1}}><label style={S.fLabel}>Colore Est. (default)</label><select value={coloreEst} onChange={(e: any)=>setColoreEst(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreEst==="__custom"&&<input value="" onChange={(e: any)=>setColoreEst(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+          </div>
         </div>
         <h3 style={{...S.sectionTitle,marginTop:20}}>Vani ({vani.length})</h3>
         {vani.map((v: any,i: number)=>(
@@ -2360,8 +2364,21 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
             <div style={S.vanoHdr}><span style={S.vanoNum}>{i+1}</span><span style={{fontSize:15,fontWeight:700,flex:1}}>Vano {i+1}</span>{vani.length>1 && <button onClick={()=>setVani(vani.filter((_: any,j: number)=>j!==i))} style={S.vanoRm}>×</button>}</div>
             <Field label="Ambiente" value={v.ambiente} onChange={(val: string)=>uv(i,"ambiente",val)} placeholder="Soggiorno, Camera..." />
             <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>Tipologia</label><select value={v.sistema||sistema} onChange={(e: any)=>uv(i,"sistema",e.target.value)} style={S.input}><option value="">—</option>{useTipologie.map((s: string)=><option key={s}>{s}</option>)}</select></div>
-            <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
+            <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q.tà" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
             <div style={S.fGroup}><label style={S.fLabel}>Apertura</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{APERTURE.map(a=><button key={a} onClick={()=>uv(i,"apertura",a)} style={{...S.pill,background:v.apertura===a?"#d97706":"#f3f4f6",color:v.apertura===a?"#fff":"#6b7280"}}>{a}</button>)}</div></div>
+            {/* FLAG ALTRO COLORE */}
+            <div style={{marginBottom:8}}>
+              <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,fontWeight:600,color:"#374151"}}>
+                <input type="checkbox" checked={v.altroColore||false} onChange={(e: any)=>uv(i,"altroColore",e.target.checked)} style={{width:18,height:18,accentColor:"#d97706"}} />
+                🎨 Colore diverso per questo vano
+              </label>
+            </div>
+            {v.altroColore && (
+              <div style={{display:"flex",gap:8,marginBottom:8,background:"#fffbeb",padding:10,borderRadius:12,border:"1px solid #fbbf24"}}>
+                <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Int.</label><select value={v.coloreIntVano||""} onChange={(e: any)=>uv(i,"coloreIntVano",e.target.value)} style={{...S.input,fontSize:12}}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Custom</option></select>{v.coloreIntVano==="__custom"&&<input onChange={(e: any)=>uv(i,"coloreIntVano",e.target.value)} placeholder="Colore..." style={{...S.input,fontSize:12,marginTop:4}} />}</div>
+                <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Est.</label><select value={v.coloreEstVano||""} onChange={(e: any)=>uv(i,"coloreEstVano",e.target.value)} style={{...S.input,fontSize:12}}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Custom</option></select>{v.coloreEstVano==="__custom"&&<input onChange={(e: any)=>uv(i,"coloreEstVano",e.target.value)} placeholder="Colore..." style={{...S.input,fontSize:12,marginTop:4}} />}</div>
+              </div>
+            )}
             <div style={S.fGroup}><label style={S.fLabel}>Foto Vano</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{PHOTO_TYPES.map(p=><PhotoCapture key={p.k} url={v.photos[p.k]} label={p.l} icon={p.i} onCapture={async(file: File)=>{if(!userId)return;const url=await uploadPhotoToStorage(file,userId,`misure/${pratica?.id}/${v.id}`);if(url){const photos={...v.photos,[p.k]:url};uv(i,"photos",photos);}}} onDelete={async()=>{if(v.photos[p.k])await deletePhotoFromStorage(v.photos[p.k]);const photos={...v.photos};delete photos[p.k];uv(i,"photos",photos);}} />)}</div></div>
             <Field label="Note" value={v.note} onChange={(val: string)=>uv(i,"note",val)} placeholder="Note vano..." />
           </div>
@@ -2679,25 +2696,57 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
 // ==================== EMAIL VIEW ====================
 function EmailView({ pratica, client, settings, onSend, onBack }: any) {
   const [dest, setDest] = useState(client?.email||"");
-  const [oggetto, setOggetto] = useState(`Pratica ${pratica?.numero} - ${client?.nome||""}`);
+  // Smart subject based on current fase
+  const fase = pratica?.fase || "sopralluogo";
+  const smartSubjects: Record<string,string> = {
+    sopralluogo: `Sopralluogo - Pratica ${pratica?.numero}`,
+    misure: `Misure - Pratica ${pratica?.numero}`,
+    preventivo: `Preventivo - Pratica ${pratica?.numero}`,
+    conferma: `Conferma d'Ordine - Pratica ${pratica?.numero}`,
+    fattura: `Fattura${pratica?.fattura?.numero?" "+pratica.fattura.numero:""} - Pratica ${pratica?.numero}`,
+    posa: `Posa in Opera - Pratica ${pratica?.numero}`,
+    riparazione: `Riparazione - Pratica ${pratica?.numero}`,
+  };
+  const [oggetto, setOggetto] = useState(smartSubjects[fase] || `Pratica ${pratica?.numero} - ${client?.nome||""}`);
   const firma = settings?.nomeAzienda ? `\n\n${settings.nomeAzienda}${settings.telefonoAzienda?"\nTel: "+settings.telefonoAzienda:""}${settings.emailAzienda?"\n"+settings.emailAzienda:""}` : "\n\nCordiali saluti";
   const [corpo, setCorpo] = useState(`Gentile ${client?.nome||"Cliente"},\n\nIn riferimento alla pratica ${pratica?.numero}${pratica?.indirizzo?` per l'immobile in ${pratica.indirizzo}`:""}, Le comunichiamo che...\n${firma}`);
+  
+  // Detect what PDF can be attached
+  const attachments: {icon:string,label:string,action:()=>void}[] = [];
+  if (pratica?.preventivo) attachments.push({icon:"💰",label:"Preventivo PDF",action:()=>exportPreventivo(pratica,client,true)});
+  if (pratica?.confermaOrdine?.firmata) attachments.push({icon:"✅",label:"Conferma Ordine PDF",action:()=>exportConfermaOrdine(pratica,client)});
+  if (pratica?.fattura) attachments.push({icon:"🧾",label:"Fattura PDF",action:()=>exportFattura(pratica,client)});
+  if (pratica?.misure) attachments.push({icon:"📐",label:"Misure PDF",action:()=>exportMisure(pratica,client)});
+  if (pratica?.riparazione) attachments.push({icon:"🛠️",label:"Riparazione PDF",action:()=>exportRiparazione(pratica,client)});
+
   const templates = [
-    { l: "📅 Conferma Appuntamento", t: `Gentile ${client?.nome},\n\nLe confermiamo l'appuntamento per il giorno ${dateLabel(pratica?.data)} alle ore ${pratica?.ora}${pratica?.indirizzo?` presso ${pratica.indirizzo}`:""}.\n\nPer qualsiasi necessità non esiti a contattarci.\n${firma}` },
-    { l: "💰 Invio Preventivo", t: `Gentile ${client?.nome},\n\nIn allegato trova il preventivo relativo alla pratica ${pratica?.numero}.\n\nIl preventivo ha validità 30 giorni.\n\nRestiamo a disposizione per chiarimenti.\n${firma}` },
-    { l: "📦 Conferma Ordine", t: `Gentile ${client?.nome},\n\nLe confermiamo che l'ordine (pratica ${pratica?.numero}) è stato inoltrato al produttore.\n\nTempi di consegna stimati: circa [X] settimane.\n${firma}` },
-    { l: "🔧 Data Posa", t: `Gentile ${client?.nome},\n\nLa posa in opera (pratica ${pratica?.numero}) è programmata per il giorno [DATA] alle ore [ORA].\n\nLa preghiamo di assicurarsi che l'accesso sia libero.\n${firma}` },
-    { l: "✅ Lavoro Completato", t: `Gentile ${client?.nome},\n\nLe comunichiamo che i lavori relativi alla pratica ${pratica?.numero} sono stati completati.\n\nPer qualsiasi segnalazione non esiti a contattarci.\n${firma}` },
+    { l: "📅 Conferma Appuntamento", s: `Appuntamento Sopralluogo - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLe confermiamo l'appuntamento per il giorno ${dateLabel(pratica?.data)} alle ore ${pratica?.ora}${pratica?.indirizzo?` presso ${pratica.indirizzo}`:""}.\n\nPer qualsiasi necessità non esiti a contattarci.\n${firma}` },
+    { l: "💰 Invio Preventivo", s: `Preventivo - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nIn allegato trova il preventivo relativo alla pratica ${pratica?.numero}.\n\nIl preventivo ha validità 30 giorni.\n\nRestiamo a disposizione per chiarimenti.\n${firma}` },
+    { l: "✍️ Conferma Ordine", s: `Conferma d'Ordine - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLe confermiamo che l'ordine (pratica ${pratica?.numero}) è stato inoltrato al produttore.\n\nIn allegato trova la conferma d'ordine firmata.\n\nTempi di consegna stimati: circa [X] settimane.\n${firma}` },
+    { l: "🧾 Invio Fattura", s: `Fattura${pratica?.fattura?.numero?" "+pratica.fattura.numero:""} - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nIn allegato trova la fattura relativa alla pratica ${pratica?.numero}.\n\nModalità di pagamento: [specificare].\n${firma}` },
+    { l: "🔧 Data Posa", s: `Posa in Opera - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLa posa in opera (pratica ${pratica?.numero}) è programmata per il giorno [DATA] alle ore [ORA].\n\nLa preghiamo di assicurarsi che l'accesso sia libero.\n${firma}` },
+    { l: "✅ Lavoro Completato", s: `Lavoro Completato - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLe comunichiamo che i lavori relativi alla pratica ${pratica?.numero} sono stati completati.\n\nPer qualsiasi segnalazione non esiti a contattarci.\n${firma}` },
   ];
   return (
     <div style={S.container}>
       <div style={{...S.secHdr,background:"linear-gradient(135deg,#6366f1,#a855f7)",boxShadow:"0 4px 14px rgba(99,102,241,0.3)"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>✉️ Email</h2></div>
       <div style={{padding:20}}>
         <div style={{...S.praticaRef,borderLeftColor:"#6366f1"}}>{pratica?.numero} · {client?.nome}</div>
-        <div style={S.fGroup}><label style={S.fLabel}>Template Rapidi</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{templates.map((t,i)=><button key={i} onClick={()=>{setOggetto(`${t.l.replace(/^[^ ]+ /,"")} - Pratica ${pratica?.numero}`);setCorpo(t.t);}} style={S.templateBtn}>{t.l}</button>)}</div></div>
+        <div style={S.fGroup}><label style={S.fLabel}>Template Rapidi</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{templates.map((t,i)=><button key={i} onClick={()=>{setOggetto(t.s);setCorpo(t.t);}} style={S.templateBtn}>{t.l}</button>)}</div></div>
         <Field label="Destinatario" value={dest} onChange={setDest} placeholder="email@esempio.it" type="email" />
         <Field label="Oggetto" value={oggetto} onChange={setOggetto} placeholder="Oggetto email" />
         <div style={S.fGroup}><label style={S.fLabel}>Messaggio</label><textarea value={corpo} onChange={(e: any)=>setCorpo(e.target.value)} style={{...S.textarea,minHeight:200}} /></div>
+        {attachments.length > 0 && (
+          <div style={{marginBottom:16,padding:14,background:"#f8fafc",borderRadius:14,border:"1.5px solid #e2e8f0"}}>
+            <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",display:"block",marginBottom:8}}>📎 Genera PDF da allegare</label>
+            <p style={{fontSize:11,color:"#94a3b8",margin:"0 0 8px"}}>Genera il PDF, poi allegalo manualmente nella tua app email</p>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {attachments.map((a,i) => (
+                <button key={i} onClick={a.action} style={{padding:"8px 14px",borderRadius:12,border:"1.5px solid #6366f1",background:"#f5f3ff",color:"#6366f1",fontSize:12,fontWeight:700,cursor:"pointer"}}>{a.icon} {a.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>{if(!dest.trim())return;const url=`mailto:${encodeURIComponent(dest)}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpo)}`;window.open(url,"_blank");onSend({destinatario:dest,oggetto,corpo});}} disabled={!dest.trim()} style={{...S.saveBtn,background:"#7c3aed",flex:1,opacity:dest.trim()?1:0.5}}>📨 Mailto</button>
           <button onClick={()=>{if(!dest.trim())return;const url=`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(dest)}&su=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpo)}`;window.open(url,"_blank");onSend({destinatario:dest,oggetto,corpo,via:"gmail"});}} disabled={!dest.trim()} style={{...S.saveBtn,background:"#ea4335",flex:1,opacity:dest.trim()?1:0.5}}>Gmail</button>
