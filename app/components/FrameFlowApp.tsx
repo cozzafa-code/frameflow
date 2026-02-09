@@ -505,8 +505,8 @@ function emptyUserSettings() {
 
 async function loadFromSupabase(userId: string) {
   const [cRes, pRes, nRes, sRes] = await Promise.all([
-    supabase.from("clients").select("*"),  // RLS handles access (own + org)
-    supabase.from("pratiche").select("*"),  // RLS handles access (own + org)
+    supabase.from("clients").select("*").eq("user_id", userId),
+    supabase.from("pratiche").select("*").eq("user_id", userId),
     supabase.from("notes").select("*").eq("user_id", userId),
     supabase.from("user_settings").select("*").eq("user_id", userId).single(),
   ]);
@@ -726,8 +726,12 @@ export default function FrameFlowApp() {
     });
     setDb((prev: any) => ({...prev, pratiche}));
     if (user && updatedP) {
-      const row = praticaToDb(updatedP, user.id);
-      supabase.from("pratiche").update(row).eq("id", id).then(({error}) => { if(error) console.error("updatePratica:", error); });
+      try {
+        const row = praticaToDb(updatedP, user.id);
+        supabase.from("pratiche").update(row).eq("id", id).then(({error}) => { 
+          if(error) console.error("updatePratica:", error.message, error.details);
+        });
+      } catch(e) { console.error("updatePratica serialize error:", e); }
     }
   }
 
@@ -881,23 +885,30 @@ export default function FrameFlowApp() {
   const isAdmin = myMember?.ruolo === "admin" || (org && org.created_by === user?.id);
   const myPermissions: string[] = myMember?.permessi || ["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione"];
 
-  async function createOrganization(nome: string) {
+  async function createOrganization(orgData: any) {
     if (!user) return;
-    const { data: orgData, error } = await supabase.from("organizations").insert({ nome, created_by: user.id, email: user.email }).select().single();
+    const nome = typeof orgData === "string" ? orgData : orgData.nome;
+    const { data: orgRow, error } = await supabase.from("organizations").insert({
+      nome, created_by: user.id,
+      email: orgData.email || user.email,
+      telefono: orgData.telefono || "",
+      indirizzo: orgData.indirizzo || "",
+      piva: orgData.piva || "",
+    }).select().single();
     if (error) { console.error("Create org:", error); return; }
     // Add self as admin
     const { data: memberData, error: mErr } = await supabase.from("team_members").insert({
-      org_id: orgData.id, user_id: user.id, nome: user.email?.split("@")[0] || "Admin",
+      org_id: orgRow.id, user_id: user.id, nome: user.email?.split("@")[0] || "Admin",
       email: user.email, ruolo: "admin", permessi: ["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione"],
       invite_accepted: true,
     }).select().single();
     if (mErr) { console.error("Add admin:", mErr); return; }
-    setOrg(orgData);
+    setOrg(orgRow);
     setMyMember(memberData);
     setTeamMembers([memberData]);
     // Update existing pratiche and clients with org_id
-    await supabase.from("pratiche").update({ org_id: orgData.id }).eq("user_id", user.id);
-    await supabase.from("clients").update({ org_id: orgData.id }).eq("user_id", user.id);
+    await supabase.from("pratiche").update({ org_id: orgRow.id }).eq("user_id", user.id);
+    await supabase.from("clients").update({ org_id: orgRow.id }).eq("user_id", user.id);
   }
 
   async function addTeamMember(nome: string, email: string, ruolo: string, permessi: string[]) {
@@ -1063,7 +1074,11 @@ export default function FrameFlowApp() {
   }
   if (view==="email" && emailDraft) {
     const p = getPratica(emailDraft); const c = getClient(p?.clientId);
-    return <EmailView pratica={p} client={c} settings={db.settings} onSend={(d: any)=>{addEmail(emailDraft,d);setEmailDraft(null);setSelPratica(emailDraft);setView("pratica");}} onBack={()=>{setEmailDraft(null);setSelPratica(emailDraft);setView("pratica");}} />;
+    return <EmailView pratica={p} client={c} settings={db.settings} onSend={(d: any)=>{
+      const pid = emailDraft;
+      try { addEmail(pid, d); } catch(e) { console.error("Email send error:", e); }
+      setEmailDraft(null); setSelPratica(pid); setView("pratica");
+    }} onBack={()=>{setEmailDraft(null);setSelPratica(emailDraft);setView("pratica");}} />;
   }
   if (view==="note_edit") {
     return <NoteEditor note={noteEdit} onSave={(n: any)=>{saveNote(n);setNoteEdit(null);setView("notes");}} onBack={()=>{setNoteEdit(null);setView("notes");}} />;
@@ -1293,6 +1308,7 @@ export default function FrameFlowApp() {
           <div style={{display:"flex",gap:8}}>
             <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Esci">🚪</button>
             <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Impostazioni">⚙️</button>
+            <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Note">📝</button>
             <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}}>🔍</button>
             <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ Nuova</button>
           </div>
@@ -2049,15 +2065,25 @@ function FirmaCorrettaPosa({ onSave }: any) {
 // ==================== TEAM SETUP (create org) ====================
 function TeamSetup({ onCreate, userName }: any) {
   const [nome, setNome] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [email, setEmail] = useState("");
+  const [indirizzo, setIndirizzo] = useState("");
+  const [piva, setPiva] = useState("");
   return (
-    <div style={{textAlign:"center",padding:"40px 20px"}}>
-      <div style={{fontSize:56,marginBottom:16}}>🏢</div>
-      <h3 style={{fontSize:20,fontWeight:800,color:"#0f172a",marginBottom:8}}>Crea la tua Organizzazione</h3>
-      <p style={{fontSize:14,color:"#64748b",marginBottom:24}}>Per usare il team, crea prima l'azienda. Potrai invitare dipendenti e assegnare compiti.</p>
-      <div style={{marginBottom:16}}>
-        <input value={nome} onChange={(e: any)=>setNome(e.target.value)} placeholder="Nome Azienda (es. Rossi Serramenti)" style={{width:"100%",padding:"14px 16px",borderRadius:14,border:"2px solid #e2e8f0",fontSize:15,fontWeight:600,outline:"none",boxSizing:"border-box"}} autoFocus />
+    <div style={{padding:"20px 0"}}>
+      <div style={{textAlign:"center",marginBottom:20}}>
+        <div style={{fontSize:56,marginBottom:12}}>🏢</div>
+        <h3 style={{fontSize:20,fontWeight:800,color:"#0f172a",marginBottom:6}}>Crea la tua Organizzazione</h3>
+        <p style={{fontSize:13,color:"#64748b"}}>Per usare il team, crea prima l'azienda. Potrai invitare dipendenti e assegnare compiti.</p>
       </div>
-      <button onClick={()=>{if(nome.trim())onCreate(nome.trim());}} disabled={!nome.trim()} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:nome.trim()?"linear-gradient(135deg,#6366f1,#a855f7)":"#e2e8f0",color:nome.trim()?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:nome.trim()?"pointer":"default"}}>🚀 Crea Organizzazione</button>
+      <div style={{background:"#fff",borderRadius:16,padding:16,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+        <Field label="Nome Azienda *" value={nome} onChange={setNome} placeholder="es. Walter Cozza Serramenti SRL" autoFocus />
+        <Field label="Telefono" value={telefono} onChange={setTelefono} placeholder="+39 0984 ..." type="tel" />
+        <Field label="Email Azienda" value={email} onChange={setEmail} placeholder="info@azienda.it" type="email" />
+        <Field label="Indirizzo Sede" value={indirizzo} onChange={setIndirizzo} placeholder="Via Roma 1, Cosenza" />
+        <Field label="P.IVA" value={piva} onChange={setPiva} placeholder="IT01234567890" />
+      </div>
+      <button onClick={()=>{if(nome.trim())onCreate({nome:nome.trim(),telefono,email,indirizzo,piva});}} disabled={!nome.trim()} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:nome.trim()?"linear-gradient(135deg,#6366f1,#a855f7)":"#e2e8f0",color:nome.trim()?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:nome.trim()?"pointer":"default",marginTop:16}}>🚀 Crea Organizzazione</button>
     </div>
   );
 }
@@ -3099,12 +3125,14 @@ function EmailView({ pratica, client, settings, onSend, onBack }: any) {
   const [corpo, setCorpo] = useState(`Gentile ${client?.nome||"Cliente"},\n\nIn riferimento alla pratica ${pratica?.numero}${pratica?.indirizzo?` per l'immobile in ${pratica.indirizzo}`:""}, Le comunichiamo che...\n${firma}`);
   
   // Detect what PDF can be attached
-  const attachments: {icon:string,label:string,action:()=>void}[] = [];
-  if (pratica?.preventivo) attachments.push({icon:"💰",label:"Preventivo PDF",action:()=>exportPreventivo(pratica,client,true)});
-  if (pratica?.confermaOrdine?.firmata) attachments.push({icon:"✅",label:"Conferma Ordine PDF",action:()=>exportConfermaOrdine(pratica,client)});
-  if (pratica?.fattura) attachments.push({icon:"🧾",label:"Fattura PDF",action:()=>exportFattura(pratica,client)});
-  if (pratica?.misure) attachments.push({icon:"📐",label:"Misure PDF",action:()=>exportMisure(pratica,client)});
-  if (pratica?.riparazione) attachments.push({icon:"🛠️",label:"Riparazione PDF",action:()=>exportRiparazione(pratica,client)});
+  const allPdfs = [
+    { icon: "📐", label: "Misure", available: !!pratica?.misure, action: () => exportMisure(pratica, client) },
+    { icon: "💰", label: "Preventivo", available: !!pratica?.preventivo, action: () => exportPreventivo(pratica, client, true) },
+    { icon: "✅", label: "Conferma Ordine", available: !!pratica?.confermaOrdine?.firmata, action: () => exportConfermaOrdine(pratica, client) },
+    { icon: "🧾", label: "Fattura", available: !!pratica?.fattura, action: () => exportFattura(pratica, client) },
+    { icon: "🛠️", label: "Riparazione", available: !!pratica?.riparazione, action: () => exportRiparazione(pratica, client) },
+    { icon: "📋", label: "Riepilogo", available: true, action: () => exportPratica(pratica, client) },
+  ];
 
   const templates = [
     { l: "📅 Conferma Appuntamento", s: `Appuntamento Sopralluogo - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLe confermiamo l'appuntamento per il giorno ${dateLabel(pratica?.data)} alle ore ${pratica?.ora}${pratica?.indirizzo?` presso ${pratica.indirizzo}`:""}.\n\nPer qualsiasi necessità non esiti a contattarci.\n${firma}` },
@@ -3123,17 +3151,15 @@ function EmailView({ pratica, client, settings, onSend, onBack }: any) {
         <Field label="Destinatario" value={dest} onChange={setDest} placeholder="email@esempio.it" type="email" />
         <Field label="Oggetto" value={oggetto} onChange={setOggetto} placeholder="Oggetto email" />
         <div style={S.fGroup}><label style={S.fLabel}>Messaggio</label><textarea value={corpo} onChange={(e: any)=>setCorpo(e.target.value)} style={{...S.textarea,minHeight:200}} /></div>
-        {attachments.length > 0 && (
-          <div style={{marginBottom:16,padding:14,background:"#f8fafc",borderRadius:14,border:"1.5px solid #e2e8f0"}}>
-            <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",display:"block",marginBottom:8}}>📎 Genera PDF da allegare</label>
-            <p style={{fontSize:11,color:"#94a3b8",margin:"0 0 8px"}}>Genera il PDF, poi allegalo manualmente nella tua app email</p>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {attachments.map((a,i) => (
-                <button key={i} onClick={a.action} style={{padding:"8px 14px",borderRadius:12,border:"1.5px solid #6366f1",background:"#f5f3ff",color:"#6366f1",fontSize:12,fontWeight:700,cursor:"pointer"}}>{a.icon} {a.label}</button>
-              ))}
-            </div>
+        <div style={{marginBottom:16,padding:14,background:"#f8fafc",borderRadius:14,border:"1.5px solid #e2e8f0"}}>
+          <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",display:"block",marginBottom:8}}>📎 Genera PDF da allegare</label>
+          <p style={{fontSize:11,color:"#94a3b8",margin:"0 0 8px"}}>Genera il PDF, poi allegalo manualmente nella tua app email</p>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {allPdfs.map((a,i) => (
+              <button key={i} onClick={a.available ? a.action : undefined} disabled={!a.available} style={{padding:"8px 14px",borderRadius:12,border:a.available?"1.5px solid #6366f1":"1.5px solid #d1d5db",background:a.available?"#f5f3ff":"#f3f4f6",color:a.available?"#6366f1":"#94a3b8",fontSize:12,fontWeight:700,cursor:a.available?"pointer":"default",opacity:a.available?1:0.5}}>{a.icon} {a.label}{!a.available?" ⛔":""}</button>
+            ))}
           </div>
-        )}
+        </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>{if(!dest.trim())return;const url=`mailto:${encodeURIComponent(dest)}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpo)}`;window.open(url,"_blank");onSend({destinatario:dest,oggetto,corpo});}} disabled={!dest.trim()} style={{...S.saveBtn,background:"#7c3aed",flex:1,opacity:dest.trim()?1:0.5}}>📨 Mailto</button>
           <button onClick={()=>{if(!dest.trim())return;const url=`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(dest)}&su=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(corpo)}`;window.open(url,"_blank");onSend({destinatario:dest,oggetto,corpo,via:"gmail"});}} disabled={!dest.trim()} style={{...S.saveBtn,background:"#ea4335",flex:1,opacity:dest.trim()?1:0.5}}>Gmail</button>
