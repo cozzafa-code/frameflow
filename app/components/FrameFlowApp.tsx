@@ -106,8 +106,8 @@ const TASKS: Record<string, string[]> = {
   followup: ["Chiamare il cliente","Annotare esito"],
 };
 
-const APERTURE = ["DX","SX","DX+SX","Fisso","Vasistas"];
-const SISTEMI = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino"];
+const APERTURE = ["DX","SX","DX+SX","Fisso","Vasistas","A/R","Bilico"];
+const SISTEMI = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino","Vetrata composta","Vetrata fissa","Lamiera","Cassonetto"];
 const PHOTO_TYPES = [{k:"panoramica",l:"Panoram.",i:"🏠"},{k:"soglia",l:"Soglia",i:"⬇️"},{k:"nodo",l:"Nodo",i:"🔗"},{k:"cassonetto",l:"Cassone.",i:"📦"},{k:"imbotto",l:"Imbotto",i:"🔲"},{k:"contesto",l:"Contesto",i:"📸"}];
 const PROBLEMI = ["Ferramenta rotta","Guarnizioni usurate","Vetro rotto","Maniglia rotta","Chiusura difettosa","Infiltrazione acqua","Infiltrazione aria","Condensa","Tapparella bloccata","Cerniera rotta","Altro"];
 const URGENZE = [{k:"bassa",l:"Bassa",c:"#059669",i:"🟢"},{k:"media",l:"Media",c:"#d97706",i:"🟡"},{k:"alta",l:"Alta",c:"#ef4444",i:"🔴"},{k:"urgente",l:"Urgente",c:"#7c3aed",i:"🟣"}];
@@ -458,10 +458,10 @@ function clientToDb(c: any, userId: string): any {
 }
 function dbToPratica(row: any): any {
   const photos = row.photos || {};
-  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], createdAt: row.created_at };
+  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], assegnatoA: row.assegnato_a||null, orgId: row.org_id||null, firmaPosa: row.misure?.firmaPosa||photos.firmaPosa||null, createdAt: row.created_at };
 }
 function praticaToDb(p: any, userId: string): any {
-  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data||"", ora: p.ora||"", indirizzo: p.indirizzo||"", tipo: p.tipo||"nuovo_infisso", fase: p.fase||"sopralluogo", status: p.status||"da_fare", note: p.note||"", actions: p.actions||[], misure: p.misure||null, riparazione: p.riparazione||null, preventivo: p.preventivo||null, conferma_ordine: p.confermaOrdine||null, fattura: p.fattura||null, emails: p.emails||[], photos: { sopralluogo: p.fotoSopralluogo||[], posaInizio: p.fotoPosaInizio||[], posaFine: p.fotoPosaFine||[] } };
+  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data||"", ora: p.ora||"", indirizzo: p.indirizzo||"", tipo: p.tipo||"nuovo_infisso", fase: p.fase||"sopralluogo", status: p.status||"da_fare", note: p.note||"", actions: p.actions||[], misure: p.misure||null, riparazione: p.riparazione||null, preventivo: p.preventivo||null, conferma_ordine: p.confermaOrdine||null, fattura: p.fattura||null, emails: p.emails||[], photos: { sopralluogo: p.fotoSopralluogo||[], posaInizio: p.fotoPosaInizio||[], posaFine: p.fotoPosaFine||[], firmaPosa: p.firmaPosa||null }, assegnato_a: p.assegnatoA||null, org_id: p.orgId||null };
 }
 function dbToNote(row: any): any {
   return { id: row.id, testo: row.testo, colore: row.colore, praticaId: row.pratica_id, updatedAt: row.updated_at, createdAt: row.created_at };
@@ -497,7 +497,7 @@ const DEFAULT_COLORI: Record<string, string[]> = {
   ferro: ["Grezzo","Verniciato Nero","Verniciato Grafite","Corten","Micaceo"],
   taglio_termico: ["Bianco RAL 9010","Grigio RAL 7016","Nero RAL 9005","Bronzo","Corten","Bicolore"],
 };
-const DEFAULT_TIPOLOGIE = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino","Porta interna","Porta blindata","Tapparella","Zanzariera","Cassonetto","Persiana","Inferriata"];
+const DEFAULT_TIPOLOGIE = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino","Porta interna","Porta blindata","Tapparella","Zanzariera","Cassonetto","Persiana","Inferriata","Vetrata composta","Vetrata fissa","Lamiera","Sopraluce","Sottoluce","Pannello fisso"];
 
 function emptyUserSettings() {
   return { sistemi: [], categorie: [], colori: {}, listino: [], tipologie: [], azienda: { nome:"", email:"", telefono:"", indirizzo:"", piva:"", cf:"" }, setupCompleted: false };
@@ -505,8 +505,8 @@ function emptyUserSettings() {
 
 async function loadFromSupabase(userId: string) {
   const [cRes, pRes, nRes, sRes] = await Promise.all([
-    supabase.from("clients").select("*").eq("user_id", userId),
-    supabase.from("pratiche").select("*").eq("user_id", userId),
+    supabase.from("clients").select("*"),  // RLS handles access (own + org)
+    supabase.from("pratiche").select("*"),  // RLS handles access (own + org)
     supabase.from("notes").select("*").eq("user_id", userId),
     supabase.from("user_settings").select("*").eq("user_id", userId).single(),
   ]);
@@ -570,6 +570,10 @@ export default function FrameFlowApp() {
   const [prevEdit, setPrevEdit] = useState<string|null>(null);
   const [emailDraft, setEmailDraft] = useState<string|null>(null);
   const [noteEdit, setNoteEdit] = useState<any>(null);
+  // TEAM
+  const [org, setOrg] = useState<any>(null);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [myMember, setMyMember] = useState<any>(null);
 
   // ===== AUTH =====
   useEffect(() => {
@@ -596,8 +600,38 @@ export default function FrameFlowApp() {
       setDb(loadData());
       setLoading(false);
     });
+    // Load team data
+    loadTeamData(user);
     requestNotificationPermission();
   }, [user]);
+
+  async function loadTeamData(u: any) {
+    if (!u) return;
+    try {
+      // Find my membership
+      const { data: myMemberships } = await supabase.from("team_members").select("*").eq("user_id", u.id).eq("attivo", true);
+      if (myMemberships && myMemberships.length > 0) {
+        const membership = myMemberships[0];
+        setMyMember(membership);
+        // Load org
+        const { data: orgData } = await supabase.from("organizations").select("*").eq("id", membership.org_id).single();
+        if (orgData) setOrg(orgData);
+        // Load all team members
+        const { data: members } = await supabase.from("team_members").select("*").eq("org_id", membership.org_id).eq("attivo", true);
+        if (members) setTeamMembers(members);
+      } else {
+        // Check if user has an org as creator
+        const { data: orgs } = await supabase.from("organizations").select("*").eq("created_by", u.id);
+        if (orgs && orgs.length > 0) {
+          setOrg(orgs[0]);
+          const { data: members } = await supabase.from("team_members").select("*").eq("org_id", orgs[0].id).eq("attivo", true);
+          if (members) setTeamMembers(members);
+          const me = members?.find((m: any) => m.user_id === u.id);
+          if (me) setMyMember(me);
+        }
+      }
+    } catch (err) { console.error("Load team error:", err); }
+  }
 
   // Check for upcoming appointments every minute
   useEffect(() => {
@@ -673,7 +707,7 @@ export default function FrameFlowApp() {
       fase: "sopralluogo",
       status: "da_fare", actions: [sopralluogoAction], misure: null, riparazione: null, preventivo: null,
       confermaOrdine: null, fattura: null,
-      emails: [], createdAt: new Date().toISOString(),
+      emails: [], orgId: org?.id||null, createdAt: new Date().toISOString(),
     };
     setDb((prev: any) => ({...prev, pratiche: [...prev.pratiche, p], nextSeq: prev.nextSeq+1}));
     if (user) {
@@ -841,6 +875,59 @@ export default function FrameFlowApp() {
     };
     const { error } = await supabase.from("user_settings").upsert(row, { onConflict: "user_id" });
     if (error) console.error("saveUserSettings:", error);
+  }
+
+  // ===== TEAM FUNCTIONS =====
+  const isAdmin = myMember?.ruolo === "admin" || (org && org.created_by === user?.id);
+  const myPermissions: string[] = myMember?.permessi || ["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione"];
+
+  async function createOrganization(nome: string) {
+    if (!user) return;
+    const { data: orgData, error } = await supabase.from("organizations").insert({ nome, created_by: user.id, email: user.email }).select().single();
+    if (error) { console.error("Create org:", error); return; }
+    // Add self as admin
+    const { data: memberData, error: mErr } = await supabase.from("team_members").insert({
+      org_id: orgData.id, user_id: user.id, nome: user.email?.split("@")[0] || "Admin",
+      email: user.email, ruolo: "admin", permessi: ["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione"],
+      invite_accepted: true,
+    }).select().single();
+    if (mErr) { console.error("Add admin:", mErr); return; }
+    setOrg(orgData);
+    setMyMember(memberData);
+    setTeamMembers([memberData]);
+    // Update existing pratiche and clients with org_id
+    await supabase.from("pratiche").update({ org_id: orgData.id }).eq("user_id", user.id);
+    await supabase.from("clients").update({ org_id: orgData.id }).eq("user_id", user.id);
+  }
+
+  async function addTeamMember(nome: string, email: string, ruolo: string, permessi: string[]) {
+    if (!org || !isAdmin) return;
+    const token = Math.random().toString(36).substr(2, 12);
+    const { data, error } = await supabase.from("team_members").insert({
+      org_id: org.id, nome, email, ruolo, permessi, invite_token: token, invite_accepted: false,
+    }).select().single();
+    if (error) { console.error("Add member:", error); alert("Errore: " + error.message); return; }
+    setTeamMembers(prev => [...prev, data]);
+    return data;
+  }
+
+  async function updateTeamMember(memberId: string, updates: any) {
+    if (!isAdmin) return;
+    const { error } = await supabase.from("team_members").update(updates).eq("id", memberId);
+    if (error) { console.error("Update member:", error); return; }
+    setTeamMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...updates } : m));
+  }
+
+  async function removeTeamMember(memberId: string) {
+    if (!isAdmin) return;
+    const { error } = await supabase.from("team_members").update({ attivo: false }).eq("id", memberId);
+    if (error) { console.error("Remove member:", error); return; }
+    setTeamMembers(prev => prev.filter(m => m.id !== memberId));
+  }
+
+  async function assignPratica(praticaId: string, memberId: string | null) {
+    updatePratica(praticaId, { assegnatoA: memberId });
+    await supabase.from("pratiche").update({ assegnato_a: memberId }).eq("id", praticaId);
   }
 
   // Dynamic lists from settings
@@ -1072,7 +1159,7 @@ export default function FrameFlowApp() {
     const p = getPratica(selPratica);
     if (!p) { setView("dashboard"); return null; }
     const c = getClient(p.clientId);
-    return <PraticaDetail pratica={p} client={c} userId={user?.id}
+    return <PraticaDetail pratica={p} client={c} userId={user?.id} teamMembers={teamMembers} isAdmin={isAdmin}
       onBack={()=>{setSelPratica(null);setView("pratiche");}}
       onDelete={()=>{if(confirm("Eliminare pratica "+p.numero+"?"))deletePratica(p.id);}}
       onAddAction={()=>{setActionPicker(p.id);setView("action_picker");}}
@@ -1087,6 +1174,7 @@ export default function FrameFlowApp() {
       onUpdateFattura={(data: any)=>updateFattura(p.id,data)}
       onAdvancePhase={()=>advancePhase(p.id)}
       onUpdatePratica={(data: any)=>updatePratica(p.id,data)}
+      onAssign={(memberId: string|null)=>assignPratica(p.id,memberId)}
     />;
   }
 
@@ -1096,7 +1184,7 @@ export default function FrameFlowApp() {
     { key: "calendario", icon: "📅", label: "Agenda" },
     { key: "pratiche", icon: "📋", label: "Pratiche" },
     { key: "clienti", icon: "👤", label: "Clienti" },
-    { key: "notes", icon: "📝", label: "Note" },
+    { key: "team", icon: "👥", label: "Team" },
   ];
 
   // ==================== GLOBAL SEARCH ====================
@@ -1838,7 +1926,199 @@ export default function FrameFlowApp() {
     );
   }
 
+  // ==================== TEAM VIEW ====================
+  if (view === "team") {
+    return (
+      <div style={S.container}>
+        <div style={{...S.header,padding:"16px 20px 12px"}}>
+          <h2 style={{...S.logo,fontSize:18}}>👥 Team</h2>
+          {org && isAdmin && <button onClick={()=>setView("team_add")} style={S.addBtn}>+ Membro</button>}
+        </div>
+        <div style={{padding:"0 16px",paddingTop:12}}>
+          {!org ? (
+            <TeamSetup onCreate={createOrganization} userName={user?.email} />
+          ) : (
+            <>
+              {/* Org header */}
+              <div style={{background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:20,padding:20,marginBottom:16,color:"#fff"}}>
+                <div style={{fontSize:18,fontWeight:800}}>{org.nome}</div>
+                <div style={{fontSize:13,opacity:0.8,marginTop:4}}>{teamMembers.length} membri · Piano {org.piano||"free"}</div>
+                {myMember && <div style={{fontSize:12,marginTop:8,background:"rgba(255,255,255,0.2)",padding:"4px 12px",borderRadius:20,display:"inline-block"}}>Il tuo ruolo: <b>{myMember.ruolo === "admin" ? "👑 Admin" : "👷 Operatore"}</b></div>}
+              </div>
+
+              {/* I miei permessi */}
+              {!isAdmin && myPermissions.length > 0 && (
+                <div style={{background:"#f8fafc",borderRadius:14,padding:14,marginBottom:16,border:"1px solid #e2e8f0"}}>
+                  <div style={{fontSize:12,fontWeight:800,color:"#374151",marginBottom:8}}>I TUOI COMPITI</div>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {myPermissions.map((p: string) => {
+                      const phase = [...WORKFLOW_NUOVO, ...WORKFLOW_RIP].find(w => w.key === p);
+                      return phase ? <span key={p} style={{padding:"6px 12px",borderRadius:12,background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:700}}>{phase.icon} {phase.label}</span> : null;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Team members list */}
+              <div style={{fontSize:13,fontWeight:800,color:"#374151",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}>Membri del Team</div>
+              {teamMembers.map((m: any) => (
+                <div key={m.id} style={{display:"flex",alignItems:"center",gap:12,padding:14,background:"#fff",borderRadius:16,marginBottom:10,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+                  <div style={{width:44,height:44,borderRadius:"50%",background:m.ruolo==="admin"?"linear-gradient(135deg,#f59e0b,#d97706)":"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:800,flexShrink:0}}>{m.nome?.charAt(0)?.toUpperCase()}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:15,fontWeight:700,color:"#0f172a"}}>{m.nome}</div>
+                    <div style={{fontSize:12,color:"#64748b"}}>{m.email}</div>
+                    <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:4}}>
+                      <span style={{fontSize:10,padding:"2px 8px",borderRadius:8,background:m.ruolo==="admin"?"#fef3c7":"#eff6ff",color:m.ruolo==="admin"?"#92400e":"#1e40af",fontWeight:700}}>{m.ruolo==="admin"?"👑 Admin":"👷 Operatore"}</span>
+                      {!m.invite_accepted && <span style={{fontSize:10,padding:"2px 8px",borderRadius:8,background:"#fef2f2",color:"#dc2626",fontWeight:700}}>⏳ In attesa</span>}
+                    </div>
+                  </div>
+                  {isAdmin && m.user_id !== user?.id && (
+                    <button onClick={()=>{if(confirm(`Rimuovere ${m.nome}?`))removeTeamMember(m.id);}} style={{width:32,height:32,borderRadius:10,background:"#fef2f2",border:"none",color:"#dc2626",fontSize:14,cursor:"pointer"}}>🗑️</button>
+                  )}
+                </div>
+              ))}
+
+              {/* Le mie pratiche assegnate (per operatori) */}
+              {!isAdmin && (
+                <div style={{marginTop:20}}>
+                  <div style={{fontSize:13,fontWeight:800,color:"#374151",marginBottom:10,textTransform:"uppercase"}}>Le Mie Pratiche</div>
+                  {db.pratiche.filter((p: any) => p.assegnatoA === myMember?.id).length === 0 
+                    ? <div style={{fontSize:13,color:"#94a3b8",textAlign:"center",padding:20}}>Nessuna pratica assegnata</div>
+                    : db.pratiche.filter((p: any) => p.assegnatoA === myMember?.id).map((p: any) => {
+                        const c = getClient(p.clientId);
+                        const wf = getWorkflow(p.tipo);
+                        const phaseIdx = getPhaseIndex(p.tipo, p.fase);
+                        const phase = wf[phaseIdx];
+                        return (
+                          <button key={p.id} onClick={()=>{setSelPratica(p.id);setView("pratica");}} style={{display:"flex",alignItems:"center",gap:12,width:"100%",textAlign:"left",padding:14,background:"#fff",borderRadius:16,border:"none",marginBottom:10,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+                            <span style={{fontSize:22}}>{phase?.icon||"📋"}</span>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{p.numero}</div>
+                              <div style={{fontSize:12,color:"#64748b"}}>{c?.nome} · {phase?.label}</div>
+                            </div>
+                          </button>
+                        );
+                      })
+                  }
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        <BottomNav items={navItems} active={view} onNav={setView} />
+      </div>
+    );
+  }
+
+  // ==================== TEAM ADD MEMBER ====================
+  if (view === "team_add") {
+    return <TeamAddMember onAdd={async (nome: string, email: string, ruolo: string, permessi: string[]) => {
+      await addTeamMember(nome, email, ruolo, permessi);
+      setView("team");
+    }} onBack={()=>setView("team")} />;
+  }
+
   return <div style={S.container}><BottomNav items={navItems} active={view} onNav={setView} /></div>;
+}
+
+// ==================== FIRMA CORRETTA POSA ====================
+function FirmaCorrettaPosa({ onSave }: any) {
+  const [nonConformita, setNonConformita] = useState("");
+  const [noteFinali, setNoteFinali] = useState("");
+  const [showSign, setShowSign] = useState(false);
+  return (
+    <div>
+      <p style={{fontSize:12,color:"#374151",marginBottom:10}}>Il cliente firma per confermare la corretta posa in opera degli infissi.</p>
+      <div style={{marginBottom:10}}>
+        <label style={{fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:4}}>⚠️ Non conformità (se presenti)</label>
+        <textarea value={nonConformita} onChange={(e: any)=>setNonConformita(e.target.value)} placeholder="Nessuna non conformità rilevata" style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #d1d5db",fontSize:13,resize:"vertical",minHeight:50,outline:"none",boxSizing:"border-box"}} />
+      </div>
+      <div style={{marginBottom:10}}>
+        <label style={{fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:4}}>📝 Note finali</label>
+        <textarea value={noteFinali} onChange={(e: any)=>setNoteFinali(e.target.value)} placeholder="Note sulla posa..." style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #d1d5db",fontSize:13,resize:"vertical",minHeight:50,outline:"none",boxSizing:"border-box"}} />
+      </div>
+      {!showSign ? (
+        <button onClick={()=>setShowSign(true)} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}>✍️ Firma del Cliente</button>
+      ) : (
+        <SignaturePad onSave={(img: string) => { onSave({ firma: img, nonConformita, noteFinali }); setShowSign(false); }} onCancel={() => setShowSign(false)} />
+      )}
+    </div>
+  );
+}
+
+// ==================== TEAM SETUP (create org) ====================
+function TeamSetup({ onCreate, userName }: any) {
+  const [nome, setNome] = useState("");
+  return (
+    <div style={{textAlign:"center",padding:"40px 20px"}}>
+      <div style={{fontSize:56,marginBottom:16}}>🏢</div>
+      <h3 style={{fontSize:20,fontWeight:800,color:"#0f172a",marginBottom:8}}>Crea la tua Organizzazione</h3>
+      <p style={{fontSize:14,color:"#64748b",marginBottom:24}}>Per usare il team, crea prima l'azienda. Potrai invitare dipendenti e assegnare compiti.</p>
+      <div style={{marginBottom:16}}>
+        <input value={nome} onChange={(e: any)=>setNome(e.target.value)} placeholder="Nome Azienda (es. Rossi Serramenti)" style={{width:"100%",padding:"14px 16px",borderRadius:14,border:"2px solid #e2e8f0",fontSize:15,fontWeight:600,outline:"none",boxSizing:"border-box"}} autoFocus />
+      </div>
+      <button onClick={()=>{if(nome.trim())onCreate(nome.trim());}} disabled={!nome.trim()} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:nome.trim()?"linear-gradient(135deg,#6366f1,#a855f7)":"#e2e8f0",color:nome.trim()?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:nome.trim()?"pointer":"default"}}>🚀 Crea Organizzazione</button>
+    </div>
+  );
+}
+
+// ==================== TEAM ADD MEMBER ====================
+function TeamAddMember({ onAdd, onBack }: any) {
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [ruolo, setRuolo] = useState("operatore");
+  const [permessi, setPermessi] = useState<string[]>(["sopralluogo","posa"]);
+  const allPermessi = [
+    { key: "sopralluogo", label: "🔍 Sopralluogo" },
+    { key: "misure", label: "📐 Misure" },
+    { key: "preventivo", label: "💰 Preventivo" },
+    { key: "conferma", label: "✍️ Conferma" },
+    { key: "fattura", label: "🧾 Fattura" },
+    { key: "posa", label: "🔧 Posa" },
+    { key: "riparazione", label: "🛠️ Riparazione" },
+  ];
+  function togglePerm(key: string) {
+    setPermessi(prev => prev.includes(key) ? prev.filter(p=>p!==key) : [...prev, key]);
+  }
+  return (
+    <div style={S.container}>
+      <div style={{...S.secHdr,background:"linear-gradient(135deg,#6366f1,#a855f7)"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>👥 Nuovo Membro</h2></div>
+      <div style={{padding:20}}>
+        <Field label="Nome" value={nome} onChange={setNome} placeholder="Mario Rossi" autoFocus />
+        <Field label="Email" value={email} onChange={setEmail} placeholder="mario@esempio.it" type="email" />
+        <div style={S.fGroup}>
+          <label style={S.fLabel}>Ruolo</label>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setRuolo("operatore")} style={{flex:1,padding:"14px",borderRadius:14,border:ruolo==="operatore"?"3px solid #6366f1":"2px solid #e2e8f0",background:ruolo==="operatore"?"#eff6ff":"#fff",cursor:"pointer",textAlign:"center"}}>
+              <div style={{fontSize:24}}>👷</div>
+              <div style={{fontSize:13,fontWeight:700,color:ruolo==="operatore"?"#4338ca":"#374151",marginTop:4}}>Operatore</div>
+              <div style={{fontSize:10,color:"#94a3b8"}}>Vede solo pratiche assegnate</div>
+            </button>
+            <button onClick={()=>{setRuolo("admin");setPermessi(allPermessi.map(p=>p.key));}} style={{flex:1,padding:"14px",borderRadius:14,border:ruolo==="admin"?"3px solid #f59e0b":"2px solid #e2e8f0",background:ruolo==="admin"?"#fffbeb":"#fff",cursor:"pointer",textAlign:"center"}}>
+              <div style={{fontSize:24}}>👑</div>
+              <div style={{fontSize:13,fontWeight:700,color:ruolo==="admin"?"#92400e":"#374151",marginTop:4}}>Admin</div>
+              <div style={{fontSize:10,color:"#94a3b8"}}>Accesso completo</div>
+            </button>
+          </div>
+        </div>
+        {ruolo === "operatore" && (
+          <div style={S.fGroup}>
+            <label style={S.fLabel}>Cosa può fare?</label>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {allPermessi.map(p => (
+                <button key={p.key} onClick={()=>togglePerm(p.key)} style={{padding:"10px 14px",borderRadius:12,border:permessi.includes(p.key)?"2px solid #6366f1":"2px solid #e2e8f0",background:permessi.includes(p.key)?"#eff6ff":"#fff",color:permessi.includes(p.key)?"#4338ca":"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>{p.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{background:"#f0fdf4",borderRadius:14,padding:14,marginBottom:16,border:"1px solid #86efac"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#166534",marginBottom:4}}>📩 Come invitare</div>
+          <div style={{fontSize:12,color:"#374151"}}>Il membro dovrà registrarsi su FrameFlow con la stessa email <b>{email||"..."}</b>. Appena accede, vedrà le pratiche assegnate.</div>
+        </div>
+        <button onClick={()=>{if(nome.trim()&&email.trim())onAdd(nome.trim(),email.trim(),ruolo,ruolo==="admin"?allPermessi.map(p=>p.key):permessi);}} disabled={!nome.trim()||!email.trim()} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:nome.trim()&&email.trim()?"linear-gradient(135deg,#6366f1,#a855f7)":"#e2e8f0",color:nome.trim()&&email.trim()?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:nome.trim()&&email.trim()?"pointer":"default"}}>✅ Aggiungi al Team</button>
+      </div>
+    </div>
+  );
 }
 
 // ==================== BOTTOM NAV ====================
@@ -2228,7 +2508,7 @@ function SignaturePad({ onSave, onCancel }: any) {
 }
 
 // ==================== PRATICA DETAIL ====================
-function PraticaDetail({ pratica: p, client: c, userId, onBack, onDelete, onAddAction, onToggleTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica }: any) {
+function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, onBack, onDelete, onAddAction, onToggleTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica, onAssign }: any) {
   const sc = STATUS[p.status];
   const totalT = p.actions.reduce((s: number,a: any)=>s+a.tasks.length,0);
   const doneT = p.actions.reduce((s: number,a: any)=>s+a.tasks.filter((t: any)=>t.done).length,0);
@@ -2307,6 +2587,39 @@ function PraticaDetail({ pratica: p, client: c, userId, onBack, onDelete, onAddA
         {p.preventivo && <div style={{...S.dataSummary,borderLeftColor:"#8b5cf6"}}><h4 style={{...S.dataSumTitle,color:"#8b5cf6"}}>💰 Preventivo</h4><p style={S.dataSumLine}>€ {(p.preventivo.totaleFinale||0).toFixed(2)}</p><button onClick={onOpenPrev} style={{...S.openFormBtn,marginTop:6,background:"#f5f3ff",color:"#8b5cf6"}}>Apri →</button></div>}
         {(p.emails||[]).length>0 && <div style={{marginTop:16}}><h3 style={S.sectionTitle}>✉️ Email ({p.emails.length})</h3>{p.emails.map((e: any)=><div key={e.id} style={S.emailCard}><div style={{fontSize:13,fontWeight:600,color:"#0f172a"}}>{e.oggetto}</div><div style={{fontSize:12,color:"#64748b"}}>A: {e.destinatario} · {new Date(e.sentAt).toLocaleString("it-IT")}</div></div>)}</div>}
         <button onClick={onOpenEmail} style={S.sendEmailBtn}>✉️ Invia Email</button>
+
+        {/* ASSEGNA A MEMBRO TEAM */}
+        {teamMembers && teamMembers.length > 0 && isAdmin && (
+          <div style={{marginTop:16,padding:14,background:"#f5f3ff",borderRadius:14,border:"2px solid #c4b5fd"}}>
+            <div style={{fontSize:12,fontWeight:800,color:"#4338ca",textTransform:"uppercase",marginBottom:8}}>👥 Assegna Pratica</div>
+            <select value={p.assegnatoA||""} onChange={(e: any)=>onAssign(e.target.value||null)} style={{width:"100%",padding:"12px 14px",borderRadius:12,border:"2px solid #c4b5fd",fontSize:14,fontWeight:600,background:"#fff",outline:"none"}}>
+              <option value="">— Non assegnata —</option>
+              {teamMembers.map((m: any)=><option key={m.id} value={m.id}>{m.nome} ({m.ruolo})</option>)}
+            </select>
+            {p.assegnatoA && (() => {
+              const member = teamMembers.find((m: any) => m.id === p.assegnatoA);
+              return member ? <div style={{fontSize:12,color:"#6366f1",marginTop:6,fontWeight:600}}>✅ Assegnata a: {member.nome}</div> : null;
+            })()}
+          </div>
+        )}
+
+        {/* FIRMA CORRETTA POSA */}
+        {p.fase === "posa" && (
+          <div style={{marginTop:16,padding:16,background:"linear-gradient(135deg,#ecfdf5,#d1fae5)",borderRadius:16,border:"2px solid #059669"}}>
+            <div style={{fontSize:14,fontWeight:800,color:"#065f46",marginBottom:10}}>✍️ Firma Corretta Posa</div>
+            {p.firmaPosa ? (
+              <div>
+                <div style={{fontSize:13,color:"#059669",fontWeight:700,marginBottom:6}}>✅ Documento firmato dal cliente</div>
+                {p.firmaPosa.firma && <img src={p.firmaPosa.firma} alt="Firma" style={{height:50,borderRadius:8,background:"#fff",padding:4,border:"1px solid #d1d5db"}} />}
+                <div style={{fontSize:11,color:"#64748b",marginTop:4}}>Firmato il: {p.firmaPosa.data ? new Date(p.firmaPosa.data).toLocaleString("it-IT") : "—"}</div>
+                {p.firmaPosa.nonConformita && <div style={{fontSize:12,color:"#dc2626",marginTop:6,fontWeight:600}}>⚠️ Non conformità: {p.firmaPosa.nonConformita}</div>}
+              </div>
+            ) : (
+              <FirmaCorrettaPosa onSave={(data: any) => onUpdatePratica({ firmaPosa: { ...data, data: new Date().toISOString() } })} />
+            )}
+          </div>
+        )}
+
         <div style={{marginTop:16,padding:14,background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0"}}>
           <h4 style={{fontSize:14,fontWeight:700,color:"#0f172a",margin:"0 0 10px"}}>🖨️ Esporta / Stampa</h4>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -2318,6 +2631,61 @@ function PraticaDetail({ pratica: p, client: c, userId, onBack, onDelete, onAddA
             {hasFattura && <button onClick={()=>exportFattura(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}>🧾 Fattura</button>}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== VETRATA DESIGNER ====================
+function VetrataDesigner({ design, onChange }: any) {
+  const d = design || { panels: [{ type: "DX" }] };
+  const panels = d.panels || [{ type: "DX" }];
+  const panelTypes = [
+    { key: "DX", label: "DX", icon: "→", desc: "Apertura destra" },
+    { key: "SX", label: "SX", icon: "←", desc: "Apertura sinistra" },
+    { key: "Fisso", label: "F", icon: "▪", desc: "Fisso" },
+    { key: "Vasistas", label: "V", icon: "↑", desc: "Vasistas" },
+    { key: "A/R", label: "A/R", icon: "↕", desc: "Anta/Ribalta" },
+    { key: "Sopraluce", label: "SL", icon: "△", desc: "Sopraluce" },
+  ];
+  function setPanel(idx: number, type: string) {
+    const np = [...panels]; np[idx] = { ...np[idx], type }; onChange({ ...d, panels: np });
+  }
+  function addPanel() { onChange({ ...d, panels: [...panels, { type: "Fisso" }] }); }
+  function removePanel(idx: number) { if (panels.length > 1) onChange({ ...d, panels: panels.filter((_: any, i: number) => i !== idx) }); }
+  // Visual preview
+  const totalW = panels.length * 70;
+  return (
+    <div style={{marginBottom:12}}>
+      <label style={{fontSize:11,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:8}}>✏️ Schema Vetrata</label>
+      {/* Visual preview */}
+      <div style={{background:"#f8fafc",borderRadius:14,padding:16,border:"1.5px solid #d1d5db",marginBottom:10}}>
+        <div style={{display:"flex",justifyContent:"center",alignItems:"stretch",border:"3px solid #374151",borderRadius:4,minHeight:100,overflow:"hidden",maxWidth:Math.min(totalW, 340),margin:"0 auto"}}>
+          {panels.map((p: any, i: number) => {
+            const t = panelTypes.find(pt => pt.key === p.type) || panelTypes[0];
+            const isLast = i === panels.length - 1;
+            return (
+              <div key={i} style={{flex:1,minWidth:50,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:8,borderRight:isLast?"none":"2px solid #374151",position:"relative",background:p.type==="Fisso"?"#e2e8f0":"#fff",cursor:"pointer"}} onClick={()=>{const types = panelTypes.map(pt=>pt.key);const curIdx = types.indexOf(p.type);setPanel(i, types[(curIdx+1)%types.length]);}}>
+                {/* Arrow/indicator */}
+                <div style={{fontSize:28,fontWeight:900,color:"#374151",lineHeight:1}}>{t.icon}</div>
+                <div style={{fontSize:11,fontWeight:800,color:"#6366f1",marginTop:4}}>{t.label}</div>
+                {panels.length > 1 && <button onClick={(e)=>{e.stopPropagation();removePanel(i);}} style={{position:"absolute",top:2,right:2,width:18,height:18,borderRadius:"50%",background:"#ef4444",border:"none",color:"#fff",fontSize:10,cursor:"pointer",lineHeight:1}}>×</button>}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{textAlign:"center",marginTop:8}}>
+          <button onClick={addPanel} style={{padding:"6px 16px",borderRadius:10,border:"1.5px dashed #6366f1",background:"#eff6ff",color:"#4338ca",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Aggiungi anta</button>
+        </div>
+        <p style={{fontSize:10,color:"#94a3b8",textAlign:"center",marginTop:6}}>Tocca un pannello per cambiare tipo (DX → SX → F → V → A/R → SL)</p>
+      </div>
+      {/* Panel list */}
+      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+        {panels.map((p: any, i: number) => (
+          <div key={i} style={{padding:"4px 10px",borderRadius:8,background:"#eff6ff",fontSize:11,fontWeight:700,color:"#4338ca"}}>
+            {i+1}: {p.type}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -2336,7 +2704,7 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
   const [noteGen, setNoteGen] = useState(m?.noteGen||"");
   const [vani, setVani] = useState(m?.vani||[makeVano()]);
   const coloriPerMat = materialeId && coloriMap[materialeId] ? coloriMap[materialeId] : allColori || [];
-  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",note:"",photos:{},altroColore:false,coloreIntVano:"",coloreEstVano:""}; }
+  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",note:"",photos:{},altroColore:false,coloreIntVano:"",coloreEstVano:"",design:{panels:[{type:"DX"}]}}; }
   function uv(i: number,f: string,v: any) { const n=[...vani]; n[i]={...n[i],[f]:v}; setVani(n); }
   const useTipologie = tipologie?.length > 0 ? tipologie : SISTEMI;
   return (
@@ -2366,6 +2734,8 @@ function MisureForm({ pratica, client, sistemi, tipologie, coloriMap, allColori,
             <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>Tipologia</label><select value={v.sistema||sistema} onChange={(e: any)=>uv(i,"sistema",e.target.value)} style={S.input}><option value="">—</option>{useTipologie.map((s: string)=><option key={s}>{s}</option>)}</select></div>
             <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q.tà" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
             <div style={S.fGroup}><label style={S.fLabel}>Apertura</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{APERTURE.map(a=><button key={a} onClick={()=>uv(i,"apertura",a)} style={{...S.pill,background:v.apertura===a?"#d97706":"#f3f4f6",color:v.apertura===a?"#fff":"#6b7280"}}>{a}</button>)}</div></div>
+            {/* DISEGNO VETRATA */}
+            <VetrataDesigner design={v.design} onChange={(d: any)=>uv(i,"design",d)} />
             {/* FLAG ALTRO COLORE */}
             <div style={{marginBottom:8}}>
               <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,fontWeight:600,color:"#374151"}}>
@@ -2453,6 +2823,10 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
         id: gid(),
         descrizione: `${v.sistema || m.sistema || "Infisso"} ${v.apertura || ""}`.trim(),
         ambiente: v.ambiente || "",
+        tipologia: v.sistema || "",
+        sistema: "",
+        coloreInt: v.altroColore ? (v.coloreIntVano||"") : (m.coloreInt||""),
+        coloreEst: v.altroColore ? (v.coloreEstVano||"") : (m.coloreEst||""),
         tipoPrezzo: "mq",
         tipoPrezzoLabel: "€/mq",
         larghezza: v.l || "",
@@ -2468,7 +2842,8 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
 
   function addProdotto() {
     setProdotti([...prodotti, {
-      id: gid(), descrizione: "", ambiente: "", tipoPrezzo: "pezzo",
+      id: gid(), descrizione: "", ambiente: "", tipologia: "", sistema: "",
+      coloreInt: "", coloreEst: "", tipoPrezzo: "pezzo",
       tipoPrezzoLabel: "€/pezzo", larghezza: "", altezza: "", mq: 0,
       quantita: 1, prezzoUnitario: 0, totale: 0,
     }]);
@@ -2603,6 +2978,18 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
             </div>
             <Field label="Descrizione" value={p.descrizione} onChange={(v: string) => updateProdotto(i, "descrizione", v)} placeholder="es. Finestra 2 ante PVC bianco" />
             <Field label="Ambiente / Posizione" value={p.ambiente} onChange={(v: string) => updateProdotto(i, "ambiente", v)} placeholder="es. Soggiorno, Camera..." />
+            
+            {/* INLINE SISTEMA / COLORE / TIPOLOGIA */}
+            <div style={{background:"#faf5ff",borderRadius:12,padding:10,marginBottom:8,border:"1px solid #e9d5ff"}}>
+              <div style={{display:"flex",gap:8,marginBottom:6}}>
+                <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Sistema</label><select value={p.sistema||""} onChange={(e: any)=>updateProdotto(i,"sistema",e.target.value)} style={{...S.input,fontSize:12,padding:"8px 10px"}}><option value="">—</option>{(userSistemi||[]).map((s: any)=><option key={s.id} value={s.nome}>{s.icon} {s.nome}</option>)}</select></div>
+                <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Tipologia</label><select value={p.tipologia||""} onChange={(e: any)=>updateProdotto(i,"tipologia",e.target.value)} style={{...S.input,fontSize:12,padding:"8px 10px"}}><option value="">—</option>{DEFAULT_TIPOLOGIE.map((t: string)=><option key={t}>{t}</option>)}</select></div>
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Int.</label><input value={p.coloreInt||""} onChange={(e: any)=>updateProdotto(i,"coloreInt",e.target.value)} placeholder="es. Bianco RAL 9010" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
+                <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Est.</label><input value={p.coloreEst||""} onChange={(e: any)=>updateProdotto(i,"coloreEst",e.target.value)} placeholder="es. Grigio RAL 7016" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
+              </div>
+            </div>
             
             {/* Tipo Prezzo */}
             <div style={S.fGroup}>
