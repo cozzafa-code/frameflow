@@ -3572,19 +3572,73 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
           </div>
         </div>
 
-        {/* PRATICA COLLEGATA */}
+        {/* PRATICA COLLEGATA — con storia completa */}
         {p.praticaCollegata && (()=>{
           const linked = (allPratiche||[]).find((pr: any) => pr.id === p.praticaCollegata);
           if (!linked) return null;
           const linkedClient = (allClients||[]).find((cl: any) => cl.id === linked.clientId);
-          return <div onClick={()=>onOpenPratica?.(linked.id)} style={{padding:12,background:"#fef2f2",borderRadius:2,border:"2px solid #fecaca",marginBottom:14,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:18}}>🔗</span>
-            <div style={{flex:1}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#dc2626",textTransform:"uppercase"}}>Collegata a pratica originale</div>
-              <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{linked.numero} — {linkedClient?.nome||"—"}</div>
-              <div style={{fontSize:11,color:"#64748b"}}>{linked.indirizzo||""} · Fase: {linked.fase}</div>
+          const mis = linked.misure;
+          const prev = linked.preventivo;
+          const vani = mis?.vani || [];
+          const posaAction = (linked.actions||[]).find((a: any) => a.type === "posa");
+          const posaDone = posaAction?.tasks?.every((t: any) => t.done);
+          return <div style={{background:"#fef2f2",borderRadius:2,border:"2px solid #fecaca",marginBottom:14,overflow:"hidden"}}>
+            {/* Header cliccabile */}
+            <div onClick={()=>onOpenPratica?.(linked.id)} style={{padding:12,display:"flex",alignItems:"center",gap:10,cursor:"pointer",borderBottom:"1px solid #fecaca"}}>
+              <span style={{fontSize:18}}>🔗</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,fontWeight:800,color:"#dc2626",textTransform:"uppercase"}}>Pratica originale</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{linked.numero} — {linkedClient?.nome||"—"}</div>
+                <div style={{fontSize:11,color:"#64748b"}}>{linked.indirizzo||""} · Creata: {fmtDate(linked.data||"")} · Stato: {linked.status}</div>
+              </div>
+              <span style={{color:"#dc2626",fontWeight:700}}>→</span>
             </div>
-            <span style={{color:"#dc2626",fontWeight:700}}>→</span>
+            {/* Storia / Riepilogo infissi montati */}
+            <div style={{padding:12}}>
+              <div style={{fontSize:11,fontWeight:800,color:"#991b1b",textTransform:"uppercase",marginBottom:8}}>📋 Riepilogo lavori eseguiti</div>
+              
+              {/* Vani / Infissi montati */}
+              {vani.length > 0 ? <div style={{marginBottom:10}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#64748b",marginBottom:4}}>Infissi montati ({vani.length}):</div>
+                {vani.map((v: any, i: number) => (
+                  <div key={i} style={{padding:"6px 10px",background:"#fff",borderRadius:2,border:"1px solid #fecaca",marginBottom:3,fontSize:12}}>
+                    <span style={{fontWeight:700,color:"#0f172a"}}>{v.sistema || "Infisso"}</span>
+                    <span style={{color:"#64748b"}}> — {v.l||0}×{v.h||0}mm</span>
+                    {v.ambiente && <span style={{color:"#94a3b8"}}> · {v.ambiente}</span>}
+                    {v.apertura && <span style={{color:"#94a3b8"}}> · {v.apertura}</span>}
+                    {v.colore && <span style={{color:"#94a3b8"}}> · {v.colore}</span>}
+                    {v.vetro && <span style={{color:"#94a3b8"}}> · {v.vetro}</span>}
+                  </div>
+                ))}
+              </div> : <div style={{fontSize:12,color:"#94a3b8",marginBottom:8}}>Nessuna misura registrata</div>}
+
+              {/* Preventivo */}
+              {prev?.prodotti?.length > 0 && <div style={{marginBottom:10}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#64748b",marginBottom:4}}>Preventivo:</div>
+                {prev.prodotti.slice(0,5).map((pr: any, i: number) => (
+                  <div key={i} style={{fontSize:12,color:"#374151",padding:"3px 0"}}>
+                    • {pr.descrizione||"Prodotto"} {pr.larghezza&&pr.altezza ? `(${pr.larghezza}×${pr.altezza})` : ""} — <span style={{fontWeight:700,color:"#059669"}}>€{parseFloat(pr.totale||0).toFixed(2)}</span> ×{pr.quantita||1}
+                  </div>
+                ))}
+                <div style={{fontSize:13,fontWeight:800,color:"#059669",marginTop:4}}>Totale preventivo: €{(prev.prodotti.reduce((s: number, pr: any) => s + (parseFloat(pr.totale)||0), 0)).toFixed(2)}</div>
+              </div>}
+
+              {/* Posa */}
+              {posaAction && <div style={{marginBottom:6}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#64748b",marginBottom:2}}>Posa:</div>
+                <div style={{fontSize:12,color:posaDone?"#059669":"#d97706",fontWeight:600}}>{posaDone ? "✅ Completata" : "⏳ In corso"}</div>
+              </div>}
+
+              {/* Log / Timeline sintetica */}
+              {(linked.log||[]).length > 0 && <div>
+                <div style={{fontSize:11,fontWeight:700,color:"#64748b",marginBottom:4,marginTop:6}}>Cronologia:</div>
+                {(linked.log||[]).slice(-5).map((l: any, i: number) => (
+                  <div key={i} style={{fontSize:11,color:"#94a3b8",padding:"2px 0"}}>
+                    {new Date(l.ts).toLocaleDateString("it-IT",{day:"2-digit",month:"short"})} — {l.msg}
+                  </div>
+                ))}
+              </div>}
+            </div>
           </div>;
         })()}
 
