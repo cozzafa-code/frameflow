@@ -732,26 +732,24 @@ export default function FrameFlowApp() {
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
-      html, body { overflow-x: hidden !important; width: 100% !important; max-width: 100vw !important; -webkit-text-size-adjust: 100%; }
+      html { overflow-x: hidden !important; }
+      body { overflow-x: hidden !important; overflow-y: auto !important; }
       * { box-sizing: border-box !important; }
       input, select, textarea { max-width: 100% !important; font-size: 16px !important; }
       img { max-width: 100% !important; height: auto !important; }
       table { max-width: 100% !important; }
-      button { max-width: 100%; }
-      @media (max-width: 400px) {
-        body { font-size: 14px; }
-        [style*="padding: 20px"], [style*="padding:20"] { padding: 12px !important; }
-      }
       ${AUTOFLOW_CSS}
     `;
-    // Ensure viewport meta is correct
-    let viewport = document.querySelector('meta[name="viewport"]');
-    if (!viewport) {
-      viewport = document.createElement("meta");
-      viewport.setAttribute("name", "viewport");
-      document.head.appendChild(viewport);
+    // Ensure viewport meta is correct (mobile only)
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      let viewport = document.querySelector('meta[name="viewport"]');
+      if (!viewport) {
+        viewport = document.createElement("meta");
+        viewport.setAttribute("name", "viewport");
+        document.head.appendChild(viewport);
+      }
+      viewport.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
     }
-    viewport.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover");
     document.head.appendChild(style);
     return () => { document.head.removeChild(style); };
   }, []);
