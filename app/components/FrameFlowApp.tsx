@@ -1744,12 +1744,12 @@ export default function FrameFlowApp() {
 
   // ==================== BOTTOM NAV ====================
   const allNavItems = [
-    { key: "dashboard", icon: "H", label: "Home" },
-    { key: "appuntamenti", icon: "📅", label: "Appunt." },
-    { key: "calendario", icon: "A", label: "Agenda" },
-    { key: "pratiche", icon: "P", label: "Pratiche" },
-    { key: "clienti", icon: "C", label: "Clienti" },
-    { key: "team", icon: "T", label: "Team" },
+    { key: "dashboard", icon: "🏠", label: "Home" },
+    { key: "appuntamenti", icon: "📅", label: "App." },
+    { key: "calendario", icon: "📆", label: "Agenda" },
+    { key: "pratiche", icon: "📋", label: "Pratiche" },
+    { key: "clienti", icon: "👤", label: "Clienti" },
+    { key: "team", icon: "👥", label: "Team" },
   ];
   const navItems = allNavItems.filter(n => canSeeNav.includes(n.key));
 
@@ -1852,19 +1852,18 @@ export default function FrameFlowApp() {
     return (
       <div style={S.container}>
         <div style={S.header}>
-          <div>
-            <h1 style={S.logo}>FRAMEFLOW</h1>
+          <div style={{minWidth:0}}>
+            <h1 style={{...S.logo,fontSize:16}}>FRAMEFLOW</h1>
             <p style={S.subtitle}>Gestione Serramenti</p>
           </div>
-          <div style={{display:"flex",gap:4,alignItems:"center"}}>
-            {/* Notification Bell */}
-            <button onClick={()=>setShowNotifPanel(!showNotifPanel)} style={{background:showNotifPanel?"#e07a2f":"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:14,cursor:"pointer",position:"relative"}}>
+          <div style={{display:"flex",gap:3,alignItems:"center",flexShrink:0}}>
+            <button onClick={()=>setShowNotifPanel(!showNotifPanel)} style={{background:showNotifPanel?"#e07a2f":"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"7px 8px",fontSize:14,cursor:"pointer",position:"relative"}}>
               🔔{notifications.filter(n=>!n.letto).length>0 && <span style={{position:"absolute",top:2,right:2,width:8,height:8,borderRadius:"50%",background:"#ef4444"}}/>}
             </button>
-            <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:14,cursor:"pointer"}}>🔍</button>
-            {isAdmin && <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:14,cursor:"pointer"}}>⚙️</button>}
-            {(isAdmin || myPermissions.includes("note")) && <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:14,cursor:"pointer"}}>📝</button>}
-            <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:10,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>ESCI</button>
+            <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"7px 8px",fontSize:14,cursor:"pointer"}}>🔍</button>
+            {isAdmin && <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"7px 8px",fontSize:14,cursor:"pointer"}}>⚙️</button>}
+            {(isAdmin || myPermissions.includes("note")) && <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"7px 8px",fontSize:14,cursor:"pointer"}}>📝</button>}
+            <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"7px 8px",fontSize:9,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>ESCI</button>
           </div>
         </div>
         {/* Floating new button */}
@@ -2437,9 +2436,9 @@ export default function FrameFlowApp() {
           {/* New/Edit Appuntamento Form */}
           {appForm && <div style={{background:"#faf5ff",borderRadius:2,border:"2px solid #7c3aed",padding:16,marginBottom:16}}>
             <h4 style={{fontSize:14,fontWeight:800,color:"#7c3aed",margin:"0 0 12px"}}>{appForm.id ? "Modifica" : "Nuovo"} Appuntamento</h4>
-            <div style={{display:"flex",gap:8,marginBottom:8}}>
-              <div style={{flex:1}}><label style={S.fLabel}>Data</label><input type="date" value={appForm.data} onChange={e=>setAppForm({...appForm,data:e.target.value})} style={S.input} /></div>
-              <div style={{flex:1}}><label style={S.fLabel}>Ora</label><input type="time" value={appForm.ora} onChange={e=>setAppForm({...appForm,ora:e.target.value})} style={S.input} /></div>
+            <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+              <div style={{flex:"1 1 120px",minWidth:0}}><label style={S.fLabel}>Data</label><input type="date" value={appForm.data} onChange={e=>setAppForm({...appForm,data:e.target.value})} style={S.input} /></div>
+              <div style={{flex:"1 1 100px",minWidth:0}}><label style={S.fLabel}>Ora</label><input type="time" value={appForm.ora} onChange={e=>setAppForm({...appForm,ora:e.target.value})} style={S.input} /></div>
             </div>
             <div style={{marginBottom:8}}>
               <label style={S.fLabel}>Tipo</label>
@@ -3465,20 +3464,130 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
   );
 }
 
+// ==================== FIELD NAVIGATOR (MAGIC JOYSTICK) ====================
+function FieldNavigator() {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState<{x:number,y:number}>({x:0,y:0});
+  const dragRef = useRef<{startX:number,startY:number,startPosX:number,startPosY:number,moved:boolean}|null>(null);
+
+  useEffect(() => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) return;
+    
+    const defaultPos = { x: window.innerWidth - 75, y: window.innerHeight * 0.4 };
+    try { const s = localStorage.getItem("ff-nav-pos"); if(s) { const p = JSON.parse(s); defaultPos.x=p.x; defaultPos.y=p.y; } } catch(e){}
+    setPos(defaultPos);
+
+    let hideTimer: any = null;
+    const onFocusIn = (e: any) => {
+      const tag = e.target?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") {
+        clearTimeout(hideTimer);
+        setVisible(true);
+      }
+    };
+    const onFocusOut = () => {
+      hideTimer = setTimeout(() => setVisible(false), 300);
+    };
+    
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => { document.removeEventListener("focusin", onFocusIn); document.removeEventListener("focusout", onFocusOut); clearTimeout(hideTimer); };
+  }, []);
+
+  const getAllFields = (): HTMLElement[] => {
+    return Array.from(document.querySelectorAll("input:not([type=hidden]):not([type=file]):not([type=checkbox]), textarea, select")).filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && !(el as HTMLInputElement).disabled;
+    }) as HTMLElement[];
+  };
+
+  const nav = (dir: number) => {
+    const fields = getAllFields();
+    const cur = document.activeElement as HTMLElement;
+    let idx = fields.indexOf(cur);
+    if (idx === -1) idx = 0; else idx += dir;
+    idx = Math.max(0, Math.min(fields.length - 1, idx));
+    fields[idx]?.focus();
+    fields[idx]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const dismiss = () => {
+    (document.activeElement as HTMLElement)?.blur();
+    setVisible(false);
+  };
+
+  // Drag the whole pad
+  const onDragStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    dragRef.current = { startX: t.clientX, startY: t.clientY, startPosX: pos.x, startPosY: pos.y, moved: false };
+  };
+  const onDragMove = (e: React.TouchEvent) => {
+    if (!dragRef.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - dragRef.current.startX;
+    const dy = t.clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragRef.current.moved = true;
+    if (!dragRef.current.moved) return;
+    e.preventDefault();
+    setPos({
+      x: Math.max(0, Math.min(window.innerWidth - 140, dragRef.current.startPosX + dx)),
+      y: Math.max(40, Math.min(window.innerHeight - 140, dragRef.current.startPosY + dy))
+    });
+  };
+  const onDragEnd = () => {
+    if (dragRef.current?.moved) {
+      try { localStorage.setItem("ff-nav-pos", JSON.stringify(pos)); } catch(e) {}
+    }
+    dragRef.current = null;
+  };
+
+  if (!visible) return null;
+
+  const btn = (icon: string, action: ()=>void, extra?: any): any => (
+    <button onClick={(e)=>{e.preventDefault();e.stopPropagation();action();}} style={{
+      width:44,height:44,borderRadius:"50%",border:"none",
+      background:"rgba(26,26,46,0.88)",color:"#fff",fontSize:18,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      cursor:"pointer",boxShadow:"0 2px 10px rgba(0,0,0,0.35)",
+      WebkitTapHighlightColor:"transparent",touchAction:"manipulation",
+      ...extra
+    }}>{icon}</button>
+  );
+
+  return (
+    <div style={{position:"fixed",zIndex:9999,left:pos.x,top:pos.y,touchAction:"none"}}
+      onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd}>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+        {btn("▲",()=>nav(-1))}
+        <div style={{display:"flex",gap:3}}>
+          {btn("◀",()=>nav(-1))}
+          {btn("✓",dismiss,{background:"#e07a2f",fontSize:14,fontWeight:900})}
+          {btn("▶",()=>nav(1))}
+        </div>
+        {btn("▼",()=>nav(1))}
+      </div>
+    </div>
+  );
+}
+
 function BottomNav({ items, active, onNav }: any) {
   return (
+    <>
+    <FieldNavigator />
     <div style={S.bottomNav}>
       {items.map((it: any) => {
         const isActive = active===it.key;
         const color = isActive ? (THEMES[typeof window!=="undefined"?localStorage.getItem("ff-theme")||"classic":"classic"]||THEMES.classic).primary : "#7a8194";
         return (
         <button key={it.key} onClick={()=>onNav(it.key)} style={{...S.navItem,color}}>
-          <span style={{width:28,height:28,borderRadius:2,background:isActive?color+"18":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,fontFamily:"'DM Sans',system-ui,sans-serif"}}>{it.icon}</span>
-          <span style={{fontSize:9,fontWeight:isActive?700:500,letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:"'DM Sans',system-ui,sans-serif"}}>{it.label}</span>
+          <span style={{fontSize:18,lineHeight:"22px"}}>{it.icon}</span>
+          <span style={{fontSize:8,fontWeight:isActive?700:500,letterSpacing:"0.3px",textTransform:"uppercase",fontFamily:"'DM Sans',system-ui,sans-serif",whiteSpace:"nowrap"}}>{it.label}</span>
         </button>
         );
       })}
     </div>
+    </>
   );
 }
 
@@ -4870,8 +4979,8 @@ function getThemeStyles(themeKey: string): Record<string, React.CSSProperties> {
   emailDashCard:{background:cardBg,borderRadius:2,padding:"10px 16px",border:`1px solid ${borderColor}`,marginBottom:6,boxShadow:t.cardShadow},
   noteCard:{display:"block",width:"100%",textAlign:"left",borderRadius:2,padding:"12px 16px",border:`1px solid ${borderColor}`,marginBottom:8,cursor:"pointer",boxShadow:t.cardShadow},
   addNoteBtn:{width:34,height:34,borderRadius:2,background:t.primary,color:"#fff",border:"none",fontSize:18,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"},
-  bottomNav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:540,display:"flex",background:isDark?"#1c1f26":"#fff",borderTop:`2px solid ${t.primary}`,padding:"8px 0 calc(6px + env(safe-area-inset-bottom, 0px))",zIndex:100},
-  navItem:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"none",border:"none",cursor:"pointer",padding:"4px 0",transition:"all 0.15s"},
+  bottomNav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:540,display:"flex",background:isDark?"#1c1f26":"#fff",borderTop:`2px solid ${t.primary}`,padding:"6px 0 calc(4px + env(safe-area-inset-bottom, 0px))",zIndex:100,overflow:"hidden" as any},
+  navItem:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:1,background:"none",border:"none",cursor:"pointer",padding:"2px 0",transition:"all 0.15s",minWidth:0,overflow:"hidden" as any},
   stats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,padding:"14px 16px 10px"},
   statCard:{display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:cardBg,borderRadius:2,padding:"12px 4px",border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow},
   statNum:{fontSize:22,fontWeight:800,color:textPrimary,fontFamily:mono},
