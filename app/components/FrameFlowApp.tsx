@@ -1322,20 +1322,71 @@ export default function FrameFlowApp() {
       const pratica = db.pratiche.find((p: any) => p.id === praticaId);
       const client = db.clients.find((c: any) => c.id === pratica?.clientId);
       const myName = myMember?.nome || user?.email?.split("@")[0] || "Admin";
+      
+      // Build linked pratica history for repairs
+      let linkedInfo = "";
+      if (pratica?.praticaCollegata) {
+        const linked = db.pratiche.find((p: any) => p.id === pratica.praticaCollegata);
+        if (linked) {
+          const linkedClient = db.clients.find((c: any) => c.id === linked.clientId);
+          linkedInfo += `\n\n--- PRATICA ORIGINALE: ${linked.numero} ---`;
+          linkedInfo += `\nCliente: ${linkedClient?.nome || "—"}`;
+          linkedInfo += `\nIndirizzo: ${linked.indirizzo || "—"}`;
+          linkedInfo += `\nData pratica originale: ${fmtDate(linked.data||"")}`;
+          linkedInfo += `\nStato: ${linked.status} — Fase: ${linked.fase}`;
+          // Infissi montati
+          const vani = linked.misure?.vani || [];
+          if (vani.length > 0) {
+            linkedInfo += `\n\nINFISSI MONTATI (${vani.length}):`;
+            vani.forEach((v: any, i: number) => {
+              linkedInfo += `\n  ${i+1}. ${v.sistema||"Infisso"} ${v.l||0}×${v.h||0}mm`;
+              if (v.ambiente) linkedInfo += ` — ${v.ambiente}`;
+              if (v.apertura) linkedInfo += ` (${v.apertura})`;
+              if (v.colore) linkedInfo += ` — Colore: ${v.colore}`;
+              if (v.vetro) linkedInfo += ` — Vetro: ${v.vetro}`;
+            });
+          }
+          // Preventivo
+          const prev = linked.preventivo;
+          if (prev?.prodotti?.length > 0) {
+            const totale = prev.prodotti.reduce((s: number, pr: any) => s + (parseFloat(pr.totale)||0), 0);
+            linkedInfo += `\n\nPREVENTIVO: €${totale.toFixed(2)}`;
+            prev.prodotti.forEach((pr: any, i: number) => {
+              linkedInfo += `\n  ${i+1}. ${pr.descrizione||"Prodotto"} ${pr.larghezza&&pr.altezza?`(${pr.larghezza}×${pr.altezza})`:""}  €${parseFloat(pr.totale||0).toFixed(2)} ×${pr.quantita||1}`;
+            });
+          }
+          // Log
+          const logs = linked.log || [];
+          if (logs.length > 0) {
+            linkedInfo += `\n\nCRONOLOGIA:`;
+            logs.slice(-5).forEach((l: any) => {
+              linkedInfo += `\n  ${new Date(l.ts).toLocaleDateString("it-IT")} — ${l.msg}`;
+            });
+          }
+          linkedInfo += `\n---`;
+        }
+      }
+
       if (member?.user_id) {
+        const notifMsg = pratica?.praticaCollegata 
+          ? `${myName} ti ha assegnato la riparazione ${pratica?.numero || ""} — ${client?.nome || "Cliente"} (${pratica?.indirizzo || ""}). Collegata a pratica originale, vedi dettagli in app.`
+          : `${myName} ti ha assegnato la pratica ${pratica?.numero || ""} — ${client?.nome || "Cliente"} (${pratica?.indirizzo || ""})`;
         await addNotification(
           member.user_id,
           "assegnazione",
-          `Pratica assegnata a te`,
-          `${myName} ti ha assegnato la pratica ${pratica?.numero || ""} — ${client?.nome || "Cliente"} (${pratica?.indirizzo || ""})`,
+          pratica?.praticaCollegata ? `🔧 Riparazione assegnata` : `Pratica assegnata a te`,
+          notifMsg,
           praticaId
         );
         // Browser notification
-        sendNotification("Pratica assegnata", `${pratica?.numero} - ${client?.nome||""}`);
+        sendNotification(pratica?.praticaCollegata ? "Riparazione assegnata" : "Pratica assegnata", `${pratica?.numero} - ${client?.nome||""}`);
         // Email notification (opens mailto)
         if (member.email) {
-          const subject = `FrameFlow: Pratica ${pratica?.numero || ""} assegnata a te`;
-          const body = `Ciao ${member.nome},\n\n${myName} ti ha assegnato la pratica ${pratica?.numero || ""}.\n\nCliente: ${client?.nome || "—"}\nIndirizzo: ${pratica?.indirizzo || "—"}\nData: ${fmtDate(pratica?.data||"")} ore ${pratica?.ora||""}\n\nApri FrameFlow per i dettagli.\n\nFrameFlow`;
+          const isRepair = !!pratica?.praticaCollegata;
+          const subject = isRepair 
+            ? `FrameFlow: 🔧 Riparazione ${pratica?.numero || ""} — ${client?.nome || ""}`
+            : `FrameFlow: Pratica ${pratica?.numero || ""} assegnata a te`;
+          const body = `Ciao ${member.nome},\n\n${myName} ti ha assegnato ${isRepair?"la riparazione":"la pratica"} ${pratica?.numero || ""}.\n\nCliente: ${client?.nome || "—"}\nIndirizzo: ${pratica?.indirizzo || "—"}\nData: ${fmtDate(pratica?.data||"")} ore ${pratica?.ora||""}\nNote: ${pratica?.note || "—"}${linkedInfo}\n\nApri FrameFlow per tutti i dettagli.\n\nFrameFlow`;
           window.open(`mailto:${member.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
         }
       }
@@ -1778,18 +1829,21 @@ export default function FrameFlowApp() {
             <h1 style={S.logo}>FRAMEFLOW</h1>
             <p style={S.subtitle}>Gestione Serramenti</p>
           </div>
-          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-            <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}} title="Esci">ESCI</button>
-            {isAdmin && <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}} title="Impostazioni">SET</button>}
-            {(isAdmin || myPermissions.includes("note")) && <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}} title="Note">NOTE</button>}
-            <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>CERCA</button>
+          <div style={{display:"flex",gap:4,alignItems:"center"}}>
             {/* Notification Bell */}
-            <button onClick={()=>setShowNotifPanel(!showNotifPanel)} style={{background:showNotifPanel?"#e07a2f":"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:14,cursor:"pointer",position:"relative"}}>
+            <button onClick={()=>setShowNotifPanel(!showNotifPanel)} style={{background:showNotifPanel?"#e07a2f":"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:14,cursor:"pointer",position:"relative"}}>
               🔔{notifications.filter(n=>!n.letto).length>0 && <span style={{position:"absolute",top:2,right:2,width:8,height:8,borderRadius:"50%",background:"#ef4444"}}/>}
             </button>
-            {isAdmin && <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ NUOVA</button>}
+            <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:14,cursor:"pointer"}}>🔍</button>
+            {isAdmin && <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:14,cursor:"pointer"}}>⚙️</button>}
+            {(isAdmin || myPermissions.includes("note")) && <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:14,cursor:"pointer"}}>📝</button>}
+            <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 10px",fontSize:10,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>ESCI</button>
           </div>
         </div>
+        {/* Floating new button */}
+        {isAdmin && <div style={{padding:"0 16px"}}>
+          <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#e07a2f",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",letterSpacing:"1px",textTransform:"uppercase",fontFamily:"'JetBrains Mono','SF Mono',monospace",marginTop:12}}>+ NUOVA PRATICA</button>
+        </div>}
 
         <div style={{padding:"16px 16px 0"}}>
           {/* Notification Panel */}
