@@ -3466,33 +3466,18 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
 
 // ==================== FIELD NAVIGATOR (MAGIC JOYSTICK) ====================
 function FieldNavigator() {
-  const [visible, setVisible] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [pos, setPos] = useState<{x:number,y:number}>({x:0,y:0});
   const dragRef = useRef<{startX:number,startY:number,startPosX:number,startPosY:number,moved:boolean}|null>(null);
 
   useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (!isMobile) return;
-    
-    const defaultPos = { x: window.innerWidth - 75, y: window.innerHeight * 0.4 };
+    const mobile = window.innerWidth <= 640 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    setIsMobile(mobile);
+    if (!mobile) return;
+    const defaultPos = { x: window.innerWidth - 65, y: window.innerHeight * 0.45 };
     try { const s = localStorage.getItem("ff-nav-pos"); if(s) { const p = JSON.parse(s); defaultPos.x=p.x; defaultPos.y=p.y; } } catch(e){}
     setPos(defaultPos);
-
-    let hideTimer: any = null;
-    const onFocusIn = (e: any) => {
-      const tag = e.target?.tagName?.toLowerCase();
-      if (tag === "input" || tag === "textarea" || tag === "select") {
-        clearTimeout(hideTimer);
-        setVisible(true);
-      }
-    };
-    const onFocusOut = () => {
-      hideTimer = setTimeout(() => setVisible(false), 300);
-    };
-    
-    document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
-    return () => { document.removeEventListener("focusin", onFocusIn); document.removeEventListener("focusout", onFocusOut); clearTimeout(hideTimer); };
   }, []);
 
   const getAllFields = (): HTMLElement[] => {
@@ -3506,7 +3491,8 @@ function FieldNavigator() {
     const fields = getAllFields();
     const cur = document.activeElement as HTMLElement;
     let idx = fields.indexOf(cur);
-    if (idx === -1) idx = 0; else idx += dir;
+    if (idx === -1) idx = dir > 0 ? 0 : fields.length - 1;
+    else idx += dir;
     idx = Math.max(0, Math.min(fields.length - 1, idx));
     fields[idx]?.focus();
     fields[idx]?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -3514,10 +3500,9 @@ function FieldNavigator() {
 
   const dismiss = () => {
     (document.activeElement as HTMLElement)?.blur();
-    setVisible(false);
+    setOpen(false);
   };
 
-  // Drag the whole pad
   const onDragStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
     dragRef.current = { startX: t.clientX, startY: t.clientY, startPosX: pos.x, startPosY: pos.y, moved: false };
@@ -3527,12 +3512,12 @@ function FieldNavigator() {
     const t = e.touches[0];
     const dx = t.clientX - dragRef.current.startX;
     const dy = t.clientY - dragRef.current.startY;
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragRef.current.moved = true;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) dragRef.current.moved = true;
     if (!dragRef.current.moved) return;
     e.preventDefault();
     setPos({
-      x: Math.max(0, Math.min(window.innerWidth - 140, dragRef.current.startPosX + dx)),
-      y: Math.max(40, Math.min(window.innerHeight - 140, dragRef.current.startPosY + dy))
+      x: Math.max(0, Math.min(window.innerWidth - 60, dragRef.current.startPosX + dx)),
+      y: Math.max(40, Math.min(window.innerHeight - 100, dragRef.current.startPosY + dy))
     });
   };
   const onDragEnd = () => {
@@ -3542,30 +3527,43 @@ function FieldNavigator() {
     dragRef.current = null;
   };
 
-  if (!visible) return null;
+  if (!isMobile) return null;
 
-  const btn = (icon: string, action: ()=>void, extra?: any): any => (
-    <button onClick={(e)=>{e.preventDefault();e.stopPropagation();action();}} style={{
-      width:44,height:44,borderRadius:"50%",border:"none",
-      background:"rgba(26,26,46,0.88)",color:"#fff",fontSize:18,
-      display:"flex",alignItems:"center",justifyContent:"center",
-      cursor:"pointer",boxShadow:"0 2px 10px rgba(0,0,0,0.35)",
-      WebkitTapHighlightColor:"transparent",touchAction:"manipulation",
-      ...extra
-    }}>{icon}</button>
-  );
+  const btnS: any = {
+    width:40,height:40,borderRadius:"50%",border:"none",
+    background:"rgba(26,26,46,0.85)",color:"#fff",fontSize:16,
+    display:"flex",alignItems:"center",justifyContent:"center",
+    cursor:"pointer",boxShadow:"0 2px 10px rgba(0,0,0,0.35)",
+    WebkitTapHighlightColor:"transparent"
+  };
 
+  // Collapsed: just a small floating button
+  if (!open) {
+    return (
+      <div style={{position:"fixed",zIndex:9999,left:pos.x,top:pos.y,touchAction:"none"}}
+        onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd}>
+        <button onClick={()=>{ if(!dragRef.current?.moved) setOpen(true); }} style={{
+          width:48,height:48,borderRadius:"50%",border:"2px solid #e07a2f",
+          background:"rgba(26,26,46,0.9)",color:"#e07a2f",fontSize:20,
+          display:"flex",alignItems:"center",justifyContent:"center",
+          cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.4)"
+        }}>⇥</button>
+      </div>
+    );
+  }
+
+  // Expanded: full D-pad
   return (
-    <div style={{position:"fixed",zIndex:9999,left:pos.x,top:pos.y,touchAction:"none"}}
+    <div style={{position:"fixed",zIndex:9999,left:pos.x - 50,top:pos.y - 50,touchAction:"none"}}
       onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd}>
-      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-        {btn("▲",()=>nav(-1))}
-        <div style={{display:"flex",gap:3}}>
-          {btn("◀",()=>nav(-1))}
-          {btn("✓",dismiss,{background:"#e07a2f",fontSize:14,fontWeight:900})}
-          {btn("▶",()=>nav(1))}
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"rgba(0,0,0,0.15)",borderRadius:60,padding:6}}>
+        <button onClick={()=>nav(-1)} style={btnS}>▲</button>
+        <div style={{display:"flex",gap:2}}>
+          <button onClick={()=>nav(-1)} style={btnS}>◀</button>
+          <button onClick={dismiss} style={{...btnS,background:"#e07a2f",fontSize:12,fontWeight:900}}>✓</button>
+          <button onClick={()=>nav(1)} style={btnS}>▶</button>
         </div>
-        {btn("▼",()=>nav(1))}
+        <button onClick={()=>nav(1)} style={btnS}>▼</button>
       </div>
     </div>
   );
