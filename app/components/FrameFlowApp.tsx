@@ -459,6 +459,66 @@ function exportFattura(pratica: any, client: any) {
   printHTML(`Fattura ${fatt.numero} - ${client?.nome}`, content);
 }
 
+function exportStampaCantiere(pratica: any, client: any) {
+  const m = pratica?.misure;
+  const prev = pratica?.preventivo;
+  const vaniHTML = (m?.vani||[]).map((v: any, i: number) => `
+    <div style="border:2px solid #000;margin-bottom:8px;page-break-inside:avoid">
+      <div style="background:#000;color:#fff;padding:6px 10px;font-weight:700;font-size:14px;font-family:monospace">VANO ${i+1} ${v.ambiente?("— "+v.ambiente):""}</div>
+      <div style="padding:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+        <div><span style="font-size:10px;color:#666">L</span><br/><strong style="font-size:16px">${v.l||"—"}</strong></div>
+        <div><span style="font-size:10px;color:#666">H</span><br/><strong style="font-size:16px">${v.h||"—"}</strong></div>
+        <div><span style="font-size:10px;color:#666">Q.tà</span><br/><strong style="font-size:16px">${v.q||"1"}</strong></div>
+        <div><span style="font-size:10px;color:#666">APERTURA</span><br/><strong>${v.apertura||"—"}</strong></div>
+        <div><span style="font-size:10px;color:#666">SISTEMA</span><br/><strong>${v.sistema||m?.sistema||"—"}</strong></div>
+        <div><span style="font-size:10px;color:#666">VETRO</span><br/><strong>${v.vetro||m?.vetro||"—"}</strong></div>
+      </div>
+      ${v.note?`<div style="padding:4px 8px;background:#fff3cd;font-size:12px;border-top:1px solid #ddd">${v.note}</div>`:""}
+      ${v.freehandData?`<div style="text-align:center;padding:4px"><img src="${v.freehandData}" style="max-width:100%;max-height:150px" /></div>`:""}
+      ${v.lamieraData?`<div style="text-align:center;padding:4px"><img src="${v.lamieraData}" style="max-width:100%;max-height:150px" /></div>`:""}
+    </div>
+  `).join("");
+
+  const prodottiHTML = (prev?.prodotti||[]).map((p: any, i: number) => `
+    <tr><td style="border:1px solid #ddd;padding:4px;font-weight:700">${i+1}</td><td style="border:1px solid #ddd;padding:4px">${p.descrizione||"—"}</td><td style="border:1px solid #ddd;padding:4px;text-align:center">${p.quantita||1}</td></tr>
+  `).join("");
+
+  const content = `
+    <div style="border-bottom:4px solid #000;padding-bottom:8px;margin-bottom:12px;display:flex;justify-content:space-between">
+      <div>
+        <div style="font-size:20px;font-weight:900;font-family:monospace;letter-spacing:2px">SCHEDA CANTIERE</div>
+        <div style="font-size:14px;font-weight:700;margin-top:2px">${pratica?.numero||""}</div>
+      </div>
+      <div style="text-align:right;font-size:12px">
+        <div style="font-weight:700">${new Date().toLocaleDateString("it-IT")}</div>
+        <div>Ore: ${pratica?.ora||"—"}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:12px;font-size:13px">
+      <div><strong>CLIENTE:</strong> ${client?.nome||"—"}</div>
+      <div><strong>TEL:</strong> ${client?.telefono||"—"}</div>
+      <div><strong>INDIRIZZO:</strong> ${pratica?.indirizzo||m?.indirizzo||"—"}</div>
+      <div><strong>CANTIERE:</strong> ${m?.cantiere||"—"}</div>
+      <div><strong>PIANO:</strong> ${m?.piano||"—"}</div>
+      <div><strong>MEZZI SALITA:</strong> ${m?.mezziSalita||"—"}</div>
+      <div><strong>COLORE INT:</strong> ${m?.coloreInt||"—"}</div>
+      <div><strong>COLORE EST:</strong> ${m?.coloreEst||"—"}</div>
+      <div><strong>SISTEMA:</strong> ${m?.sistema||"—"}</div>
+      <div><strong>VETRO:</strong> ${m?.vetro||"—"}</div>
+    </div>
+    ${(m?.vani||[]).length>0?`<h3 style="font-size:14px;font-weight:900;margin:12px 0 8px;font-family:monospace;border-bottom:2px solid #000;padding-bottom:4px">VANI (${m.vani.length})</h3>${vaniHTML}`:""}
+    ${(prev?.prodotti||[]).length>0?`<h3 style="font-size:14px;font-weight:900;margin:12px 0 8px;font-family:monospace;border-bottom:2px solid #000;padding-bottom:4px">PRODOTTI</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="border:1px solid #ddd;padding:4px;background:#f0f0f0">#</th><th style="border:1px solid #ddd;padding:4px;background:#f0f0f0">Descrizione</th><th style="border:1px solid #ddd;padding:4px;background:#f0f0f0">Q.tà</th></tr></thead><tbody>${prodottiHTML}</tbody></table>`:""}
+    ${m?.noteGen?`<div style="margin-top:12px;padding:8px;background:#fff3cd;border:2px solid #000;font-size:13px"><strong>NOTE:</strong> ${m.noteGen}</div>`:""}
+    <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;font-size:11px;color:#666">
+      <div style="border-top:1px solid #000;padding-top:4px;text-align:center">Firma Posatore</div>
+      <div style="border-top:1px solid #000;padding-top:4px;text-align:center">Firma Cliente</div>
+      <div style="border-top:1px solid #000;padding-top:4px;text-align:center">Note Cantiere</div>
+    </div>
+  `;
+  printHTML(`Cantiere ${pratica?.numero} - ${client?.nome}`, content);
+}
+
 function daysFromNow(d: string) {
   const now = new Date(today()+"T00:00:00");
   const target = new Date(d+"T00:00:00");
@@ -493,10 +553,10 @@ function clientToDb(c: any, userId: string): any {
 }
 function dbToPratica(row: any): any {
   const photos = row.photos || {};
-  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], fotoPosaVani: photos.posaVani||{}, messaggi: row.actions?.__messaggi||photos.messaggi||[], assegnatoA: row.assegnato_a||null, orgId: row.org_id||null, firmaPosa: row.misure?.firmaPosa||photos.firmaPosa||null, createdAt: row.created_at };
+  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], fotoPosaVani: photos.posaVani||{}, messaggi: row.actions?.__messaggi||photos.messaggi||[], assegnatoA: row.assegnato_a||null, orgId: row.org_id||null, firmaPosa: row.misure?.firmaPosa||photos.firmaPosa||null, createdAt: row.created_at, log: photos._log||row.log||[], completedAt: photos._completedAt||row.completed_at||null };
 }
 function praticaToDb(p: any, userId: string): any {
-  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data??"", ora: p.ora??"", indirizzo: p.indirizzo??"", tipo: p.tipo??"nuovo_infisso", fase: p.fase??"sopralluogo", status: p.status??"da_fare", note: p.note??"", actions: p.actions??[], misure: p.misure??null, riparazione: p.riparazione??null, preventivo: p.preventivo??null, conferma_ordine: p.confermaOrdine??null, fattura: p.fattura??null, emails: p.emails??[], photos: { sopralluogo: p.fotoSopralluogo??[], posaInizio: p.fotoPosaInizio??[], posaFine: p.fotoPosaFine??[], posaVani: p.fotoPosaVani??{}, firmaPosa: p.firmaPosa??null, messaggi: p.messaggi??[] }, assegnato_a: p.assegnatoA??null, org_id: p.orgId??null };
+  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data??"", ora: p.ora??"", indirizzo: p.indirizzo??"", tipo: p.tipo??"nuovo_infisso", fase: p.fase??"sopralluogo", status: p.status??"da_fare", note: p.note??"", actions: p.actions??[], misure: p.misure??null, riparazione: p.riparazione??null, preventivo: p.preventivo??null, conferma_ordine: p.confermaOrdine??null, fattura: p.fattura??null, emails: p.emails??[], photos: { sopralluogo: p.fotoSopralluogo??[], posaInizio: p.fotoPosaInizio??[], posaFine: p.fotoPosaFine??[], posaVani: p.fotoPosaVani??{}, firmaPosa: p.firmaPosa??null, messaggi: p.messaggi??[], _log: p.log??[], _completedAt: p.completedAt??null }, assegnato_a: p.assegnatoA??null, org_id: p.orgId??null };
 }
 function dbToNote(row: any): any {
   return { id: row.id, testo: row.testo, colore: row.colore, praticaId: row.pratica_id, updatedAt: row.updated_at, createdAt: row.created_at };
@@ -612,6 +672,8 @@ export default function FrameFlowApp() {
   const [selPratica, setSelPratica] = useState<string|null>(null);
   const [selClient, setSelClient] = useState<string|null>(null);
   const [filter, setFilter] = useState("tutti");
+  const [filterFase, setFilterFase] = useState("tutte");
+  const [filterTipo, setFilterTipo] = useState("tutti");
   const [search, setSearch] = useState("");
   const [calMonth, setCalMonth] = useState(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
   const [globalSearch, setGlobalSearch] = useState("");
@@ -784,6 +846,7 @@ export default function FrameFlowApp() {
       status: "da_fare", actions: [sopralluogoAction], misure: null, riparazione: null, preventivo: null,
       confermaOrdine: null, fattura: null,
       emails: [], orgId: org?.id||null, createdAt: new Date().toISOString(),
+      log: [{ ts: new Date().toISOString(), msg: `Pratica creata (${tipo})`, by: user?.email || "system" }],
     };
     setDb((prev: any) => {
       const next = {...prev, pratiche: [...prev.pratiche, p], nextSeq: prev.nextSeq+1};
@@ -843,6 +906,73 @@ export default function FrameFlowApp() {
     });
     if (user) { supabase.from("pratiche").delete().eq("id", id).then(({error}) => { if(error) console.error("deletePratica:", error); }); }
     if (selPratica===id) { setSelPratica(null); setView("dashboard"); }
+  }
+
+  function duplicaPratica(id: string) {
+    const orig = getPratica(id);
+    if (!orig) return;
+    const seq = db.nextSeq || (db.pratiche.length + 1);
+    const dup: any = {
+      ...JSON.parse(JSON.stringify(orig)),
+      id: gid(),
+      numero: `FF-${String(seq).padStart(4,"0")}`,
+      status: "da_fare",
+      fase: orig.tipo === "riparazione" ? "sopralluogo" : "sopralluogo",
+      createdAt: new Date().toISOString(),
+      data: today(),
+      actions: [],
+      confermaOrdine: null,
+      fattura: null,
+      emails: [],
+      log: [{ ts: new Date().toISOString(), msg: `Duplicata da ${orig.numero}`, by: user?.email || "system" }],
+    };
+    // Keep misure and preventivo as reference, clear signatures
+    if (dup.confermaOrdine) delete dup.confermaOrdine;
+    setDb((prev: any) => {
+      const next = {...prev, pratiche: [...prev.pratiche, dup], nextSeq: seq + 1};
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
+    if (user) {
+      const row = praticaToDb(dup, user.id);
+      supabase.from("pratiche").insert(row).then(({error}) => { if(error) console.error("duplicaPratica:", error); });
+    }
+    setSelPratica(dup.id); setView("pratica");
+  }
+
+  function logActivity(praticaId: string, msg: string) {
+    const entry = { ts: new Date().toISOString(), msg, by: user?.email || "system" };
+    updatePratica(praticaId, { log: [...(getPratica(praticaId)?.log || []), entry] });
+  }
+
+  function exportBackup() {
+    const data = { clients: db.clients, pratiche: db.pratiche, notes: db.notes || [], settings: userSettings, exportedAt: new Date().toISOString(), version: "frameflow-v4" };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `frameflow-backup-${today()}.json`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importBackup(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (!data.clients || !data.pratiche) { alert("File non valido"); return; }
+        if (!confirm(`Importare ${data.clients.length} clienti e ${data.pratiche.length} pratiche? I dati attuali verranno SOSTITUITI.`)) return;
+        const newDb = { clients: data.clients, pratiche: data.pratiche, notes: data.notes || [], nextSeq: Math.max(...data.pratiche.map((p: any) => parseInt(p.numero?.replace("FF-","")||"0")), 0) + 1, settings: db.settings };
+        setDb(newDb);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(newDb)); } catch(e2) {}
+        if (data.settings) { saveUserSettingsToDb(data.settings); }
+        // Re-save all to Supabase
+        if (user) {
+          data.clients.forEach((c: any) => { supabase.from("clients").upsert({ ...c, user_id: user.id }).then(() => {}); });
+          data.pratiche.forEach((p: any) => { supabase.from("pratiche").upsert(praticaToDb(p, user.id)).then(() => {}); });
+        }
+        alert(`Importati: ${data.clients.length} clienti, ${data.pratiche.length} pratiche`);
+      } catch(err) { alert("Errore nel file: " + err); }
+    };
+    reader.readAsText(file);
   }
 
   function addAction(praticaId: string, actionKey: string) {
@@ -926,21 +1056,25 @@ export default function FrameFlowApp() {
 
   function saveMisure(praticaId: string, misureData: any) {
     updatePratica(praticaId, { misure: misureData });
+    logActivity(praticaId, `Misure salvate (${(misureData.vani||[]).length} vani)`);
     setMisureEdit(null); setSelPratica(praticaId); setView("pratica");
   }
 
   function saveRiparazione(praticaId: string, ripData: any) {
     updatePratica(praticaId, { riparazione: ripData });
+    logActivity(praticaId, `Riparazione salvata: ${ripData.problema||""}`);
     setRipEdit(null); setSelPratica(praticaId); setView("pratica");
   }
 
   function savePreventivo(praticaId: string, prevData: any) {
     updatePratica(praticaId, { preventivo: prevData });
+    logActivity(praticaId, `Preventivo ${prevData.totaleFinale ? "salvato (€" + prevData.totaleFinale.toFixed(2) + ")" : "aggiornato"}`);
     setPrevEdit(null); setSelPratica(praticaId); setView("pratica");
   }
 
   function confirmOrder(praticaId: string, firmaImg: string, note: string) {
     updatePratica(praticaId, { confermaOrdine: { firmata: true, firmaImg, dataConferma: new Date().toISOString(), note } });
+    logActivity(praticaId, "Ordine confermato con firma");
   }
 
   function generateFattura(praticaId: string) {
@@ -1115,6 +1249,41 @@ export default function FrameFlowApp() {
     completato: myPratiche.filter((p: any)=>p.status==="completato").length,
   }), [myPratiche]);
 
+  // KPI calculations
+  const kpi = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+    const prevMonth = now.getMonth()===0 ? (now.getFullYear()-1)+"-12" : now.getFullYear()+"-"+String(now.getMonth()).padStart(2,"0");
+    // Fatturato
+    let fattMese = 0, fattPrec = 0, fattTot = 0;
+    const conPrev = myPratiche.filter((p: any)=>p.preventivo);
+    const conConferma = myPratiche.filter((p: any)=>p.confermaOrdine?.firmata);
+    myPratiche.forEach((p: any) => {
+      const tot = p.preventivo?.totaleFinale || 0;
+      if (p.confermaOrdine?.firmata) {
+        fattTot += tot;
+        const d = (p.confermaOrdine.dataConferma||"").substring(0,7);
+        if (d===thisMonth) fattMese += tot;
+        if (d===prevMonth) fattPrec += tot;
+      }
+    });
+    // Conversion rate
+    const convRate = conPrev.length > 0 ? Math.round((conConferma.length/conPrev.length)*100) : 0;
+    // Overdue
+    const td = today();
+    const overdue = myPratiche.filter((p: any)=>p.status!=="completato"&&p.data<td).length;
+    // Average days to complete
+    const completed = myPratiche.filter((p: any)=>p.status==="completato"&&p.completedAt&&p.createdAt);
+    const avgDays = completed.length>0 ? Math.round(completed.reduce((s: number,p: any)=> {
+      const d1 = new Date(p.createdAt).getTime(); const d2 = new Date(p.completedAt).getTime();
+      return s + (d2-d1)/(1000*60*60*24);
+    },0)/completed.length) : 0;
+    // Pagamenti
+    const pagato = myPratiche.filter((p: any)=>p.fattura?.statoPagamento==="pagato").reduce((s: number,p: any)=>s+(p.preventivo?.totaleFinale||0),0);
+    const daPagare = fattTot - pagato;
+    return { fattMese, fattPrec, fattTot, convRate, conPrev: conPrev.length, conConferma: conConferma.length, overdue, avgDays, pagato, daPagare };
+  }, [myPratiche]);
+
   const pendingTasks = useMemo(() => {
     const tasks: any[] = [];
     myPratiche.forEach((p: any) => {
@@ -1133,20 +1302,21 @@ export default function FrameFlowApp() {
 
   const filteredPratiche = useMemo(() => {
     let list = db.pratiche;
-    // Non-admin: show only assigned pratiche
     if (!isAdmin && myMember) {
       list = list.filter((p: any) => p.assegnatoA === myMember.id);
     }
     if (filter!=="tutti") list = list.filter((p: any)=>p.status===filter);
+    if (filterFase!=="tutte") list = list.filter((p: any)=>p.fase===filterFase);
+    if (filterTipo!=="tutti") list = list.filter((p: any)=>p.tipo===filterTipo);
     if (search) {
       const s = search.toLowerCase();
       list = list.filter((p: any) => {
         const c = getClient(p.clientId);
-        return p.numero.toLowerCase().includes(s) || c?.nome?.toLowerCase().includes(s) || p.indirizzo?.toLowerCase().includes(s);
+        return p.numero.toLowerCase().includes(s) || c?.nome?.toLowerCase().includes(s) || p.indirizzo?.toLowerCase().includes(s) || (p.note||"").toLowerCase().includes(s);
       });
     }
     return [...list].sort((a: any,b: any)=>b.createdAt.localeCompare(a.createdAt));
-  }, [db, filter, search, isAdmin, myMember]);
+  }, [db, filter, filterFase, filterTipo, search, isAdmin, myMember]);
 
   const filteredClients = useMemo(() => {
     if (!clientSearch) return db.clients;
@@ -1321,13 +1491,20 @@ export default function FrameFlowApp() {
       onOpenRip={()=>{setRipEdit(p.id);setView("riparazione");}}
       onOpenPrev={()=>{setPrevEdit(p.id);setView("preventivo");}}
       onOpenEmail={()=>{setEmailDraft(p.id);setView("email");}}
-      onStatusChange={(s: string)=>updatePratica(p.id,{status:s})}
+      onStatusChange={(s: string)=>{
+        const updates: any = {status:s};
+        if (s==="completato") updates.completedAt = new Date().toISOString();
+        updatePratica(p.id, updates);
+        logActivity(p.id, `Stato → ${STATUS[s]?.label||s}`);
+      }}
       onConfirmOrder={(firma: string,note: string)=>confirmOrder(p.id,firma,note)}
       onGenerateFattura={()=>generateFattura(p.id)}
       onUpdateFattura={(data: any)=>updateFattura(p.id,data)}
-      onAdvancePhase={()=>advancePhase(p.id)}
+      onAdvancePhase={()=>{advancePhase(p.id);const wf=getWorkflow(p.tipo);const ci=getPhaseIndex(p.tipo,p.fase||"sopralluogo");if(ci<wf.length-1)logActivity(p.id,`Fase → ${wf[ci+1].label}`);}}
       onUpdatePratica={(data: any)=>updatePratica(p.id,data)}
       onAssign={(memberId: string|null)=>assignPratica(p.id,memberId)}
+      onDuplica={()=>duplicaPratica(p.id)}
+      onStampaCantiere={()=>exportStampaCantiere(p,c)}
     />;
   }
 
@@ -1456,32 +1633,56 @@ export default function FrameFlowApp() {
         <div style={{padding:"16px 16px 0"}}>
           {/* Greeting */}
           <div style={S.greetCard}>
-            <h2 style={{fontSize:20,fontWeight:700,color:"#0f172a",margin:"0 0 4px"}}>
-              {new Date().getHours()<12?"Buongiorno":"Buon pomeriggio"} 👋
+            <h2 style={{fontSize:18,fontWeight:700,color:"#1a1a2e",margin:"0 0 4px",fontFamily:"'DM Sans',system-ui"}}>
+              {new Date().getHours()<12?"Buongiorno":new Date().getHours()<18?"Buon pomeriggio":"Buonasera"}
             </h2>
-            <p style={{fontSize:14,color:"#64748b",margin:0}}>
-              {todayPratiche.length>0?`Hai ${todayPratiche.length} appuntament${todayPratiche.length>1?"i":"o"} oggi`:"Nessun appuntamento per oggi"}
+            <p style={{fontSize:13,color:"#5c6370",margin:0}}>
+              {todayPratiche.length>0?`${todayPratiche.length} appuntament${todayPratiche.length>1?"i":"o"} oggi`:"Nessun appuntamento"}
               {overduePratiche.length>0?` · ${overduePratiche.length} scadut${overduePratiche.length>1?"e":"a"}`:""}</p>
-            {!isAdmin && myMember && <div style={{marginTop:8,padding:"6px 14px",borderRadius:2,background:myRoleCfg.bg,display:"inline-flex",alignItems:"center",gap:6}}><span style={{fontSize:14}}>{myRoleCfg.icon}</span><span style={{fontSize:12,fontWeight:700,color:myRoleCfg.color}}>{myRoleCfg.label}</span></div>}
+            {!isAdmin && myMember && <div style={{marginTop:8,padding:"4px 12px",borderRadius:2,background:myRoleCfg.bg,display:"inline-flex",alignItems:"center",gap:6}}><span style={{fontSize:11,fontWeight:700,color:myRoleCfg.color,fontFamily:"'JetBrains Mono',monospace"}}>{myRoleCfg.icon} {myRoleCfg.label}</span></div>}
           </div>
+
+          {/* KPI Cards */}
+          {isAdmin && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+            <div style={{padding:12,background:"#fff",border:"1px solid #d5d8de",borderRadius:2}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#5c6370",textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:"'JetBrains Mono',monospace"}}>FATTURATO MESE</div>
+              <div style={{fontSize:22,fontWeight:800,color:"#2d8a4e",fontFamily:"'JetBrains Mono',monospace"}}>€ {kpi.fattMese.toFixed(0)}</div>
+              {kpi.fattPrec>0 && <div style={{fontSize:10,color:kpi.fattMese>=kpi.fattPrec?"#2d8a4e":"#c44040"}}>{kpi.fattMese>=kpi.fattPrec?"+":""}{ kpi.fattPrec>0?Math.round(((kpi.fattMese-kpi.fattPrec)/kpi.fattPrec)*100):0}% vs mese prec.</div>}
+            </div>
+            <div style={{padding:12,background:"#fff",border:"1px solid #d5d8de",borderRadius:2}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#5c6370",textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:"'JetBrains Mono',monospace"}}>CONV. PREV→ORD</div>
+              <div style={{fontSize:22,fontWeight:800,color:"#3a7bd5",fontFamily:"'JetBrains Mono',monospace"}}>{kpi.convRate}%</div>
+              <div style={{fontSize:10,color:"#5c6370"}}>{kpi.conConferma}/{kpi.conPrev} confermati</div>
+            </div>
+            <div style={{padding:12,background:"#fff",border:"1px solid #d5d8de",borderRadius:2}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#5c6370",textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:"'JetBrains Mono',monospace"}}>DA INCASSARE</div>
+              <div style={{fontSize:22,fontWeight:800,color:kpi.daPagare>0?"#c44040":"#2d8a4e",fontFamily:"'JetBrains Mono',monospace"}}>€ {kpi.daPagare.toFixed(0)}</div>
+              <div style={{fontSize:10,color:"#5c6370"}}>Tot. € {kpi.fattTot.toFixed(0)}</div>
+            </div>
+            <div style={{padding:12,background:"#fff",border:"1px solid #d5d8de",borderRadius:2}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#5c6370",textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:"'JetBrains Mono',monospace"}}>SCADUTE / MEDIA GG</div>
+              <div style={{fontSize:22,fontWeight:800,color:kpi.overdue>0?"#c44040":"#2d8a4e",fontFamily:"'JetBrains Mono',monospace"}}>{kpi.overdue} <span style={{fontSize:14,color:"#5c6370"}}>/ {kpi.avgDays}gg</span></div>
+              <div style={{fontSize:10,color:"#5c6370"}}>Pratiche in ritardo / tempo medio</div>
+            </div>
+          </div>}
 
           {/* Quick Stats */}
           <div style={S.dashStats}>
             <div style={S.dashStat} onClick={()=>{setFilter("da_fare");setView("pratiche");}}>
-              <span style={{fontSize:28,fontWeight:800,color:"#ef4444"}}>{counts.da_fare}</span>
-              <span style={{fontSize:11,color:"#64748b"}}>Da fare</span>
+              <span style={{fontSize:28,fontWeight:800,color:"#c44040"}}>{counts.da_fare}</span>
+              <span style={{fontSize:11,color:"#5c6370"}}>Da fare</span>
             </div>
             <div style={S.dashStat} onClick={()=>{setFilter("in_corso");setView("pratiche");}}>
-              <span style={{fontSize:28,fontWeight:800,color:"#d97706"}}>{counts.in_corso}</span>
-              <span style={{fontSize:11,color:"#64748b"}}>In corso</span>
+              <span style={{fontSize:28,fontWeight:800,color:"#d4820e"}}>{counts.in_corso}</span>
+              <span style={{fontSize:11,color:"#5c6370"}}>In corso</span>
             </div>
             <div style={S.dashStat} onClick={()=>{setFilter("completato");setView("pratiche");}}>
-              <span style={{fontSize:28,fontWeight:800,color:"#059669"}}>{counts.completato}</span>
-              <span style={{fontSize:11,color:"#64748b"}}>Completate</span>
+              <span style={{fontSize:28,fontWeight:800,color:"#2d8a4e"}}>{counts.completato}</span>
+              <span style={{fontSize:11,color:"#5c6370"}}>Fatte</span>
             </div>
             <div style={S.dashStat} onClick={()=>setView("clienti")}>
               <span style={{fontSize:28,fontWeight:800,color:"#e07a2f"}}>{db.clients.length}</span>
-              <span style={{fontSize:11,color:"#64748b"}}>Clienti</span>
+              <span style={{fontSize:11,color:"#5c6370"}}>Clienti</span>
             </div>
           </div>
 
@@ -1576,10 +1777,19 @@ export default function FrameFlowApp() {
             </div>
           )}
 
-          {/* Statistiche Button */}
-          <button onClick={()=>setView("stats")} style={{width:"100%",padding:"16px",borderRadius:2,border:"none",background:"#1a1a2e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"center",gap:10,letterSpacing:"-0.2px"}}>
-             Statistiche e Report <span style={{fontSize:18}}>→</span>
-          </button>
+          {/* Statistiche + Backup */}
+          <div style={{display:"flex",gap:8,marginBottom:12}}>
+            <button onClick={()=>setView("stats")} style={{flex:2,padding:"14px",borderRadius:2,border:"none",background:"#1a1a2e",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:"0.5px"}}>
+              STATISTICHE →
+            </button>
+            <button onClick={exportBackup} style={{flex:1,padding:"14px",borderRadius:2,border:"1px solid #d5d8de",background:"#fff",color:"#1a1a2e",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}}>
+              BACKUP
+            </button>
+            <label style={{flex:1,padding:"14px",borderRadius:2,border:"1px solid #d5d8de",background:"#fff",color:"#1a1a2e",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",textAlign:"center"}}>
+              IMPORT
+              <input type="file" accept=".json" onChange={(e: any)=>{if(e.target.files[0])importBackup(e.target.files[0]);}} style={{display:"none"}} />
+            </label>
+          </div>
 
           {/* Quick Notes */}
           <div style={S.dashSection}>
@@ -1923,40 +2133,59 @@ export default function FrameFlowApp() {
 
   // ==================== PRATICHE LIST ====================
   if (view === "pratiche") {
+    const FASI = [{k:"tutte",l:"Tutte"},{k:"sopralluogo",l:"Sopralluogo"},{k:"preventivo",l:"Preventivo"},{k:"misure",l:"Misure"},{k:"ordine",l:"Ordine"},{k:"produzione",l:"Produzione"},{k:"posa",l:"Posa"},{k:"chiusura",l:"Chiusura"}];
+    const TIPI = [{k:"tutti",l:"Tutti"},{k:"nuovo",l:"Nuovo"},{k:"sostituzione",l:"Sostituz."},{k:"riparazione",l:"Riparaz."}];
     return (
       <div style={S.container}>
         <div style={{...S.header,padding:"16px 20px 12px"}}>
-          <h2 style={{...S.logo,fontSize:18}}> Pratiche</h2>
-          <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ Nuova</button>
+          <h2 style={{...S.logo,fontSize:18}}>PRATICHE</h2>
+          <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ NUOVA</button>
         </div>
         <div style={S.stats}>
-          {[{k:"tutti",l:"Totale",i:""},{k:"da_fare",l:"Da fare",i:"🔴"},{k:"in_corso",l:"In corso",i:"🟡"},{k:"completato",l:"Fatti",i:"🟢"}].map(s=>(
-            <button key={s.k} onClick={()=>setFilter(s.k)} style={{...S.statCard,borderBottom:filter===s.k?"3px solid #e07a2f":"3px solid transparent",background:filter===s.k?"#fff7ed":"#fff"}}>
-              <span style={{fontSize:16}}>{s.i}</span>
-              <span style={S.statNum}>{counts[s.k as keyof typeof counts]}</span>
+          {[{k:"tutti",l:"Tot",c:"#5c6370"},{k:"da_fare",l:"Da fare",c:"#c44040"},{k:"in_corso",l:"In corso",c:"#d4820e"},{k:"completato",l:"Fatti",c:"#2d8a4e"}].map(s=>(
+            <button key={s.k} onClick={()=>setFilter(s.k)} style={{...S.statCard,borderBottom:filter===s.k?`3px solid ${s.c}`:"3px solid transparent",background:filter===s.k?"#f0f1f3":"#fff"}}>
+              <span style={{...S.statNum,color:s.c}}>{counts[s.k as keyof typeof counts]}</span>
               <span style={S.statLbl}>{s.l}</span>
             </button>
           ))}
         </div>
-        <div style={{padding:"0 16px 8px"}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder=" Cerca pratica, cliente..." style={S.searchInp} />
+        {/* Filtri avanzati */}
+        <div style={{padding:"0 16px 6px",display:"flex",gap:6,flexWrap:"wrap"}}>
+          <select value={filterFase} onChange={e=>setFilterFase(e.target.value)} style={{...S.input,flex:1,fontSize:12,padding:"8px 10px",fontWeight:600}}>
+            {FASI.map(f=><option key={f.k} value={f.k}>{f.l}</option>)}
+          </select>
+          <select value={filterTipo} onChange={e=>setFilterTipo(e.target.value)} style={{...S.input,flex:1,fontSize:12,padding:"8px 10px",fontWeight:600}}>
+            {TIPI.map(t=><option key={t.k} value={t.k}>{t.l}</option>)}
+          </select>
+          {(filterFase!=="tutte"||filterTipo!=="tutti") && <button onClick={()=>{setFilterFase("tutte");setFilterTipo("tutti");}} style={{padding:"8px 12px",border:"none",background:"#c44040",color:"#fff",borderRadius:2,fontSize:11,fontWeight:700,cursor:"pointer"}}>RESET</button>}
         </div>
-        {filteredPratiche.length===0 ? <div style={S.empty}><div style={{fontSize:56}}>📂</div><p style={S.emptyTitle}>Nessun risultato</p></div>
+        <div style={{padding:"0 16px 8px"}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cerca pratica, cliente, indirizzo..." style={S.searchInp} />
+        </div>
+        {filteredPratiche.length===0 ? <div style={S.empty}><p style={S.emptyTitle}>Nessun risultato</p><p style={{fontSize:13,color:"#7a8194"}}>Prova a cambiare i filtri</p></div>
         : <div style={{padding:"0 16px"}}>{filteredPratiche.map((p: any)=>{
           const c = getClient(p.clientId); const sc = STATUS[p.status];
           const totalTasks = p.actions.reduce((s: number,a: any)=>s+a.tasks.length,0);
           const doneTasks = p.actions.reduce((s: number,a: any)=>s+a.tasks.filter((t: any)=>t.done).length,0);
           const prog = totalTasks?Math.round(doneTasks/totalTasks*100):0;
+          const wf = getWorkflow(p.tipo); const curPhase = wf.find((w: any)=>w.key===p.fase) || wf[0];
           return (
             <button key={p.id} onClick={()=>{setSelPratica(p.id);setView("pratica");}} style={S.praticaCard}>
-              <div style={S.praticaTop}><span style={S.praticaNum}>{p.numero}</span><span style={{...S.praticaStatus,background:sc.bg,color:sc.color}}>{sc.label}</span></div>
-              <h3 style={S.praticaCliente}>{c?.nome||"—"}</h3>
-              {p.indirizzo && <p style={S.praticaAddr}> {p.indirizzo}</p>}
-              <div style={S.praticaMeta}>
-                <span style={{fontSize:12,color:"#64748b"}}> {dateLabel(p.data)} {p.ora}</span>
-                {p.actions.length>0 && <span style={S.praticaActions}>{p.actions.length} azioni</span>}
+              <div style={S.praticaTop}>
+                <span style={S.praticaNum}>{p.numero}</span>
+                <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                  <span style={{fontSize:10,padding:"2px 8px",borderRadius:2,background:"#f0f1f3",color:"#5c6370",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace",textTransform:"uppercase"}}>{curPhase?.label||p.fase||"—"}</span>
+                  <span style={{...S.praticaStatus,background:sc.bg,color:sc.color}}>{sc.label}</span>
+                </div>
               </div>
-              {totalTasks>0 && <div style={S.progRow}><div style={S.progBar}><div style={{...S.progFill,width:`${prog}%`,background:prog===100?"#059669":"#e07a2f"}} /></div><span style={{fontSize:12,color:"#64748b",fontWeight:600}}>{doneTasks}/{totalTasks}</span></div>}
+              <h3 style={S.praticaCliente}>{c?.nome||"—"}</h3>
+              {p.indirizzo && <p style={S.praticaAddr}>{p.indirizzo}</p>}
+              <div style={S.praticaMeta}>
+                <span style={{fontSize:12,color:"#7a8194"}}>{dateLabel(p.data)} {p.ora}</span>
+                {p.preventivo?.totaleFinale && <span style={{fontSize:12,color:"#2d8a4e",fontWeight:700}}>€ {p.preventivo.totaleFinale.toFixed(0)}</span>}
+                {p.actions.length>0 && <span style={S.praticaActions}>{p.actions.length} az.</span>}
+              </div>
+              {totalTasks>0 && <div style={S.progRow}><div style={S.progBar}><div style={{...S.progFill,width:`${prog}%`,background:prog===100?"#2d8a4e":"#e07a2f"}} /></div><span style={{fontSize:12,color:"#7a8194",fontWeight:600}}>{doneTasks}/{totalTasks}</span></div>}
             </button>
           );
         })}</div>}
@@ -2761,7 +2990,7 @@ function SignaturePad({ onSave, onCancel }: any) {
 }
 
 // ==================== PRATICA DETAIL ====================
-function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, permissions, onBack, onDelete, onAddAction, onToggleTask, onAddTask, onRemoveTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica, onAssign }: any) {
+function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, permissions, onBack, onDelete, onDuplica, onAddAction, onToggleTask, onAddTask, onRemoveTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica, onAssign, onStampaCantiere }: any) {
   const [newTaskText, setNewTaskText] = useState("");
   const [msgText, setMsgText] = useState("");
   const [msgDest, setMsgDest] = useState("");
@@ -2790,7 +3019,7 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
 
   return (
     <div style={S.container}>
-      <div style={S.detailHdr}><button onClick={onBack} style={S.backBtn}>← Indietro</button><div style={{display:"flex",gap:8}}>{canDo("email") && <button onClick={onOpenEmail} style={S.emailBtn}></button>}{isAdmin && <button onClick={onDelete} style={S.delBtn}></button>}</div></div>
+      <div style={S.detailHdr}><button onClick={onBack} style={S.backBtn}>← Indietro</button><div style={{display:"flex",gap:6}}>{canDo("email") && <button onClick={onOpenEmail} style={S.emailBtn}>EMAIL</button>}{isAdmin && <button onClick={onDuplica} style={{...S.emailBtn,background:"#3a7bd5"}}>DUPLICA</button>}{<button onClick={onStampaCantiere} style={{...S.emailBtn,background:"#1a1a2e"}}>CANTIERE</button>}{isAdmin && <button onClick={onDelete} style={S.delBtn}>ELIM</button>}</div></div>
       <div style={{padding:20}}>
         <div style={S.praticaHdrCard}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={S.praticaNumBig}>{p.numero}</span><span style={{...S.statusBdg,background:sc.bg,color:sc.color,border:`1.5px solid ${sc.color}`}}>{sc.label}</span></div>
@@ -2915,16 +3144,39 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
         )}
 
         <div style={{marginTop:16,padding:14,background:"#f8fafc",borderRadius:2,border:"1px solid #e2e8f0"}}>
-          <h4 style={{fontSize:14,fontWeight:700,color:"#0f172a",margin:"0 0 10px"}}> Esporta / Stampa</h4>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <button onClick={()=>exportPratica(p,c)} style={S.exportBtn}> Riepilogo</button>
-            {p.misure && <button onClick={()=>exportMisure(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}> Misure</button>}
-            {p.riparazione && <button onClick={()=>exportRiparazione(p,c)} style={{...S.exportBtn,background:"#fef2f2",color:"#dc2626",border:"1.5px solid #dc2626"}}> Riparazione</button>}
-            {p.preventivo && <button onClick={()=>exportPreventivo(p,c,true)} style={{...S.exportBtn,background:"#f5f3ff",color:"#8b5cf6",border:"1.5px solid #8b5cf6"}}> Preventivo</button>}
-            {hasConferma && <button onClick={()=>exportConfermaOrdine(p,c)} style={{...S.exportBtn,background:"#ecfdf5",color:"#059669",border:"1.5px solid #059669"}}> Conferma</button>}
-            {hasFattura && <button onClick={()=>exportFattura(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}> Fattura</button>}
+          <h4 style={{fontSize:12,fontWeight:700,color:"#1a1a2e",margin:"0 0 10px",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.5px"}}>ESPORTA / STAMPA</h4>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            <button onClick={()=>exportPratica(p,c)} style={S.exportBtn}>Riepilogo</button>
+            {p.misure && <button onClick={()=>exportMisure(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}>Misure</button>}
+            {p.riparazione && <button onClick={()=>exportRiparazione(p,c)} style={{...S.exportBtn,background:"#fef2f2",color:"#dc2626",border:"1.5px solid #dc2626"}}>Riparazione</button>}
+            {p.preventivo && <button onClick={()=>exportPreventivo(p,c,true)} style={{...S.exportBtn,background:"#f5f3ff",color:"#8b5cf6",border:"1.5px solid #8b5cf6"}}>Preventivo</button>}
+            {hasConferma && <button onClick={()=>exportConfermaOrdine(p,c)} style={{...S.exportBtn,background:"#ecfdf5",color:"#059669",border:"1.5px solid #059669"}}>Conferma</button>}
+            {hasFattura && <button onClick={()=>exportFattura(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}>Fattura</button>}
+            <button onClick={onStampaCantiere} style={{...S.exportBtn,background:"#1a1a2e",color:"#fff",border:"1.5px solid #1a1a2e"}}>Scheda Cantiere</button>
           </div>
+          {/* WhatsApp Share */}
+          {c?.telefono && <div style={{marginTop:8}}>
+            <a href={`https://wa.me/${c.telefono.replace(/[^0-9+]/g,"").replace(/^0/,"+39")}?text=${encodeURIComponent(`Buongiorno ${c.nome}, le invio il riepilogo della pratica ${p.numero}. Cordiali saluti.`)}`} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:2,background:"#25D366",color:"#fff",fontSize:12,fontWeight:700,textDecoration:"none",fontFamily:"'JetBrains Mono',monospace"}}>
+              WHATSAPP → {c.nome}
+            </a>
+          </div>}
         </div>
+
+        {/* Activity Log / Storico */}
+        {(p.log||[]).length > 0 && (
+          <div style={{marginTop:16,padding:14,background:"#fafbfc",borderRadius:2,border:"1px solid #e2e8f0"}}>
+            <h4 style={{fontSize:12,fontWeight:700,color:"#1a1a2e",margin:"0 0 10px",fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:"0.5px"}}>STORICO ATTIVITA</h4>
+            <div style={{maxHeight:200,overflowY:"auto"}}>
+              {[...(p.log||[])].reverse().map((l: any, i: number) => (
+                <div key={i} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:i<(p.log.length-1)?"1px solid #e8e8e8":"none",fontSize:12}}>
+                  <span style={{color:"#7a8194",fontFamily:"'JetBrains Mono',monospace",fontSize:10,whiteSpace:"nowrap"}}>{new Date(l.ts).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</span>
+                  <span style={{color:"#1a1a2e",flex:1}}>{l.msg}</span>
+                  <span style={{color:"#9ca3b8",fontSize:10}}>{l.by?.split("@")[0]||""}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
