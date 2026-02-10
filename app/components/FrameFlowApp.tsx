@@ -46,29 +46,29 @@ async function deletePhotoFromStorage(url: string) {
 const STORAGE_KEY = "frameflow-v4";
 
 const ACTIONS_CFG = [
-  { key: "sopralluogo", icon: "🔍", label: "Sopralluogo", desc: "Vai a vedere il cantiere", color: "#2563eb" },
-  { key: "misure", icon: "📐", label: "Misure", desc: "Prendi le misure", color: "#d97706" },
-  { key: "preventivo", icon: "💰", label: "Preventivo", desc: "Prepara preventivo", color: "#8b5cf6" },
-  { key: "conferma", icon: "✍️", label: "Conferma Ordine", desc: "Firma conferma", color: "#059669" },
-  { key: "fattura", icon: "🧾", label: "Fattura", desc: "Genera fattura", color: "#f59e0b" },
-  { key: "posa", icon: "🔧", label: "Posa in Opera", desc: "Installazione infissi", color: "#059669" },
-  { key: "riparazione", icon: "🛠️", label: "Riparazione", desc: "Intervento riparazione", color: "#dc2626" },
-  { key: "followup", icon: "📞", label: "Richiama", desc: "Contatto follow-up", color: "#6b7280" },
+  { key: "sopralluogo", icon: "►", label: "Sopralluogo", desc: "Vai a vedere il cantiere", color: "#2563eb" },
+  { key: "misure", icon: "┼", label: "Misure", desc: "Prendi le misure", color: "#d97706" },
+  { key: "preventivo", icon: "€", label: "Preventivo", desc: "Prepara preventivo", color: "#8b5cf6" },
+  { key: "conferma", icon: "✓", label: "Conferma Ordine", desc: "Firma conferma", color: "#059669" },
+  { key: "fattura", icon: "#", label: "Fattura", desc: "Genera fattura", color: "#f59e0b" },
+  { key: "posa", icon: "▣", label: "Posa in Opera", desc: "Installazione infissi", color: "#059669" },
+  { key: "riparazione", icon: "⚙", label: "Riparazione", desc: "Intervento riparazione", color: "#dc2626" },
+  { key: "followup", icon: "↺", label: "Richiama", desc: "Contatto follow-up", color: "#6b7280" },
 ];
 
 const WORKFLOW_NUOVO = [
-  { key: "sopralluogo", label: "Sopralluogo", icon: "🔍", color: "#2563eb" },
-  { key: "misure", label: "Misure", icon: "📐", color: "#d97706" },
-  { key: "preventivo", label: "Preventivo", icon: "💰", color: "#8b5cf6" },
-  { key: "conferma", label: "Conferma", icon: "✍️", color: "#059669" },
-  { key: "fattura", label: "Fattura", icon: "🧾", color: "#f59e0b" },
-  { key: "posa", label: "Posa", icon: "🔧", color: "#10b981" },
+  { key: "sopralluogo", label: "Sopralluogo", icon: "►", color: "#2563eb" },
+  { key: "misure", label: "Misure", icon: "┼", color: "#d97706" },
+  { key: "preventivo", label: "Preventivo", icon: "€", color: "#8b5cf6" },
+  { key: "conferma", label: "Conferma", icon: "✓", color: "#059669" },
+  { key: "fattura", label: "Fattura", icon: "#", color: "#f59e0b" },
+  { key: "posa", label: "Posa", icon: "▣", color: "#10b981" },
 ];
 
 const WORKFLOW_RIP = [
-  { key: "sopralluogo", label: "Sopralluogo", icon: "🔍", color: "#2563eb" },
-  { key: "riparazione", label: "Riparazione", icon: "🛠️", color: "#dc2626" },
-  { key: "fattura", label: "Fattura", icon: "🧾", color: "#f59e0b" },
+  { key: "sopralluogo", label: "Sopralluogo", icon: "►", color: "#2563eb" },
+  { key: "riparazione", label: "Riparazione", icon: "⚙", color: "#dc2626" },
+  { key: "fattura", label: "Fattura", icon: "#", color: "#f59e0b" },
 ];
 
 function getWorkflow(tipo: string) { return tipo === "riparazione" ? WORKFLOW_RIP : WORKFLOW_NUOVO; }
@@ -92,12 +92,12 @@ function canAdvance(pratica: any) {
 }
 
 const STATUS: Record<string, {label:string;color:string;bg:string;icon:string}> = {
-  da_fare: { label: "Da fare", color: "#ef4444", bg: "#fef2f2", icon: "🔴" },
-  in_corso: { label: "In corso", color: "#d97706", bg: "#fffbeb", icon: "🟡" },
-  completato: { label: "Completato", color: "#059669", bg: "#ecfdf5", icon: "🟢" },
+  da_fare: { label: "Da fare", color: "#ef4444", bg: "#fef2f2", icon: "○" },
+  in_corso: { label: "In corso", color: "#d97706", bg: "#fffbeb", icon: "◐" },
+  completato: { label: "Completato", color: "#059669", bg: "#ecfdf5", icon: "●" },
 };
 
-const TASKS: Record<string, string[]> = {
+const DEFAULT_TASKS: Record<string, string[]> = {
   sopralluogo: ["Verificare accessibilità cantiere","Foto panoramica facciata","Contare numero vani","Verificare stato vecchi infissi","Controllare cassonetti","Note per preventivo"],
   misure: ["Portare metro laser","Misurare ogni vano (L×H)","Verificare fuori squadra","Foto soglia + nodo + cassonetto","Compilare scheda misure","Far firmare il cliente"],
   posa: ["Verificare materiali consegnati","Smontaggio vecchi infissi","Installazione nuovi","Sigillature e schiuma","Regolazione ferramenta","Test apertura/chiusura","Pulizia finale","Foto prima/dopo"],
@@ -105,12 +105,20 @@ const TASKS: Record<string, string[]> = {
   preventivo: ["Riepilogare misure e materiali","Calcolare costi materiale","Calcolare costi manodopera","Preparare documento","Inviare al cliente"],
   followup: ["Chiamare il cliente","Annotare esito"],
 };
+const TASKS = DEFAULT_TASKS;
 
-const APERTURE = ["DX","SX","DX+SX","Fisso","Vasistas","A/R","Bilico"];
+const APERTURE = ["DX","SX","DX+SX","Fisso","Vasistas","Anta/Ribalta","Bilico"];
+
+const ROLES: Record<string,{label:string;icon:string;color:string;bg:string;permessi:string[];desc:string;canSee:string[]}> = {
+  admin: { label:"Admin", icon:"ADM", color:"#92400e", bg:"#fef3c7", permessi:["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione","clienti","impostazioni","team","note","email"], desc:"Accesso completo a tutto", canSee:["dashboard","calendario","pratiche","clienti","team"] },
+  geometra: { label:"Geometra", icon:"GEO", color:"#1d4ed8", bg:"#dbeafe", permessi:["sopralluogo","misure"], desc:"Sopralluogo e misure", canSee:["dashboard","calendario","pratiche"] },
+  posatore: { label:"Posatore", icon:"POS", color:"#065f46", bg:"#d1fae5", permessi:["posa"], desc:"Fase posa e foto", canSee:["dashboard","pratiche"] },
+  segretaria: { label:"Segretaria", icon:"SEG", color:"#7c2d12", bg:"#ffedd5", permessi:["preventivo","conferma","fattura","clienti","email","note"], desc:"Preventivi, fatture, clienti, email", canSee:["dashboard","calendario","pratiche","clienti"] },
+};
 const SISTEMI = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino","Vetrata composta","Vetrata fissa","Lamiera","Cassonetto"];
-const PHOTO_TYPES = [{k:"panoramica",l:"Panoram.",i:"🏠"},{k:"soglia",l:"Soglia",i:"⬇️"},{k:"nodo",l:"Nodo",i:"🔗"},{k:"cassonetto",l:"Cassone.",i:"📦"},{k:"imbotto",l:"Imbotto",i:"🔲"},{k:"contesto",l:"Contesto",i:"📸"}];
+const PHOTO_TYPES = [{k:"panoramica",l:"Panoram.",i:"[P]"},{k:"soglia",l:"Soglia",i:"[S]"},{k:"nodo",l:"Nodo",i:"[N]"},{k:"cassonetto",l:"Cassone.",i:"[C]"},{k:"imbotto",l:"Imbotto",i:"[I]"},{k:"contesto",l:"Contesto",i:"[X]"}];
 const PROBLEMI = ["Ferramenta rotta","Guarnizioni usurate","Vetro rotto","Maniglia rotta","Chiusura difettosa","Infiltrazione acqua","Infiltrazione aria","Condensa","Tapparella bloccata","Cerniera rotta","Altro"];
-const URGENZE = [{k:"bassa",l:"Bassa",c:"#059669",i:"🟢"},{k:"media",l:"Media",c:"#d97706",i:"🟡"},{k:"alta",l:"Alta",c:"#ef4444",i:"🔴"},{k:"urgente",l:"Urgente",c:"#7c3aed",i:"🟣"}];
+const URGENZE = [{k:"bassa",l:"Bassa",c:"#059669",i:"▽"},{k:"media",l:"Media",c:"#d97706",i:"◇"},{k:"alta",l:"Alta",c:"#ef4444",i:"△"},{k:"urgente",l:"Urgente",c:"#7c3aed",i:"▲"}];
 
 function gid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
 function today() { return new Date().toISOString().split("T")[0]; }
@@ -120,7 +128,7 @@ function fmtDate(d: string) {
   return ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][dt.getDay()] + " " + dt.getDate() + " " + ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"][dt.getMonth()];
 }
 function dateLabel(d: string) {
-  if (d === today()) return "📌 Oggi";
+  if (d === today()) return " Oggi";
   const tom = new Date(); tom.setDate(tom.getDate()+1);
   if (d === tom.toISOString().split("T")[0]) return "Domani";
   return fmtDate(d);
@@ -136,35 +144,49 @@ function getProgress(tasks: any[]) {
 function printHTML(title: string, content: string) {
   const w = window.open("", "_blank");
   if (!w) { alert("Abilita i popup per stampare/esportare PDF"); return; }
+  // Try to load azienda info from settings
+  let az: any = {};
+  try { const raw = localStorage.getItem("ff-settings"); if (raw) { const s = JSON.parse(raw); az = s.azienda || {}; } } catch(e) {}
+  const azHeader = az.ragioneSociale ? `<div style="text-align:right;font-size:11px;color:#5c6370;margin-bottom:12px;font-family:monospace;border-bottom:1px solid #d5d8de;padding-bottom:8px">
+    <div style="font-weight:700;font-size:13px;color:#1a1a2e">${az.ragioneSociale}</div>
+    ${az.indirizzo?`<div>${az.indirizzo}</div>`:""}
+    ${az.piva?`<div>P.IVA: ${az.piva}</div>`:""}
+    ${az.telefono?`<div>Tel: ${az.telefono}</div>`:""}${az.email?` <span>Email: ${az.email}</span>`:""}
+  </div>` : "";
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;padding:24px;color:#1e293b;font-size:13px;line-height:1.5}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1e293b;padding-bottom:12px;margin-bottom:16px}
-  .logo{font-size:20px;font-weight:800;color:#1e293b}
-  .logo span{color:#2563eb}
-  .doc-title{font-size:16px;font-weight:700;color:#2563eb;margin-top:4px}
-  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:16px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
-  .info-row{display:flex;gap:6px}.info-label{font-weight:700;min-width:80px;color:#64748b;font-size:12px;text-transform:uppercase}.info-val{font-weight:600;color:#0f172a}
-  .vano{border:1.5px solid #d1d5db;border-radius:8px;margin-bottom:12px;page-break-inside:avoid}
-  .vano-hdr{background:#f59e0b;color:#fff;padding:8px 12px;border-radius:6px 6px 0 0;font-weight:700;font-size:14px}
+  body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;padding:24px;color:#1a1a2e;font-size:13px;line-height:1.5}
+  .az-header{text-align:right;font-size:11px;color:#5c6370;margin-bottom:12px;font-family:'JetBrains Mono','SF Mono',monospace;border-bottom:1px solid #d5d8de;padding-bottom:8px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1a1a2e;padding-bottom:12px;margin-bottom:16px}
+  .logo{font-size:16px;font-weight:800;color:#1a1a2e;letter-spacing:2px;text-transform:uppercase;font-family:'JetBrains Mono','SF Mono',monospace}
+  .doc-title{font-size:14px;font-weight:700;color:#e07a2f;margin-top:4px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono','SF Mono',monospace}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-bottom:16px;padding:12px;background:#fafbfc;border:1px solid #d5d8de}
+  .info-row{display:flex;gap:6px}.info-label{font-weight:700;min-width:90px;color:#5c6370;font-size:11px;text-transform:uppercase;font-family:'JetBrains Mono','SF Mono',monospace;letter-spacing:0.5px}.info-val{font-weight:600;color:#1a1a2e}
+  .vano{border:1.5px solid #d5d8de;margin-bottom:12px;page-break-inside:avoid}
+  .vano-hdr{background:#d4820e;color:#fff;padding:8px 12px;font-weight:700;font-size:13px;font-family:'JetBrains Mono','SF Mono',monospace;letter-spacing:0.5px;text-transform:uppercase}
   .vano-body{padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 16px}
-  .vano-field{}.vano-field .lbl{font-size:11px;color:#64748b;text-transform:uppercase;font-weight:600}.vano-field .val{font-size:14px;font-weight:700;color:#0f172a}
-  .note-box{background:#fffbeb;border:1px solid #fbbf24;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:13px}
-  .footer{margin-top:24px;padding-top:12px;border-top:2px solid #e2e8f0;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8}
-  .sign-area{margin-top:24px;display:flex;gap:40px}.sign-box{flex:1;border-top:1px solid #1e293b;padding-top:6px;font-size:11px;color:#64748b;text-align:center}
-  .urgenza{display:inline-block;padding:3px 12px;border-radius:12px;font-weight:700;font-size:12px}
-  .problem-box{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:12px}
-  .status-badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700}
+  .vano-field{}.vano-field .lbl{font-size:10px;color:#5c6370;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono','SF Mono',monospace;letter-spacing:0.5px}.vano-field .val{font-size:14px;font-weight:700;color:#1a1a2e;font-family:'JetBrains Mono','SF Mono',monospace}
+  .note-box{background:#fdf3eb;border-left:4px solid #e07a2f;padding:10px 12px;margin-top:8px;font-size:13px}
+  .footer{margin-top:24px;padding-top:12px;border-top:2px solid #d5d8de;display:flex;justify-content:space-between;font-size:10px;color:#7a8194;font-family:'JetBrains Mono','SF Mono',monospace}
+  .sign-area{margin-top:24px;display:flex;gap:40px}.sign-box{flex:1;border-top:1px solid #1a1a2e;padding-top:6px;font-size:11px;color:#5c6370;text-align:center}
+  .urgenza{display:inline-block;padding:3px 12px;font-weight:700;font-size:12px;font-family:'JetBrains Mono','SF Mono',monospace;text-transform:uppercase}
+  .problem-box{background:#fef2f2;border-left:4px solid #dc2626;padding:12px;margin-bottom:12px}
+  .status-badge{display:inline-block;padding:2px 10px;font-size:11px;font-weight:700;font-family:'JetBrains Mono','SF Mono',monospace;text-transform:uppercase}
   table{width:100%;border-collapse:collapse;margin:12px 0}
-  th{background:#f1f5f9;padding:8px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;border:1px solid #e2e8f0}
-  td{padding:8px 10px;border:1px solid #e2e8f0;font-size:13px}
+  th{background:#f0f1f3;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:#5c6370;border:1px solid #d5d8de;font-family:'JetBrains Mono','SF Mono',monospace;letter-spacing:0.5px}
+  td{padding:8px 10px;border:1px solid #d5d8de;font-size:13px}
+  .totals-box{margin-top:16px;border:2px solid #1a1a2e;padding:14px;page-break-inside:avoid}
+  .totals-row{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px}
+  .totals-final{display:flex;justify-content:space-between;font-size:18px;font-weight:800;border-top:2px solid #1a1a2e;padding-top:8px;margin-top:8px}
+  h3{font-size:13px;font-weight:700;margin:16px 0 10px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono','SF Mono',monospace;color:#1a1a2e}
   .no-print{position:fixed;top:12px;right:12px;display:flex;gap:8px}
-  .no-print button{padding:10px 20px;border-radius:8px;border:none;font-size:14px;font-weight:700;cursor:pointer}
-  .btn-print{background:#2563eb;color:#fff}.btn-close{background:#f1f5f9;color:#64748b}
-  @media print{.no-print{display:none!important}body{padding:12px}}
+  .no-print button{padding:10px 20px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono','SF Mono',monospace;text-transform:uppercase;letter-spacing:0.5px}
+  .btn-print{background:#e07a2f;color:#fff}.btn-close{background:#f0f1f3;color:#5c6370}
+  @media print{.no-print{display:none!important}body{padding:12px}.az-header{display:block!important}}
 </style></head><body>
-<div class="no-print"><button class="btn-print" onclick="window.print()">🖨️ Stampa / Salva PDF</button><button class="btn-close" onclick="window.close()">✕ Chiudi</button></div>
+<div class="no-print"><button class="btn-print" onclick="window.print()">STAMPA / PDF</button><button class="btn-close" onclick="window.close()">CHIUDI</button></div>
+${azHeader}
 ${content}
 </body></html>`);
   w.document.close();
@@ -185,14 +207,16 @@ function exportMisure(pratica: any, client: any) {
         <div class="vano-field"><div class="lbl">Vetro</div><div class="val">${v.vetro||m.vetro||"—"}</div></div>
         <div class="vano-field"><div class="lbl">Foto</div><div class="val">${Object.values(v.photos||{}).filter(Boolean).length}/6</div></div>
       </div>
-      ${v.note?`<div class="note-box">📝 ${v.note}</div>`:""}
+      ${v.note?`<div class="note-box"> ${v.note}</div>`:""}
+      ${v.freehandData?`<div style="margin-top:8px;text-align:center"><p style="font-size:10px;font-weight:700;color:#2563eb;margin-bottom:4px">DISEGNO A MANO</p><img src="${v.freehandData}" style="max-width:100%;max-height:200px;border:1px solid #d1d5db;" /></div>`:""}
+      ${v.lamieraData?`<div style="margin-top:8px;text-align:center"><p style="font-size:10px;font-weight:700;color:#d97706;margin-bottom:4px">DISEGNO LAMIERA</p><img src="${v.lamieraData}" style="max-width:100%;max-height:200px;border:1px solid #d1d5db;" /></div>`:""}
     </div>
   `).join("");
 
   const content = `
     <div class="header">
-      <div><div class="logo"><span>◈</span> FrameFlow</div><div class="doc-title">📐 SCHEDA MISURE</div></div>
-      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#6366f1">${pratica?.numero||""}</div><div style="font-size:12px;color:#64748b">${new Date().toLocaleDateString("it-IT")}</div></div>
+      <div><div class="logo">FRAMEFLOW</div><div class="doc-title">SCHEDA MISURE</div></div>
+      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#3a7bd5">${pratica?.numero||""}</div><div style="font-size:12px;color:#64748b">${new Date().toLocaleDateString("it-IT")}</div></div>
     </div>
     <div class="info-grid">
       <div class="info-row"><span class="info-label">Cliente</span><span class="info-val">${client?.nome||"—"}</span></div>
@@ -201,6 +225,7 @@ function exportMisure(pratica: any, client: any) {
       <div class="info-row"><span class="info-label">Email</span><span class="info-val">${client?.email||"—"}</span></div>
       <div class="info-row"><span class="info-label">Indirizzo</span><span class="info-val">${m.indirizzo||pratica?.indirizzo||"—"}</span></div>
       <div class="info-row"><span class="info-label">Piano</span><span class="info-val">${m.piano||"—"}</span></div>
+      <div class="info-row"><span class="info-label">Mezzi di Salita</span><span class="info-val">${m.mezziSalita||"—"}</span></div>
       <div class="info-row"><span class="info-label">Sistema</span><span class="info-val">${m.sistema||"—"}</span></div>
       <div class="info-row"><span class="info-label">Colore Int.</span><span class="info-val">${m.coloreInt||"—"}</span></div>
       <div class="info-row"><span class="info-label">Colore Est.</span><span class="info-val">${m.coloreEst||"—"}</span></div>
@@ -209,7 +234,7 @@ function exportMisure(pratica: any, client: any) {
     </div>
     <h3 style="font-size:15px;font-weight:700;margin-bottom:10px">DETTAGLIO VANI</h3>
     ${vaniHTML}
-    ${m.noteGen?`<div class="note-box" style="margin-top:16px"><strong>📝 Note Generali:</strong><br/>${m.noteGen}</div>`:""}
+    ${m.noteGen?`<div class="note-box" style="margin-top:16px"><strong> Note Generali:</strong><br/>${m.noteGen}</div>`:""}
     <div class="sign-area"><div class="sign-box">Firma Rilevatore</div><div class="sign-box">Firma Cliente</div></div>
     <div class="footer"><span>FrameFlow — Generato il ${new Date().toLocaleString("it-IT")}</span><span>${pratica?.numero||""}</span></div>
   `;
@@ -222,8 +247,8 @@ function exportRiparazione(pratica: any, client: any) {
   const urgColors: Record<string,string> = {bassa:"background:#ecfdf5;color:#059669",media:"background:#fffbeb;color:#d97706",alta:"background:#fef2f2;color:#ef4444",urgente:"background:#f5f3ff;color:#7c3aed"};
   const content = `
     <div class="header">
-      <div><div class="logo"><span>◈</span> FrameFlow</div><div class="doc-title">🛠️ SCHEDA RIPARAZIONE</div></div>
-      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#6366f1">${pratica?.numero||""}</div><div style="font-size:12px;color:#64748b">${new Date().toLocaleDateString("it-IT")}</div></div>
+      <div><div class="logo">FRAMEFLOW</div><div class="doc-title">SCHEDA RIPARAZIONE</div></div>
+      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#3a7bd5">${pratica?.numero||""}</div><div style="font-size:12px;color:#64748b">${new Date().toLocaleDateString("it-IT")}</div></div>
     </div>
     <div class="info-grid">
       <div class="info-row"><span class="info-label">Cliente</span><span class="info-val">${client?.nome||"—"}</span></div>
@@ -244,7 +269,7 @@ function exportRiparazione(pratica: any, client: any) {
       <div class="info-row"><span class="info-label">Ricambi</span><span class="info-val">${r.ricambi||"—"}</span></div>
       <div class="info-row"><span class="info-label">Costo Stimato</span><span class="info-val">${r.costoStimato?"€ "+r.costoStimato:"—"}</span></div>
     </div>
-    ${r.noteRip?`<div class="note-box"><strong>📝 Note:</strong><br/>${r.noteRip}</div>`:""}
+    ${r.noteRip?`<div class="note-box"><strong> Note:</strong><br/>${r.noteRip}</div>`:""}
     <div class="sign-area"><div class="sign-box">Firma Tecnico</div><div class="sign-box">Firma Cliente</div></div>
     <div class="footer"><span>FrameFlow — Generato il ${new Date().toLocaleString("it-IT")}</span><span>${pratica?.numero||""}</span></div>
   `;
@@ -254,9 +279,9 @@ function exportRiparazione(pratica: any, client: any) {
 function exportPratica(pratica: any, client: any) {
   const sc = STATUS[pratica.status];
   const actionsHTML = pratica.actions.map((a: any) => {
-    const cfg = ACTIONS_CFG.find(ac=>ac.key===a.type)||{icon:"📋",label:a.type};
+    const cfg = ACTIONS_CFG.find(ac=>ac.key===a.type)||{icon:"",label:a.type};
     const asc = STATUS[a.status];
-    const tasksHTML = a.tasks.map((t: any) => `<tr><td style="width:24px">${t.done?"✅":"⬜"}</td><td style="${t.done?"text-decoration:line-through;color:#9ca3af":""}">${t.text}</td></tr>`).join("");
+    const tasksHTML = a.tasks.map((t: any) => `<tr><td style="width:24px">${t.done?"":"⬜"}</td><td style="${t.done?"text-decoration:line-through;color:#9ca3af":""}">${t.text}</td></tr>`).join("");
     return `<div style="margin-bottom:12px;border-left:4px solid ${(cfg as any).color||"#6b7280"};padding-left:12px">
       <div style="display:flex;justify-content:space-between;align-items:center"><strong>${cfg.icon} ${cfg.label}</strong><span class="status-badge" style="background:${asc.bg};color:${asc.color}">${asc.label}</span></div>
       ${tasksHTML?`<table style="margin-top:6px">${tasksHTML}</table>`:""}
@@ -265,8 +290,8 @@ function exportPratica(pratica: any, client: any) {
 
   const content = `
     <div class="header">
-      <div><div class="logo"><span>◈</span> FrameFlow</div><div class="doc-title">📋 RIEPILOGO PRATICA</div></div>
-      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#6366f1">${pratica.numero}</div><span class="status-badge" style="background:${sc.bg};color:${sc.color};font-size:13px">${sc.label}</span></div>
+      <div><div class="logo">FRAMEFLOW</div><div class="doc-title">RIEPILOGO PRATICA</div></div>
+      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#3a7bd5">${pratica.numero}</div><span class="status-badge" style="background:${sc.bg};color:${sc.color};font-size:13px">${sc.label}</span></div>
     </div>
     <div class="info-grid">
       <div class="info-row"><span class="info-label">Cliente</span><span class="info-val">${client?.nome||"—"}</span></div>
@@ -276,10 +301,10 @@ function exportPratica(pratica: any, client: any) {
       <div class="info-row"><span class="info-label">Data</span><span class="info-val">${fmtDate(pratica.data)} ore ${pratica.ora}</span></div>
       <div class="info-row"><span class="info-label">N° Azioni</span><span class="info-val">${pratica.actions.length}</span></div>
     </div>
-    ${pratica.note?`<div class="note-box"><strong>📝 Note:</strong> ${pratica.note}</div>`:""}
+    ${pratica.note?`<div class="note-box"><strong> Note:</strong> ${pratica.note}</div>`:""}
     ${pratica.actions.length>0?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px">AZIONI</h3>${actionsHTML}`:""}
-    ${pratica.misure?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px">📐 MISURE</h3><div class="info-grid"><div class="info-row"><span class="info-label">Sistema</span><span class="info-val">${pratica.misure.sistema||"—"}</span></div><div class="info-row"><span class="info-label">N° Vani</span><span class="info-val">${(pratica.misure.vani||[]).length}</span></div><div class="info-row"><span class="info-label">Colore</span><span class="info-val">${pratica.misure.coloreInt||"—"} / ${pratica.misure.coloreEst||"—"}</span></div></div>`:""}
-    ${pratica.riparazione?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px">🛠️ RIPARAZIONE</h3><div class="info-grid"><div class="info-row"><span class="info-label">Problema</span><span class="info-val">${pratica.riparazione.problema||"—"}</span></div><div class="info-row"><span class="info-label">Urgenza</span><span class="info-val">${pratica.riparazione.urgenza||"—"}</span></div><div class="info-row"><span class="info-label">Costo</span><span class="info-val">${pratica.riparazione.costoStimato?"€ "+pratica.riparazione.costoStimato:"—"}</span></div></div>`:""}
+    ${pratica.misure?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px"> MISURE</h3><div class="info-grid"><div class="info-row"><span class="info-label">Sistema</span><span class="info-val">${pratica.misure.sistema||"—"}</span></div><div class="info-row"><span class="info-label">N° Vani</span><span class="info-val">${(pratica.misure.vani||[]).length}</span></div><div class="info-row"><span class="info-label">Colore</span><span class="info-val">${pratica.misure.coloreInt||"—"} / ${pratica.misure.coloreEst||"—"}</span></div></div>`:""}
+    ${pratica.riparazione?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px"> RIPARAZIONE</h3><div class="info-grid"><div class="info-row"><span class="info-label">Problema</span><span class="info-val">${pratica.riparazione.problema||"—"}</span></div><div class="info-row"><span class="info-label">Urgenza</span><span class="info-val">${pratica.riparazione.urgenza||"—"}</span></div><div class="info-row"><span class="info-label">Costo</span><span class="info-val">${pratica.riparazione.costoStimato?"€ "+pratica.riparazione.costoStimato:"—"}</span></div></div>`:""}
     <div class="footer"><span>FrameFlow — Generato il ${new Date().toLocaleString("it-IT")}</span><span>${pratica.numero}</span></div>
   `;
   printHTML(`Pratica ${pratica.numero} - ${client?.nome}`, content);
@@ -300,35 +325,43 @@ function exportPreventivo(pratica: any, client: any, showDetails: boolean) {
       <td><strong>${p.descrizione||"—"}</strong>${p.ambiente?`<br/><span style="font-size:11px;color:#64748b">${p.ambiente}</span>`:""}</td>
       <td style="text-align:center">${p.tipoPrezzoLabel||p.tipoPrezzo||"—"}</td>
       <td style="text-align:center">${p.quantita||1}</td>
-      <td style="text-align:right">€ ${(p.prezzoUnitario||0).toFixed(2)}</td>
-      <td style="text-align:right;font-weight:700">€ ${(p.totale||0).toFixed(2)}</td>
+      <td style="text-align:right">€ ${(parseFloat(p.prezzoUnitario)||0).toFixed(2)}</td>
+      <td style="text-align:right;font-weight:700">€ ${(parseFloat(p.totale)||0).toFixed(2)}</td>
     </tr>
   `).join("") : "";
 
   const content = `
     <div class="header">
-      <div><div class="logo"><span>◈</span> FrameFlow</div><div class="doc-title">💰 PREVENTIVO</div></div>
-      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#6366f1">${pratica?.numero||""}</div><div style="font-size:12px;color:#64748b">${new Date().toLocaleDateString("it-IT")}</div></div>
+      <div><div class="logo">FRAMEFLOW</div><div class="doc-title">PREVENTIVO</div></div>
+      <div style="text-align:right"><div style="font-size:16px;font-weight:800;color:#3a7bd5;font-family:'JetBrains Mono','SF Mono',monospace">${pratica?.numero||""}</div><div style="font-size:11px;color:#5c6370">${new Date().toLocaleDateString("it-IT")}</div></div>
     </div>
     <div class="info-grid">
       <div class="info-row"><span class="info-label">Cliente</span><span class="info-val">${client?.nome||"—"}</span></div>
       <div class="info-row"><span class="info-label">Telefono</span><span class="info-val">${client?.telefono||"—"}</span></div>
-      <div class="info-row"><span class="info-label">Indirizzo</span><span class="info-val">${pratica?.indirizzo||"—"}</span></div>
+      ${client?.piva?`<div class="info-row"><span class="info-label">P.IVA</span><span class="info-val">${client.piva}</span></div>`:""}
+      ${client?.codiceFiscale?`<div class="info-row"><span class="info-label">C.F.</span><span class="info-val">${client.codiceFiscale}</span></div>`:""}
+      <div class="info-row"><span class="info-label">Indirizzo</span><span class="info-val">${pratica?.indirizzo||client?.indirizzo||"—"}</span></div>
       <div class="info-row"><span class="info-label">Email</span><span class="info-val">${client?.email||"—"}</span></div>
+      ${pratica?.misure?`<div class="info-row"><span class="info-label">Piano</span><span class="info-val">${pratica.misure.piano||"—"}</span></div>
+      <div class="info-row"><span class="info-label">Mezzi Salita</span><span class="info-val">${pratica.misure.mezziSalita||"—"}</span></div>
+      <div class="info-row"><span class="info-label">Sistema</span><span class="info-val">${pratica.misure.sistema||"—"}</span></div>
+      <div class="info-row"><span class="info-label">N° Vani</span><span class="info-val">${(pratica.misure.vani||[]).length}</span></div>
+      <div class="info-row"><span class="info-label">Colore Int.</span><span class="info-val">${pratica.misure.coloreInt||"—"}</span></div>
+      <div class="info-row"><span class="info-label">Colore Est.</span><span class="info-val">${pratica.misure.coloreEst||"—"}</span></div>`:""}
     </div>
     ${showDetails ? `
     <table>
       <thead><tr><th>#</th><th>Descrizione</th><th>Tipo</th><th>Q.tà</th><th style="text-align:right">Prezzo Un.</th><th style="text-align:right">Totale</th></tr></thead>
       <tbody>${prodottiHTML}</tbody>
     </table>` : ""}
-    <div style="margin-top:16px;border:2px solid #1e293b;border-radius:8px;padding:14px;page-break-inside:avoid">
+    <div class="totals-box">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Subtotale:</span><span style="font-weight:600">€ ${subtotale.toFixed(2)}</span></div>
       ${prev.sconto>0?`<div style="display:flex;justify-content:space-between;margin-bottom:6px;color:#dc2626"><span>Sconto ${prev.sconto}%:</span><span>- € ${scontoVal.toFixed(2)}</span></div>`:""}
       <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Imponibile:</span><span style="font-weight:600">€ ${imponibile.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>IVA ${prev.iva||22}%:</span><span>€ ${ivaVal.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;border-top:2px solid #1e293b;padding-top:8px;margin-top:8px"><span>TOTALE:</span><span style="color:#059669">€ ${totale.toFixed(2)}</span></div>
     </div>
-    ${prev.condizioni?`<div style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:12px"><strong>Condizioni:</strong><br/>${prev.condizioni.replace(/\n/g,"<br/>")}</div>`:""}
+    ${prev.condizioni?`<div style="margin-top:16px;padding:12px;background:#f8fafc;;border:1px solid #e2e8f0;font-size:12px"><strong>Condizioni:</strong><br/>${prev.condizioni.replace(/\n/g,"<br/>")}</div>`:""}
     ${prev.validita?`<div style="margin-top:8px;font-size:12px;color:#64748b"><strong>Validità preventivo:</strong> ${prev.validita} giorni dalla data di emissione</div>`:""}
     <div class="sign-area"><div class="sign-box">Timbro e Firma Azienda</div><div class="sign-box">Firma Cliente per Accettazione</div></div>
     <div class="footer"><span>FrameFlow — Generato il ${new Date().toLocaleString("it-IT")}</span><span>${pratica?.numero||""}</span></div>
@@ -347,15 +380,15 @@ function exportConfermaOrdine(pratica: any, client: any) {
   const totale = imponibile + ivaVal;
 
   const prodottiHTML = (prev.prodotti||[]).map((p: any, i: number) => `
-    <tr><td>${i+1}</td><td><strong>${p.descrizione||"—"}</strong></td><td style="text-align:center">${p.quantita||1}</td><td style="text-align:right;font-weight:700">€ ${(p.totale||0).toFixed(2)}</td></tr>
+    <tr><td>${i+1}</td><td><strong>${p.descrizione||"—"}</strong></td><td style="text-align:center">${p.quantita||1}</td><td style="text-align:right;font-weight:700">€ ${(parseFloat(p.totale)||0).toFixed(2)}</td></tr>
   `).join("");
 
   const content = `
     <div class="header">
-      <div><div class="logo"><span>◈</span> FrameFlow</div><div class="doc-title">✅ CONFERMA D'ORDINE</div></div>
+      <div><div class="logo">FRAMEFLOW</div><div class="doc-title">CONFERMA D'ORDINE</div></div>
       <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#059669">${pratica?.numero||""}</div><div style="font-size:12px;color:#64748b">Data conferma: ${new Date(conf.dataConferma).toLocaleDateString("it-IT")}</div></div>
     </div>
-    <div style="background:#ecfdf5;border:2px solid #059669;border-radius:8px;padding:12px;margin-bottom:16px;text-align:center;font-weight:800;color:#059669;font-size:16px">✅ ORDINE CONFERMATO</div>
+    <div style="background:#ecfdf5;border:2px solid #059669;;padding:12px;margin-bottom:16px;text-align:center;font-weight:800;color:#059669;font-size:16px"> ORDINE CONFERMATO</div>
     <div class="info-grid">
       <div class="info-row"><span class="info-label">Cliente</span><span class="info-val">${client?.nome||"—"}</span></div>
       ${client?.piva?`<div class="info-row"><span class="info-label">P.IVA</span><span class="info-val">${client.piva}</span></div>`:""}
@@ -364,11 +397,11 @@ function exportConfermaOrdine(pratica: any, client: any) {
       <div class="info-row"><span class="info-label">Telefono</span><span class="info-val">${client?.telefono||"—"}</span></div>
     </div>
     <table><thead><tr><th>#</th><th>Descrizione</th><th>Q.tà</th><th style="text-align:right">Totale</th></tr></thead><tbody>${prodottiHTML}</tbody></table>
-    <div style="margin-top:16px;border:2px solid #1e293b;border-radius:8px;padding:14px">
+    <div style="margin-top:16px;border:2px solid #1e293b;;padding:14px">
       <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800"><span>TOTALE ORDINE:</span><span style="color:#059669">€ ${totale.toFixed(2)}</span></div>
     </div>
-    ${prev.condizioni?`<div style="margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:12px"><strong>Condizioni:</strong><br/>${prev.condizioni.replace(/\n/g,"<br/>")}</div>`:""}
-    ${conf.note?`<div style="margin-top:8px;padding:12px;background:#f8fafc;border-radius:8px;font-size:12px"><strong>Note ordine:</strong> ${conf.note}</div>`:""}
+    ${prev.condizioni?`<div style="margin-top:16px;padding:12px;background:#f8fafc;;border:1px solid #e2e8f0;font-size:12px"><strong>Condizioni:</strong><br/>${prev.condizioni.replace(/\n/g,"<br/>")}</div>`:""}
+    ${conf.note?`<div style="margin-top:8px;padding:12px;background:#f8fafc;;font-size:12px"><strong>Note ordine:</strong> ${conf.note}</div>`:""}
     <div class="sign-area">
       <div class="sign-box">Timbro e Firma Azienda</div>
       <div class="sign-box">${conf.firmaImg?`<img src="${conf.firmaImg}" style="max-height:80px;max-width:100%" /><br/><span style="font-size:10px">Firmato digitalmente il ${new Date(conf.dataConferma).toLocaleString("it-IT")}</span>`:"Firma Cliente per Accettazione"}</div>
@@ -389,19 +422,19 @@ function exportFattura(pratica: any, client: any) {
   const totale = imponibile + ivaVal;
 
   const prodottiHTML = (prev.prodotti||[]).map((p: any, i: number) => `
-    <tr><td>${i+1}</td><td><strong>${p.descrizione||"—"}</strong>${p.ambiente?`<br/><span style="font-size:11px;color:#64748b">${p.ambiente}</span>`:""}</td><td style="text-align:center">${p.quantita||1}</td><td style="text-align:right">€ ${(p.prezzoUnitario||0).toFixed(2)}</td><td style="text-align:right;font-weight:700">€ ${(p.totale||0).toFixed(2)}</td></tr>
+    <tr><td>${i+1}</td><td><strong>${p.descrizione||"—"}</strong>${p.ambiente?`<br/><span style="font-size:11px;color:#64748b">${p.ambiente}</span>`:""}</td><td style="text-align:center">${p.quantita||1}</td><td style="text-align:right">€ ${(parseFloat(p.prezzoUnitario)||0).toFixed(2)}</td><td style="text-align:right;font-weight:700">€ ${(parseFloat(p.totale)||0).toFixed(2)}</td></tr>
   `).join("");
 
-  const pagatoLabel = fatt.statoPagamento === "pagato" ? "✅ PAGATA" : fatt.statoPagamento === "acconto" ? `⏳ ACCONTO € ${(fatt.acconto||0).toFixed(2)}` : "❌ DA PAGARE";
+  const pagatoLabel = fatt.statoPagamento === "pagato" ? " PAGATA" : fatt.statoPagamento === "acconto" ? `⏳ ACCONTO € ${(fatt.acconto||0).toFixed(2)}` : " DA PAGARE";
   const pagatoColor = fatt.statoPagamento === "pagato" ? "#059669" : fatt.statoPagamento === "acconto" ? "#d97706" : "#ef4444";
   const pagatoBg = fatt.statoPagamento === "pagato" ? "#ecfdf5" : fatt.statoPagamento === "acconto" ? "#fffbeb" : "#fef2f2";
 
   const content = `
     <div class="header">
-      <div><div class="logo"><span>◈</span> FrameFlow</div><div class="doc-title">🧾 FATTURA DI CORTESIA</div></div>
+      <div><div class="logo">FRAMEFLOW</div><div class="doc-title">FATTURA DI CORTESIA</div></div>
       <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#1e293b">${fatt.numero}</div><div style="font-size:12px;color:#64748b">Data: ${new Date(fatt.data).toLocaleDateString("it-IT")}</div></div>
     </div>
-    <div style="background:${pagatoBg};border:2px solid ${pagatoColor};border-radius:8px;padding:12px;margin-bottom:16px;text-align:center;font-weight:800;color:${pagatoColor};font-size:16px">${pagatoLabel}</div>
+    <div style="background:${pagatoBg};border:2px solid ${pagatoColor};;padding:12px;margin-bottom:16px;text-align:center;font-weight:800;color:${pagatoColor};font-size:16px">${pagatoLabel}</div>
     <div class="info-grid">
       <div class="info-row"><span class="info-label">Cliente</span><span class="info-val">${client?.nome||"—"}</span></div>
       ${client?.piva?`<div class="info-row"><span class="info-label">P.IVA</span><span class="info-val">${client.piva}</span></div>`:""}
@@ -410,7 +443,7 @@ function exportFattura(pratica: any, client: any) {
       <div class="info-row"><span class="info-label">Rif. Pratica</span><span class="info-val">${pratica?.numero||"—"}</span></div>
     </div>
     <table><thead><tr><th>#</th><th>Descrizione</th><th>Q.tà</th><th style="text-align:right">Prezzo Un.</th><th style="text-align:right">Totale</th></tr></thead><tbody>${prodottiHTML}</tbody></table>
-    <div style="margin-top:16px;border:2px solid #1e293b;border-radius:8px;padding:14px">
+    <div style="margin-top:16px;border:2px solid #1e293b;;padding:14px">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Subtotale:</span><span style="font-weight:600">€ ${subtotale.toFixed(2)}</span></div>
       ${prev.sconto>0?`<div style="display:flex;justify-content:space-between;margin-bottom:6px;color:#dc2626"><span>Sconto ${prev.sconto}%:</span><span>- € ${scontoVal.toFixed(2)}</span></div>`:""}
       <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Imponibile:</span><span>€ ${imponibile.toFixed(2)}</span></div>
@@ -419,7 +452,7 @@ function exportFattura(pratica: any, client: any) {
       ${fatt.statoPagamento==="acconto"?`<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px dashed #94a3b8"><span>Acconto versato:</span><span style="color:#d97706;font-weight:700">€ ${(fatt.acconto||0).toFixed(2)}</span></div><div style="display:flex;justify-content:space-between;font-weight:700"><span>Rimanente:</span><span style="color:#ef4444">€ ${(totale-(fatt.acconto||0)).toFixed(2)}</span></div>`:""}
     </div>
     ${fatt.metodoPagamento?`<div style="margin-top:12px;font-size:12px"><strong>Metodo di pagamento:</strong> ${fatt.metodoPagamento}</div>`:""}
-    ${fatt.note?`<div style="margin-top:8px;font-size:12px;padding:12px;background:#f8fafc;border-radius:8px"><strong>Note:</strong> ${fatt.note}</div>`:""}
+    ${fatt.note?`<div style="margin-top:8px;font-size:12px;padding:12px;background:#f8fafc;"><strong>Note:</strong> ${fatt.note}</div>`:""}
     <p style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:center">Questo documento è una fattura di cortesia. La fattura elettronica verrà inviata tramite SDI.</p>
     <div class="footer"><span>FrameFlow — Fattura del ${new Date(fatt.data).toLocaleString("it-IT")}</span><span>${fatt.numero}</span></div>
   `;
@@ -460,10 +493,10 @@ function clientToDb(c: any, userId: string): any {
 }
 function dbToPratica(row: any): any {
   const photos = row.photos || {};
-  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], assegnatoA: row.assegnato_a||null, orgId: row.org_id||null, firmaPosa: row.misure?.firmaPosa||photos.firmaPosa||null, createdAt: row.created_at };
+  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], fotoPosaVani: photos.posaVani||{}, messaggi: row.actions?.__messaggi||photos.messaggi||[], assegnatoA: row.assegnato_a||null, orgId: row.org_id||null, firmaPosa: row.misure?.firmaPosa||photos.firmaPosa||null, createdAt: row.created_at };
 }
 function praticaToDb(p: any, userId: string): any {
-  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data||"", ora: p.ora||"", indirizzo: p.indirizzo||"", tipo: p.tipo||"nuovo_infisso", fase: p.fase||"sopralluogo", status: p.status||"da_fare", note: p.note||"", actions: p.actions||[], misure: p.misure||null, riparazione: p.riparazione||null, preventivo: p.preventivo||null, conferma_ordine: p.confermaOrdine||null, fattura: p.fattura||null, emails: p.emails||[], photos: { sopralluogo: p.fotoSopralluogo||[], posaInizio: p.fotoPosaInizio||[], posaFine: p.fotoPosaFine||[], firmaPosa: p.firmaPosa||null }, assegnato_a: p.assegnatoA||null, org_id: p.orgId||null };
+  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data??"", ora: p.ora??"", indirizzo: p.indirizzo??"", tipo: p.tipo??"nuovo_infisso", fase: p.fase??"sopralluogo", status: p.status??"da_fare", note: p.note??"", actions: p.actions??[], misure: p.misure??null, riparazione: p.riparazione??null, preventivo: p.preventivo??null, conferma_ordine: p.confermaOrdine??null, fattura: p.fattura??null, emails: p.emails??[], photos: { sopralluogo: p.fotoSopralluogo??[], posaInizio: p.fotoPosaInizio??[], posaFine: p.fotoPosaFine??[], posaVani: p.fotoPosaVani??{}, firmaPosa: p.firmaPosa??null, messaggi: p.messaggi??[] }, assegnato_a: p.assegnatoA??null, org_id: p.orgId??null };
 }
 function dbToNote(row: any): any {
   return { id: row.id, testo: row.testo, colore: row.colore, praticaId: row.pratica_id, updatedAt: row.updated_at, createdAt: row.created_at };
@@ -474,23 +507,23 @@ function noteToDb(n: any, userId: string): any {
 
 // ==================== DEFAULT SETTINGS ====================
 const DEFAULT_SISTEMI = [
-  { id: "alluminio", nome: "Alluminio", icon: "🔷" },
+  { id: "alluminio", nome: "Alluminio", icon: "" },
   { id: "pvc", nome: "PVC", icon: "⬜" },
-  { id: "legno", nome: "Legno", icon: "🟫" },
+  { id: "legno", nome: "Legno", icon: "[L]" },
   { id: "ferro", nome: "Ferro", icon: "⬛" },
-  { id: "taglio_termico", nome: "Taglio Termico", icon: "🔶" },
+  { id: "taglio_termico", nome: "Taglio Termico", icon: "[T]" },
 ];
 const DEFAULT_CATEGORIE = [
-  { id: "finestre", nome: "Finestre", icon: "🪟" },
-  { id: "porte", nome: "Porte", icon: "🚪" },
-  { id: "portoncini", nome: "Portoncini", icon: "🏠" },
-  { id: "scorrevoli", nome: "Scorrevoli", icon: "↔️" },
+  { id: "finestre", nome: "Finestre", icon: "" },
+  { id: "porte", nome: "Porte", icon: "[P]" },
+  { id: "portoncini", nome: "Portoncini", icon: "" },
+  { id: "scorrevoli", nome: "Scorrevoli", icon: "[SC]" },
   { id: "tapparelle", nome: "Tapparelle", icon: "🔽" },
   { id: "zanzariere", nome: "Zanzariere", icon: "🦟" },
-  { id: "cassonetti", nome: "Cassonetti", icon: "📦" },
+  { id: "cassonetti", nome: "Cassonetti", icon: "" },
   { id: "persiane", nome: "Persiane", icon: "🏛️" },
-  { id: "inferriate", nome: "Inferriate", icon: "🔒" },
-  { id: "accessori", nome: "Accessori", icon: "🔧" },
+  { id: "inferriate", nome: "Inferriate", icon: "" },
+  { id: "accessori", nome: "Accessori", icon: "" },
 ];
 const DEFAULT_COLORI: Record<string, string[]> = {
   alluminio: ["Bianco RAL 9010","Avorio RAL 1013","Grigio RAL 7016","Marrone RAL 8017","Nero RAL 9005","Testa di Moro RAL 8019","Corten","Bronzo"],
@@ -509,7 +542,7 @@ const DEFAULT_VETRI = [
 ];
 
 function emptyUserSettings() {
-  return { sistemi: [], categorie: [], colori: {}, listino: [], tipologie: [], vetri: [], azienda: { nome:"", email:"", telefono:"", indirizzo:"", piva:"", cf:"" }, setupCompleted: false };
+  return { sistemi: [], categorie: [], colori: {}, listino: [], tipologie: [], vetri: [], checklists: {}, azienda: { nome:"", email:"", telefono:"", indirizzo:"", piva:"", cf:"" }, setupCompleted: false };
 }
 
 async function loadFromSupabase(userId: string) {
@@ -533,6 +566,7 @@ async function loadFromSupabase(userId: string) {
     listino: sRes.data.listino || [],
     tipologie: sRes.data.sistemi?.length > 0 ? (sRes.data.colori?._tipologie || DEFAULT_TIPOLOGIE) : DEFAULT_TIPOLOGIE,
     vetri: sRes.data.colori?._vetri || DEFAULT_VETRI,
+    checklists: sRes.data.colori?._checklists || {},
     azienda: sRes.data.azienda || {},
     setupCompleted: sRes.data.setup_completed || false,
   } : emptyUserSettings();
@@ -547,7 +581,7 @@ function requestNotificationPermission() {
 }
 function sendNotification(title: string, body: string) {
   if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-    new Notification(title, { body, icon: "📋" });
+    new Notification(title, { body, icon: "" });
   }
 }
 
@@ -565,6 +599,16 @@ export default function FrameFlowApp() {
   const [userSettings, setUserSettings] = useState<any>(emptyUserSettings());
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("dashboard");
+  const [saveError, setSaveError] = useState<string|null>(null);
+  const [appTheme, setAppTheme] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("ff-theme") || "classic";
+    return "classic";
+  });
+  S = getThemeStyles(appTheme);
+  function changeTheme(key: string) {
+    setAppTheme(key);
+    localStorage.setItem("ff-theme", key);
+  }
   const [selPratica, setSelPratica] = useState<string|null>(null);
   const [selClient, setSelClient] = useState<string|null>(null);
   const [filter, setFilter] = useState("tutti");
@@ -603,7 +647,10 @@ export default function FrameFlowApp() {
     setLoading(true);
     loadFromSupabase(user.id).then(data => {
       setDb(data);
-      if (data.userSettings) setUserSettings(data.userSettings);
+      if (data.userSettings) {
+        setUserSettings(data.userSettings);
+        try { localStorage.setItem("ff-settings", JSON.stringify({azienda: data.userSettings.azienda||{}})); } catch(e) {}
+      }
       if (data.userSettings && !data.userSettings.setupCompleted) setView("setup_wizard");
       setLoading(false);
     }).catch(() => {
@@ -619,7 +666,8 @@ export default function FrameFlowApp() {
     if (!u) return;
     try {
       // Find my membership
-      const { data: myMemberships } = await supabase.from("team_members").select("*").eq("user_id", u.id).eq("attivo", true);
+      const { data: myMemberships, error: tmError } = await supabase.from("team_members").select("*").eq("user_id", u.id).eq("attivo", true);
+      if (tmError) { console.warn("team_members not available:", tmError.message); return; }
       if (myMemberships && myMemberships.length > 0) {
         const membership = myMemberships[0];
         setMyMember(membership);
@@ -640,7 +688,7 @@ export default function FrameFlowApp() {
           if (me) setMyMember(me);
         }
       }
-    } catch (err) { console.error("Load team error:", err); }
+    } catch (err) { console.warn("Load team skipped:", err); }
   }
 
   // Check for upcoming appointments every minute
@@ -654,11 +702,11 @@ export default function FrameFlowApp() {
         const mins = Math.round(diff / 60000);
         if (mins === 30) {
           const c = db.clients.find((cl: any)=>cl.id===p.clientId);
-          sendNotification(`⏰ Appuntamento tra 30 min`, `${p.numero} - ${c?.nome||""} alle ${p.ora}`);
+          sendNotification(` Appuntamento tra 30 min`, `${p.numero} - ${c?.nome||""} alle ${p.ora}`);
         }
         if (mins === 0) {
           const c = db.clients.find((cl: any)=>cl.id===p.clientId);
-          sendNotification(`🔔 Appuntamento ORA`, `${p.numero} - ${c?.nome||""}`);
+          sendNotification(` Appuntamento ORA`, `${p.numero} - ${c?.nome||""}`);
         }
       });
     }, 60000);
@@ -687,6 +735,12 @@ export default function FrameFlowApp() {
   // ===== DATA FUNCTIONS (Supabase + local state) =====
   function getClient(id: string) { return db.clients.find((c: any)=>c.id===id); }
   function getPratica(id: string) { return db.pratiche.find((p: any)=>p.id===id); }
+  // Custom checklists: use user's custom if available, else default
+  function getTasksForPhase(phase: string): string[] {
+    const custom = userSettings?.checklists?.[phase];
+    if (custom && custom.length > 0) return custom;
+    return DEFAULT_TASKS[phase] || [];
+  }
 
   function saveClient(c: any) {
     const isNew = !c.id || !db.clients.find((x: any)=>x.id===c.id);
@@ -695,13 +749,21 @@ export default function FrameFlowApp() {
     }
     setDb((prev: any) => {
       const clients = isNew ? [...prev.clients, c] : prev.clients.map((x: any)=>x.id===c.id?c:x);
-      return {...prev, clients};
+      const next = {...prev, clients};
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch(e) {}
+      return next;
     });
     if (user) {
       const row = clientToDb(c, user.id);
       if (org?.id) row.org_id = org.id;
       supabase.from("clients").upsert(row).then(({error}) => { 
-        if(error) { console.error("saveClient:", error); alert("⚠️ Errore salvataggio cliente: " + error.message); }
+        if(error) { 
+          console.error("saveClient:", error);
+          if (!error.message?.includes("infinite recursion")) {
+            setSaveError("Errore salvataggio cliente: " + error.message);
+            setTimeout(()=>setSaveError(null), 4000);
+          }
+        }
       });
     }
     return c;
@@ -713,7 +775,7 @@ export default function FrameFlowApp() {
     const sopralluogoAction = {
       id: gid(), type: "sopralluogo", createdAt: new Date().toISOString(),
       status: "da_fare",
-      tasks: (TASKS["sopralluogo"]||[]).map((t: string)=>({id:gid(),text:t,done:false})),
+      tasks: getTasksForPhase("sopralluogo").map((t: string)=>({id:gid(),text:t,done:false})),
     };
     const p: any = {
       id: gid(), numero, clientId, indirizzo: indirizzo||"",
@@ -723,11 +785,21 @@ export default function FrameFlowApp() {
       confermaOrdine: null, fattura: null,
       emails: [], orgId: org?.id||null, createdAt: new Date().toISOString(),
     };
-    setDb((prev: any) => ({...prev, pratiche: [...prev.pratiche, p], nextSeq: prev.nextSeq+1}));
+    setDb((prev: any) => {
+      const next = {...prev, pratiche: [...prev.pratiche, p], nextSeq: prev.nextSeq+1};
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
     if (user) {
       const row = praticaToDb(p, user.id);
       supabase.from("pratiche").insert(row).then(({error}) => { 
-        if(error) { console.error("createPratica:", error); alert("⚠️ Errore creazione pratica: " + error.message); }
+        if(error) { 
+          console.error("createPratica:", error);
+          if (!error.message?.includes("infinite recursion")) {
+            setSaveError("Errore creazione pratica: " + error.message);
+            setTimeout(()=>setSaveError(null), 4000);
+          }
+        }
       });
     }
     return p;
@@ -741,23 +813,34 @@ export default function FrameFlowApp() {
         updatedP = {...p, ...updates};
         return updatedP;
       });
-      return {...prev, pratiche};
+      const next = {...prev, pratiche};
+      // Backup to localStorage immediately
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch(e) {}
+      return next;
     });
-    // Save to Supabase after state update
-    setTimeout(() => {
-      if (user && updatedP) {
-        try {
-          const row = praticaToDb(updatedP, user.id);
-          supabase.from("pratiche").update(row).eq("id", id).then(({error}) => { 
-            if(error) { console.error("updatePratica:", error.message, error.details); alert("⚠️ Errore salvataggio: " + error.message); }
-          });
-        } catch(e) { console.error("updatePratica serialize error:", e); }
-      }
-    }, 50);
+    // Save to Supabase immediately (no setTimeout)
+    if (user && updatedP) {
+      try {
+        const row = praticaToDb(updatedP, user.id);
+        supabase.from("pratiche").update(row).eq("id", id).then(({error}) => { 
+          if(error) { 
+            console.error("updatePratica:", error.message, error.details);
+            if (!error.message?.includes("infinite recursion")) {
+              setSaveError("Errore salvataggio: " + error.message);
+              setTimeout(()=>setSaveError(null), 4000);
+            }
+          }
+        });
+      } catch(e) { console.error("updatePratica serialize error:", e); }
+    }
   }
 
   function deletePratica(id: string) {
-    setDb((prev: any) => ({...prev, pratiche: prev.pratiche.filter((p: any)=>p.id!==id)}));
+    setDb((prev: any) => {
+      const next = {...prev, pratiche: prev.pratiche.filter((p: any)=>p.id!==id)};
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch(e) {}
+      return next;
+    });
     if (user) { supabase.from("pratiche").delete().eq("id", id).then(({error}) => { if(error) console.error("deletePratica:", error); }); }
     if (selPratica===id) { setSelPratica(null); setView("dashboard"); }
   }
@@ -768,7 +851,7 @@ export default function FrameFlowApp() {
     const newAct = {
       id: gid(), type: actionKey, createdAt: new Date().toISOString(),
       status: "da_fare",
-      tasks: (TASKS[actionKey]||[]).map((t: string)=>({id:gid(),text:t,done:false})),
+      tasks: getTasksForPhase(actionKey).map((t: string)=>({id:gid(),text:t,done:false})),
     };
     updatePratica(praticaId, { actions: [...p.actions, newAct] });
     setActionPicker(null);
@@ -788,11 +871,11 @@ export default function FrameFlowApp() {
     // Auto-create action for next phase if it has tasks
     const hasAction = p.actions.find((a: any) => a.type === nextPhase.key);
     let newActions = [...p.actions];
-    if (!hasAction && TASKS[nextPhase.key]) {
+    if (!hasAction && getTasksForPhase(nextPhase.key).length > 0) {
       newActions.push({
         id: gid(), type: nextPhase.key, createdAt: new Date().toISOString(),
         status: "da_fare",
-        tasks: (TASKS[nextPhase.key]||[]).map((t: string)=>({id:gid(),text:t,done:false})),
+        tasks: getTasksForPhase(nextPhase.key).map((t: string)=>({id:gid(),text:t,done:false})),
       });
     }
     updatePratica(praticaId, { fase: nextPhase.key, actions: newActions, status: "in_corso" });
@@ -815,12 +898,30 @@ export default function FrameFlowApp() {
       if (allDone) st="completato"; else if (anyDone && st==="da_fare") st="in_corso";
       return {...a, tasks, status: st};
     });
-    const allComplete = actions.every((a: any)=>a.status==="completato");
-    const anyStarted = actions.some((a: any)=>a.status!=="da_fare");
     let mainSt = p.status;
-    if (allComplete && actions.length>0) mainSt="completato";
-    else if (anyStarted && mainSt==="da_fare") mainSt="in_corso";
+    const anyStarted = actions.some((a: any)=>a.status!=="da_fare");
+    if (anyStarted && mainSt==="da_fare") mainSt="in_corso";
     updatePratica(praticaId, { actions, status: mainSt });
+  }
+
+  function addTaskToAction(praticaId: string, actionId: string, text: string) {
+    const p = getPratica(praticaId);
+    if (!p || !text.trim()) return;
+    const actions = p.actions.map((a: any) => {
+      if (a.id !== actionId) return a;
+      return {...a, tasks: [...a.tasks, {id: gid(), text: text.trim(), done: false}]};
+    });
+    updatePratica(praticaId, { actions });
+  }
+
+  function removeTaskFromAction(praticaId: string, actionId: string, taskId: string) {
+    const p = getPratica(praticaId);
+    if (!p) return;
+    const actions = p.actions.map((a: any) => {
+      if (a.id !== actionId) return a;
+      return {...a, tasks: a.tasks.filter((t: any) => t.id !== taskId)};
+    });
+    updatePratica(praticaId, { actions });
   }
 
   function saveMisure(praticaId: string, misureData: any) {
@@ -887,12 +988,14 @@ export default function FrameFlowApp() {
 
   async function saveUserSettingsToDb(newSettings: any) {
     setUserSettings(newSettings);
+    // Cache azienda for PDF export
+    try { localStorage.setItem("ff-settings", JSON.stringify({azienda: newSettings.azienda||{}})); } catch(e) {}
     if (!user) return;
     const row = {
       user_id: user.id,
       sistemi: newSettings.sistemi || [],
       categorie: newSettings.categorie || [],
-      colori: { ...newSettings.colori, _tipologie: newSettings.tipologie || [], _vetri: newSettings.vetri || [] },
+      colori: { ...newSettings.colori, _tipologie: newSettings.tipologie || [], _vetri: newSettings.vetri || [], _checklists: newSettings.checklists || {} },
       listino: newSettings.listino || [],
       azienda: newSettings.azienda || {},
       setup_completed: newSettings.setupCompleted || false,
@@ -903,8 +1006,11 @@ export default function FrameFlowApp() {
   }
 
   // ===== TEAM FUNCTIONS =====
-  const isAdmin = myMember?.ruolo === "admin" || (org && org.created_by === user?.id);
-  const myPermissions: string[] = myMember?.permessi || ["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione"];
+  const isAdmin = myMember?.ruolo === "admin" || (org && org.created_by === user?.id) || !myMember;
+  const myRole = myMember?.ruolo || "admin";
+  const myRoleCfg = ROLES[myRole] || ROLES.admin;
+  const myPermissions: string[] = myMember?.permessi || myRoleCfg.permessi;
+  const canSeeNav: string[] = myRoleCfg.canSee;
 
   async function createOrganization(orgData: any) {
     if (!user) return;
@@ -920,7 +1026,7 @@ export default function FrameFlowApp() {
     // Add self as admin
     const { data: memberData, error: mErr } = await supabase.from("team_members").insert({
       org_id: orgRow.id, user_id: user.id, nome: user.email?.split("@")[0] || "Admin",
-      email: user.email, ruolo: "admin", permessi: ["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione"],
+      email: user.email, ruolo: "admin", permessi: ROLES.admin.permessi,
       invite_accepted: true,
     }).select().single();
     if (mErr) { console.error("Add admin:", mErr); return; }
@@ -979,41 +1085,45 @@ export default function FrameFlowApp() {
   }, [userColori]);
 
   // ── Computed ──
-  const todayPratiche = useMemo(() => db.pratiche.filter((p: any)=>p.data===today()&&p.status!=="completato"), [db.pratiche]);
+  const myPratiche = useMemo(() => {
+    if (isAdmin || !myMember) return db.pratiche;
+    return db.pratiche.filter((p: any) => p.assegnatoA === myMember.id);
+  }, [db.pratiche, isAdmin, myMember]);
+  const todayPratiche = useMemo(() => myPratiche.filter((p: any)=>p.data===today()&&p.status!=="completato"), [myPratiche]);
   const tomorrowPratiche = useMemo(() => {
     const tom = new Date(); tom.setDate(tom.getDate()+1);
-    return db.pratiche.filter((p: any)=>p.data===tom.toISOString().split("T")[0]&&p.status!=="completato");
-  }, [db.pratiche]);
+    return myPratiche.filter((p: any)=>p.data===tom.toISOString().split("T")[0]&&p.status!=="completato");
+  }, [myPratiche]);
   const upcomingPratiche = useMemo(() => {
-    return db.pratiche.filter((p: any)=>p.status!=="completato"&&daysFromNow(p.data)>=0).sort((a: any,b: any)=>a.data.localeCompare(b.data)||a.ora.localeCompare(b.ora)).slice(0,8);
-  }, [db.pratiche]);
-  const overduePratiche = useMemo(() => db.pratiche.filter((p: any)=>p.status!=="completato"&&daysFromNow(p.data)<0), [db.pratiche]);
+    return myPratiche.filter((p: any)=>p.status!=="completato"&&daysFromNow(p.data)>=0).sort((a: any,b: any)=>a.data.localeCompare(b.data)||a.ora.localeCompare(b.ora)).slice(0,8);
+  }, [myPratiche]);
+  const overduePratiche = useMemo(() => myPratiche.filter((p: any)=>p.status!=="completato"&&daysFromNow(p.data)<0), [myPratiche]);
   const recentEmails = useMemo(() => {
     const allEmails: any[] = [];
-    db.pratiche.forEach((p: any) => {
+    myPratiche.forEach((p: any) => {
       (p.emails||[]).forEach((e: any) => {
         allEmails.push({...e, praticaNum: p.numero, clientId: p.clientId});
       });
     });
     return allEmails.sort((a,b)=>(b.sentAt||"").localeCompare(a.sentAt||"")).slice(0,5);
-  }, [db.pratiche]);
+  }, [myPratiche]);
 
   const counts = useMemo(() => ({
-    tutti: db.pratiche.length,
-    da_fare: db.pratiche.filter((p: any)=>p.status==="da_fare").length,
-    in_corso: db.pratiche.filter((p: any)=>p.status==="in_corso").length,
-    completato: db.pratiche.filter((p: any)=>p.status==="completato").length,
-  }), [db.pratiche]);
+    tutti: myPratiche.length,
+    da_fare: myPratiche.filter((p: any)=>p.status==="da_fare").length,
+    in_corso: myPratiche.filter((p: any)=>p.status==="in_corso").length,
+    completato: myPratiche.filter((p: any)=>p.status==="completato").length,
+  }), [myPratiche]);
 
   const pendingTasks = useMemo(() => {
     const tasks: any[] = [];
-    db.pratiche.forEach((p: any) => {
+    myPratiche.forEach((p: any) => {
       if (p.status==="completato") return;
       p.actions.forEach((a: any) => {
         a.tasks.forEach((t: any) => {
           if (!t.done) {
             const cfg = ACTIONS_CFG.find(ac=>ac.key===a.type);
-            tasks.push({ ...t, praticaId: p.id, praticaNum: p.numero, actionId: a.id, actionIcon: cfg?.icon||"📋", actionLabel: cfg?.label||a.type, clientId: p.clientId });
+            tasks.push({ ...t, praticaId: p.id, praticaNum: p.numero, actionId: a.id, actionIcon: cfg?.icon||"", actionLabel: cfg?.label||a.type, clientId: p.clientId });
           }
         });
       });
@@ -1023,6 +1133,10 @@ export default function FrameFlowApp() {
 
   const filteredPratiche = useMemo(() => {
     let list = db.pratiche;
+    // Non-admin: show only assigned pratiche
+    if (!isAdmin && myMember) {
+      list = list.filter((p: any) => p.assegnatoA === myMember.id);
+    }
     if (filter!=="tutti") list = list.filter((p: any)=>p.status===filter);
     if (search) {
       const s = search.toLowerCase();
@@ -1032,7 +1146,7 @@ export default function FrameFlowApp() {
       });
     }
     return [...list].sort((a: any,b: any)=>b.createdAt.localeCompare(a.createdAt));
-  }, [db, filter, search]);
+  }, [db, filter, search, isAdmin, myMember]);
 
   const filteredClients = useMemo(() => {
     if (!clientSearch) return db.clients;
@@ -1046,24 +1160,24 @@ export default function FrameFlowApp() {
   // ===== LOGIN / REGISTER =====
   if (!user) {
     return (
-      <div style={{...S.container,background:"linear-gradient(170deg,#1e293b 0%,#334155 50%,#1e293b 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:24}}>
-        <h1 style={{background:"linear-gradient(135deg,#fbbf24,#f59e0b)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",fontSize:36,fontWeight:900,marginBottom:4,letterSpacing:"-1px"}}>◈ FrameFlow</h1>
-        <p style={{color:"#94a3b8",fontSize:14,fontWeight:600,marginBottom:32}}>Gestione Serramenti</p>
-        <div style={{width:"100%",maxWidth:380,background:"#fff",borderRadius:22,padding:28,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+      <div style={{...S.container,background:"#1a1a2e",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:24}}>
+        <h1 style={{color:"#e07a2f",fontSize:28,fontWeight:800,marginBottom:4,letterSpacing:"3px",fontFamily:"'JetBrains Mono','SF Mono',monospace",textTransform:"uppercase"}}>FRAMEFLOW</h1>
+        <p style={{color:"#5c6370",fontSize:12,fontWeight:600,marginBottom:32,letterSpacing:"2px",fontFamily:"'JetBrains Mono','SF Mono',monospace",textTransform:"uppercase"}}>Gestione Serramenti</p>
+        <div style={{width:"100%",maxWidth:380,background:"#fff",borderRadius:2,padding:28,boxShadow:"0 2px 8px rgba(0,0,0,0.12)",border:"1px solid #d5d8de"}}>
           <h2 style={{fontSize:22,fontWeight:900,color:"#1e293b",margin:"0 0 4px",letterSpacing:"-0.5px"}}>{authView==="login"?"Accedi":"Registrati"}</h2>
           <p style={{fontSize:13,color:"#64748b",margin:"0 0 20px"}}>{authView==="login"?"Inserisci le tue credenziali":"Crea il tuo account"}</p>
-          {authError && <div style={{background:"#fef2f2",border:"1.5px solid #ef4444",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#dc2626",fontWeight:600}}>❌ {authError}</div>}
-          {authMsg && <div style={{background:"#ecfdf5",border:"1.5px solid #059669",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#059669",fontWeight:600}}>✅ {authMsg}</div>}
+          {authError && <div style={{background:"#fef2f2",border:"1.5px solid #ef4444",borderRadius:2,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#dc2626",fontWeight:600}}> {authError}</div>}
+          {authMsg && <div style={{background:"#ecfdf5",border:"1.5px solid #059669",borderRadius:2,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#059669",fontWeight:600}}> {authMsg}</div>}
           <div style={{marginBottom:14}}>
             <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Email</label>
-            <input value={authEmail} onChange={(e: any)=>setAuthEmail(e.target.value)} placeholder="nome@email.it" type="email" style={{width:"100%",padding:"14px 16px",borderRadius:14,border:"2px solid #e2e8f0",fontSize:15,outline:"none",boxSizing:"border-box",transition:"border 0.2s"}} onKeyDown={(e: any)=>e.key==="Enter"&&(authView==="login"?handleLogin():handleRegister())} />
+            <input value={authEmail} onChange={(e: any)=>setAuthEmail(e.target.value)} placeholder="nome@email.it" type="email" style={{width:"100%",padding:"14px 16px",borderRadius:2,border:"2px solid #e2e8f0",fontSize:15,outline:"none",boxSizing:"border-box",transition:"border 0.2s"}} onKeyDown={(e: any)=>e.key==="Enter"&&(authView==="login"?handleLogin():handleRegister())} />
           </div>
           <div style={{marginBottom:20}}>
             <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:4}}>Password</label>
-            <input value={authPass} onChange={(e: any)=>setAuthPass(e.target.value)} placeholder="••••••••" type="password" style={{width:"100%",padding:"14px 16px",borderRadius:14,border:"2px solid #e2e8f0",fontSize:15,outline:"none",boxSizing:"border-box"}} onKeyDown={(e: any)=>e.key==="Enter"&&(authView==="login"?handleLogin():handleRegister())} />
+            <input value={authPass} onChange={(e: any)=>setAuthPass(e.target.value)} placeholder="••••••••" type="password" style={{width:"100%",padding:"14px 16px",borderRadius:2,border:"2px solid #e2e8f0",fontSize:15,outline:"none",boxSizing:"border-box"}} onKeyDown={(e: any)=>e.key==="Enter"&&(authView==="login"?handleLogin():handleRegister())} />
           </div>
-          <button onClick={authView==="login"?handleLogin:handleRegister} disabled={!authEmail||!authPass} style={{width:"100%",padding:"15px",borderRadius:14,border:"none",background:authEmail&&authPass?"linear-gradient(135deg,#ff6b35,#ff3d71)":"#e2e8f0",color:authEmail&&authPass?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:authEmail&&authPass?"pointer":"default",boxShadow:authEmail&&authPass?"0 6px 20px rgba(255,107,53,0.35)":"none",letterSpacing:"-0.2px"}}>{authView==="login"?"🔑 Accedi":"📝 Registrati"}</button>
-          <button onClick={()=>{setAuthView(authView==="login"?"register":"login");setAuthError("");setAuthMsg("");}} style={{width:"100%",marginTop:14,padding:"12px",borderRadius:12,border:"none",background:"transparent",color:"#ff6b35",fontSize:14,fontWeight:700,cursor:"pointer"}}>{authView==="login"?"Non hai un account? Registrati":"Hai già un account? Accedi"}</button>
+          <button onClick={authView==="login"?handleLogin:handleRegister} disabled={!authEmail||!authPass} style={{width:"100%",padding:"15px",borderRadius:2,border:"none",background:authEmail&&authPass?"#e07a2f":"#e2e8f0",color:authEmail&&authPass?"#fff":"#94a3b8",fontSize:14,fontWeight:700,cursor:authEmail&&authPass?"pointer":"default",letterSpacing:"1px",textTransform:"uppercase",fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>{authView==="login"?"ACCEDI":"REGISTRATI"}</button>
+          <button onClick={()=>{setAuthView(authView==="login"?"register":"login");setAuthError("");setAuthMsg("");}} style={{width:"100%",marginTop:14,padding:"12px",borderRadius:2,border:"none",background:"transparent",color:"#e07a2f",fontSize:13,fontWeight:700,cursor:"pointer"}}>{authView==="login"?"Non hai un account? Registrati":"Hai già un account? Accedi"}</button>
         </div>
       </div>
     );
@@ -1078,7 +1192,7 @@ export default function FrameFlowApp() {
 
   // ==================== SETTINGS ====================
   if (view==="impostazioni") {
-    return <SettingsView userSettings={userSettings} onSave={(s: any)=>{saveUserSettingsToDb(s);setView("dashboard");}} onBack={()=>setView("dashboard")} />;
+    return <SettingsView userSettings={userSettings} appTheme={appTheme} onChangeTheme={changeTheme} onSave={(s: any)=>{saveUserSettingsToDb(s);setView("dashboard");}} onBack={()=>setView("dashboard")} />;
   }
 
   // ==================== VIEWS ====================
@@ -1103,7 +1217,7 @@ export default function FrameFlowApp() {
     }} onBack={()=>{setEmailDraft(null);setSelPratica(emailDraft);setView("pratica");}} />;
   }
   if (view==="note_edit") {
-    return <NoteEditor note={noteEdit} onSave={(n: any)=>{saveNote(n);setNoteEdit(null);setView("notes");}} onBack={()=>{setNoteEdit(null);setView("notes");}} />;
+    return <NoteEditor note={noteEdit} pratiche={db.pratiche} clients={db.clients} onSave={(n: any)=>{saveNote(n);setNoteEdit(null);setView("notes");}} onBack={()=>{setNoteEdit(null);setView("notes");}} />;
   }
 
   // ACTION PICKER
@@ -1116,7 +1230,7 @@ export default function FrameFlowApp() {
           <h2 style={S.pickerTitle}>Pratica Creata!</h2>
           <div style={S.pickerNum}>{p?.numero}</div>
           <p style={S.pickerClient}>{c?.nome}</p>
-          {p?.indirizzo && <p style={S.pickerAddr}>📍 {p.indirizzo}</p>}
+          {p?.indirizzo && <p style={S.pickerAddr}> {p.indirizzo}</p>}
         </div>
         <h3 style={S.pickerQ}>Qual è la prossima azione?</h3>
         <div style={S.actGrid}>
@@ -1139,7 +1253,7 @@ export default function FrameFlowApp() {
       <div style={S.container}>
         <div style={S.secHdr}><button onClick={()=>setView("dashboard")} style={S.backBtn}>← Annulla</button><h2 style={S.secTitle}>Seleziona Cliente</h2></div>
         <div style={{padding:"0 16px"}}>
-          <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder="🔍 Cerca cliente..." style={S.searchInp} autoFocus />
+          <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder=" Cerca cliente..." style={S.searchInp} autoFocus />
           <button onClick={()=>{setClientForm({nome:"",telefono:"",email:"",indirizzo:"",note:""});setView("new_client");}} style={S.newClientBtn}>+ Nuovo Cliente</button>
           {filteredClients.length===0 ? <div style={S.emptyMini}>{clientSearch?"Nessun risultato":"Nessun cliente ancora"}</div>
           : filteredClients.map((c: any)=>(
@@ -1147,9 +1261,9 @@ export default function FrameFlowApp() {
               <div style={S.clientAvatar}>{c.nome.charAt(0).toUpperCase()}</div>
               <div style={{flex:1}}>
                 <div style={{fontSize:15,fontWeight:600,color:"#0f172a"}}>{c.nome}</div>
-                {c.telefono && <div style={{fontSize:13,color:"#64748b"}}>📞 {c.telefono}</div>}
+                {c.telefono && <div style={{fontSize:13,color:"#64748b"}}> {c.telefono}</div>}
               </div>
-              <span style={{color:"#ff6b35",fontSize:13,fontWeight:700}}>{db.pratiche.filter((p: any)=>p.clientId===c.id).length} pratiche</span>
+              <span style={{color:"#e07a2f",fontSize:13,fontWeight:700}}>{db.pratiche.filter((p: any)=>p.clientId===c.id).length} pratiche</span>
             </button>
           ))}
         </div>
@@ -1176,7 +1290,7 @@ export default function FrameFlowApp() {
             const c = saveClient({...clientForm,nome:clientForm.nome.trim()});
             if (isEdit) { setClientForm(null); setView("clienti"); }
             else { setSelClient(c.id); setClientForm(null); setView("new_pratica"); }
-          }} disabled={!clientForm.nome.trim()} style={{...S.saveBtn,opacity:clientForm.nome.trim()?1:0.5}}>{isEdit?"💾 Salva Modifiche":"Salva e Continua →"}</button>
+          }} disabled={!clientForm.nome.trim()} style={{...S.saveBtn,opacity:clientForm.nome.trim()?1:0.5}}>{isEdit?" Salva Modifiche":"Salva e Continua →"}</button>
         </div>
       </div>
     );
@@ -1194,13 +1308,15 @@ export default function FrameFlowApp() {
   // PRATICA DETAIL
   if (view==="pratica" && selPratica) {
     const p = getPratica(selPratica);
-    if (!p) { setView("dashboard"); return null; }
+    if (!p) return <div style={S.container}><div style={{padding:20}}><button onClick={()=>{setSelPratica(null);setView("pratiche");}} style={S.backBtn}>← Torna alle pratiche</button><p style={{marginTop:20,color:"#5c6370"}}>Pratica non trovata.</p></div></div>;
     const c = getClient(p.clientId);
-    return <PraticaDetail pratica={p} client={c} userId={user?.id} teamMembers={teamMembers} isAdmin={isAdmin}
+    return <PraticaDetail pratica={p} client={c} userId={user?.id} teamMembers={teamMembers} isAdmin={isAdmin} permissions={myPermissions}
       onBack={()=>{setSelPratica(null);setView("pratiche");}}
       onDelete={()=>{if(confirm("Eliminare pratica "+p.numero+"?"))deletePratica(p.id);}}
       onAddAction={()=>{setActionPicker(p.id);setView("action_picker");}}
       onToggleTask={(aid: string,tid: string)=>toggleActionTask(p.id,aid,tid)}
+      onAddTask={(aid: string,text: string)=>addTaskToAction(p.id,aid,text)}
+      onRemoveTask={(aid: string,tid: string)=>removeTaskFromAction(p.id,aid,tid)}
       onOpenMisure={()=>{setMisureEdit(p.id);setView("misure");}}
       onOpenRip={()=>{setRipEdit(p.id);setView("riparazione");}}
       onOpenPrev={()=>{setPrevEdit(p.id);setView("preventivo");}}
@@ -1216,13 +1332,14 @@ export default function FrameFlowApp() {
   }
 
   // ==================== BOTTOM NAV ====================
-  const navItems = [
-    { key: "dashboard", icon: "🏠", label: "Casa" },
-    { key: "calendario", icon: "📅", label: "Agenda" },
-    { key: "pratiche", icon: "📋", label: "Pratiche" },
-    { key: "clienti", icon: "👤", label: "Clienti" },
-    { key: "team", icon: "👥", label: "Team" },
+  const allNavItems = [
+    { key: "dashboard", icon: "■", label: "Home" },
+    { key: "calendario", icon: "▦", label: "Agenda" },
+    { key: "pratiche", icon: "▤", label: "Pratiche" },
+    { key: "clienti", icon: "◉", label: "Clienti" },
+    { key: "team", icon: "◎", label: "Team" },
   ];
+  const navItems = allNavItems.filter(n => canSeeNav.includes(n.key));
 
   // ==================== GLOBAL SEARCH ====================
   if (view === "search") {
@@ -1242,17 +1359,17 @@ export default function FrameFlowApp() {
       <div style={S.container}>
         <div style={{...S.secHdr,background:"#fff"}}>
           <button onClick={()=>{setGlobalSearch("");setView("dashboard");}} style={S.backBtn}>← Indietro</button>
-          <h2 style={S.secTitle}>🔍 Cerca</h2>
+          <h2 style={S.secTitle}> Cerca</h2>
         </div>
         <div style={{padding:"16px"}}>
-          <input value={globalSearch} onChange={(e: any) => setGlobalSearch(e.target.value)} placeholder="Cerca cliente, pratica, indirizzo, nota..." autoFocus style={{...S.searchInp,fontSize:16,padding:"16px 20px",border:"2.5px solid #ff6b35",boxShadow:"0 4px 16px rgba(255,107,53,0.12)"}} />
+          <input value={globalSearch} onChange={(e: any) => setGlobalSearch(e.target.value)} placeholder="Cerca cliente, pratica, indirizzo, nota..." autoFocus style={{...S.searchInp,fontSize:16,padding:"16px 20px",border:"2.5px solid #e07a2f",boxShadow:"0 4px 16px rgba(255,107,53,0.12)"}} />
           
           {q && <p style={{fontSize:13,color:"#64748b",margin:"12px 0 16px",fontWeight:600}}>{totalResults} risultat{totalResults===1?"o":"i"} per "{globalSearch}"</p>}
 
           {/* Clients */}
           {matchedClients.length > 0 && (
             <div style={{marginBottom:20}}>
-              <h3 style={{fontSize:14,fontWeight:800,color:"#ff6b35",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}>👤 Clienti ({matchedClients.length})</h3>
+              <h3 style={{fontSize:14,fontWeight:800,color:"#e07a2f",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}> Clienti ({matchedClients.length})</h3>
               {matchedClients.map((c: any) => (
                 <button key={c.id} onClick={()=>{setSearch(c.nome);setView("clienti");}} style={S.clientRow}>
                   <div style={S.clientAvatar}>{(c.nome||"?")[0]}</div>
@@ -1268,7 +1385,7 @@ export default function FrameFlowApp() {
           {/* Pratiche */}
           {matchedPratiche.length > 0 && (
             <div style={{marginBottom:20}}>
-              <h3 style={{fontSize:14,fontWeight:800,color:"#7c3aed",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}>📋 Pratiche ({matchedPratiche.length})</h3>
+              <h3 style={{fontSize:14,fontWeight:800,color:"#7c3aed",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}> Pratiche ({matchedPratiche.length})</h3>
               {matchedPratiche.map((p: any) => {
                 const c = getClient(p.clientId);
                 const sc = STATUS[p.status];
@@ -1279,7 +1396,7 @@ export default function FrameFlowApp() {
                       <span style={{...S.praticaStatus,background:sc.bg,color:sc.color}}>{sc.icon} {sc.label}</span>
                     </div>
                     <div style={S.praticaCliente}>{c?.nome||"—"}</div>
-                    <div style={S.praticaAddr}>📍 {p.indirizzo||"—"} · {fmtDate(p.data)}</div>
+                    <div style={S.praticaAddr}> {p.indirizzo||"—"} · {fmtDate(p.data)}</div>
                   </button>
                 );
               })}
@@ -1289,7 +1406,7 @@ export default function FrameFlowApp() {
           {/* Notes */}
           {matchedNotes.length > 0 && (
             <div style={{marginBottom:20}}>
-              <h3 style={{fontSize:14,fontWeight:800,color:"#059669",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}>📝 Note ({matchedNotes.length})</h3>
+              <h3 style={{fontSize:14,fontWeight:800,color:"#059669",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}> Note ({matchedNotes.length})</h3>
               {matchedNotes.map((n: any) => (
                 <button key={n.id} onClick={()=>{setNoteEdit(n);setView("note_edit");}} style={{...S.noteCard,background:n.colore||"#fffbeb"}}>
                   <div style={{fontSize:14,fontWeight:600,color:"#1e293b"}}>{(n.testo||"").substring(0,80)}{(n.testo||"").length>80?"...":""}</div>
@@ -1300,7 +1417,7 @@ export default function FrameFlowApp() {
 
           {q && totalResults === 0 && (
             <div style={{textAlign:"center",padding:"40px 20px"}}>
-              <div style={{fontSize:48,marginBottom:12}}>🔍</div>
+              <div style={{fontSize:48,marginBottom:12}}></div>
               <p style={{fontSize:16,fontWeight:700,color:"#374151"}}>Nessun risultato</p>
               <p style={{fontSize:14,color:"#94a3b8"}}>Prova con termini diversi</p>
             </div>
@@ -1308,7 +1425,7 @@ export default function FrameFlowApp() {
 
           {!q && (
             <div style={{textAlign:"center",padding:"40px 20px"}}>
-              <div style={{fontSize:48,marginBottom:12}}>🔍</div>
+              <div style={{fontSize:48,marginBottom:12}}></div>
               <p style={{fontSize:16,fontWeight:700,color:"#374151"}}>Cerca in FrameFlow</p>
               <p style={{fontSize:14,color:"#94a3b8"}}>Clienti, pratiche, indirizzi, note...</p>
             </div>
@@ -1328,11 +1445,11 @@ export default function FrameFlowApp() {
             <p style={S.subtitle}>Gestione Serramenti</p>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Esci">🚪</button>
-            <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Impostazioni">⚙️</button>
-            <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Note">📝</button>
-            <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:14,padding:"11px 14px",fontSize:16,cursor:"pointer"}}>🔍</button>
-            <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ Nuova</button>
+            <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:2,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Esci">🚪</button>
+            {isAdmin && <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:2,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Impostazioni"></button>}
+            {(isAdmin || myPermissions.includes("note")) && <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:2,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Note"></button>}
+            <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:2,padding:"11px 14px",fontSize:16,cursor:"pointer"}}></button>
+            {isAdmin && <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ Nuova</button>}
           </div>
         </div>
 
@@ -1345,6 +1462,7 @@ export default function FrameFlowApp() {
             <p style={{fontSize:14,color:"#64748b",margin:0}}>
               {todayPratiche.length>0?`Hai ${todayPratiche.length} appuntament${todayPratiche.length>1?"i":"o"} oggi`:"Nessun appuntamento per oggi"}
               {overduePratiche.length>0?` · ${overduePratiche.length} scadut${overduePratiche.length>1?"e":"a"}`:""}</p>
+            {!isAdmin && myMember && <div style={{marginTop:8,padding:"6px 14px",borderRadius:2,background:myRoleCfg.bg,display:"inline-flex",alignItems:"center",gap:6}}><span style={{fontSize:14}}>{myRoleCfg.icon}</span><span style={{fontSize:12,fontWeight:700,color:myRoleCfg.color}}>{myRoleCfg.label}</span></div>}
           </div>
 
           {/* Quick Stats */}
@@ -1362,7 +1480,7 @@ export default function FrameFlowApp() {
               <span style={{fontSize:11,color:"#64748b"}}>Completate</span>
             </div>
             <div style={S.dashStat} onClick={()=>setView("clienti")}>
-              <span style={{fontSize:28,fontWeight:800,color:"#ff6b35"}}>{db.clients.length}</span>
+              <span style={{fontSize:28,fontWeight:800,color:"#e07a2f"}}>{db.clients.length}</span>
               <span style={{fontSize:11,color:"#64748b"}}>Clienti</span>
             </div>
           </div>
@@ -1370,7 +1488,7 @@ export default function FrameFlowApp() {
           {/* Overdue alert */}
           {overduePratiche.length>0 && (
             <div style={S.alertCard}>
-              <span style={{fontSize:20}}>⚠️</span>
+              <span style={{fontSize:20}}></span>
               <div style={{flex:1}}>
                 <div style={{fontSize:14,fontWeight:700,color:"#dc2626"}}>{overduePratiche.length} pratich{overduePratiche.length>1?"e":"a"} scadut{overduePratiche.length>1?"e":"a"}</div>
                 <div style={{fontSize:12,color:"#9ca3af"}}>
@@ -1385,7 +1503,7 @@ export default function FrameFlowApp() {
 
           {/* Today's Appointments */}
           <div style={S.dashSection}>
-            <h3 style={S.dashSectionTitle}>📅 Appuntamenti di Oggi</h3>
+            <h3 style={S.dashSectionTitle}> Appuntamenti di Oggi</h3>
             {todayPratiche.length===0 ? <p style={S.dashEmpty}>Nessun appuntamento oggi</p>
             : todayPratiche.map((p: any) => {
               const c = getClient(p.clientId);
@@ -1395,7 +1513,7 @@ export default function FrameFlowApp() {
                   <div style={{...S.appointTime,background:sc.bg,color:sc.color}}>{p.ora}</div>
                   <div style={{flex:1}}>
                     <div style={{fontSize:14,fontWeight:600,color:"#0f172a"}}>{c?.nome||"—"}</div>
-                    <div style={{fontSize:12,color:"#64748b"}}>{p.numero} {p.indirizzo?`· 📍 ${p.indirizzo}`:""}</div>
+                    <div style={{fontSize:12,color:"#64748b"}}>{p.numero} {p.indirizzo?`·  ${p.indirizzo}`:""}</div>
                     {p.actions.length>0 && <div style={{fontSize:11,color:"#7c3aed",marginTop:2}}>{p.actions.map((a: any)=>{const cfg=ACTIONS_CFG.find(ac=>ac.key===a.type);return cfg?.icon+" "+cfg?.label;}).join(", ")}</div>}
                   </div>
                   <span style={{fontSize:18}}>→</span>
@@ -1407,7 +1525,7 @@ export default function FrameFlowApp() {
           {/* Tomorrow */}
           {tomorrowPratiche.length>0 && (
             <div style={S.dashSection}>
-              <h3 style={S.dashSectionTitle}>📅 Domani ({tomorrowPratiche.length})</h3>
+              <h3 style={S.dashSectionTitle}> Domani ({tomorrowPratiche.length})</h3>
               {tomorrowPratiche.map((p: any) => {
                 const c = getClient(p.clientId);
                 return (
@@ -1426,7 +1544,7 @@ export default function FrameFlowApp() {
           {/* Pending Tasks */}
           {pendingTasks.length>0 && (
             <div style={S.dashSection}>
-              <h3 style={S.dashSectionTitle}>✅ Cose da Fare ({pendingTasks.length})</h3>
+              <h3 style={S.dashSectionTitle}> Cose da Fare ({pendingTasks.length})</h3>
               {pendingTasks.map((t: any) => {
                 const c = getClient(t.clientId);
                 return (
@@ -1445,7 +1563,7 @@ export default function FrameFlowApp() {
           {/* Recent Emails */}
           {recentEmails.length>0 && (
             <div style={S.dashSection}>
-              <h3 style={S.dashSectionTitle}>✉️ Email Recenti</h3>
+              <h3 style={S.dashSectionTitle}> Email Recenti</h3>
               {recentEmails.map((e: any) => {
                 const c = getClient(e.clientId);
                 return (
@@ -1459,27 +1577,28 @@ export default function FrameFlowApp() {
           )}
 
           {/* Statistiche Button */}
-          <button onClick={()=>setView("stats")} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#1e293b,#334155)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",marginBottom:20,boxShadow:"0 4px 16px rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",gap:10,letterSpacing:"-0.2px"}}>
-            📊 Statistiche e Report <span style={{fontSize:18}}>→</span>
+          <button onClick={()=>setView("stats")} style={{width:"100%",padding:"16px",borderRadius:2,border:"none",background:"#1a1a2e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"center",gap:10,letterSpacing:"-0.2px"}}>
+             Statistiche e Report <span style={{fontSize:18}}>→</span>
           </button>
 
           {/* Quick Notes */}
           <div style={S.dashSection}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <h3 style={S.dashSectionTitle}>📝 Note Rapide</h3>
+              <h3 style={S.dashSectionTitle}> Note Rapide</h3>
               <button onClick={()=>{setNoteEdit({testo:"",colore:"#fffbeb",praticaId:""});setView("note_edit");}} style={S.addNoteBtn}>+</button>
             </div>
             {(db.notes||[]).length===0 ? <p style={S.dashEmpty}>Nessuna nota</p>
             : (db.notes||[]).slice(0,4).map((n: any)=>(
               <button key={n.id} onClick={()=>{setNoteEdit(n);setView("note_edit");}} style={{...S.noteCard,background:n.colore||"#fffbeb"}}>
                 <div style={{fontSize:13,fontWeight:600,color:"#0f172a"}}>{n.testo?.substring(0,80)||"Nota vuota"}{(n.testo?.length||0)>80?"...":""}</div>
-                {n.praticaId && <div style={{fontSize:11,color:"#7c3aed",marginTop:2}}>📋 {getPratica(n.praticaId)?.numero||""}</div>}
+                {n.praticaId && <div style={{fontSize:11,color:"#7c3aed",marginTop:2}}> {getPratica(n.praticaId)?.numero||""}</div>}
                 <div style={{fontSize:10,color:"#94a3b8",marginTop:4}}>{n.updatedAt?new Date(n.updatedAt).toLocaleString("it-IT"):""}</div>
               </button>
             ))}
           </div>
         </div>
 
+        {saveError&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#dc2626",color:"#fff",padding:"10px 20px",borderRadius:2,fontSize:13,fontWeight:700,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:340,textAlign:"center"}}>{saveError}</div>}
         <BottomNav items={navItems} active={view} onNav={setView} />
       </div>
     );
@@ -1532,48 +1651,48 @@ export default function FrameFlowApp() {
 
     return (
       <div style={S.container}>
-        <div style={{...S.secHdr,background:"linear-gradient(135deg,#1e293b,#334155)",borderRadius:"0 0 20px 20px"}}>
+        <div style={{...S.secHdr,background:"#1a1a2e",borderRadius:"0 0 20px 20px"}}>
           <button onClick={()=>setView("dashboard")} style={{...S.backBtn,color:"#fbbf24"}}>← Indietro</button>
-          <h2 style={{...S.secTitle,color:"#fff"}}>📊 Statistiche</h2>
+          <h2 style={{...S.secTitle,color:"#fff"}}> Statistiche</h2>
         </div>
         <div style={{padding:"16px"}}>
           {/* KPI Cards */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:20}}>
-            <div style={{background:"#fff",borderRadius:18,padding:18,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+            <div style={{background:"#fff",borderRadius:2,padding:18,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
               <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.5px"}}>Fatturato Totale</div>
               <div style={{fontSize:24,fontWeight:900,color:"#059669",letterSpacing:"-0.5px",marginTop:4}}>€ {fatturato.toFixed(0)}</div>
             </div>
-            <div style={{background:"#fff",borderRadius:18,padding:18,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+            <div style={{background:"#fff",borderRadius:2,padding:18,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
               <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.5px"}}>Questo Mese</div>
-              <div style={{fontSize:24,fontWeight:900,color:"#ff6b35",letterSpacing:"-0.5px",marginTop:4}}>€ {fattThisMonth.toFixed(0)}</div>
+              <div style={{fontSize:24,fontWeight:900,color:"#e07a2f",letterSpacing:"-0.5px",marginTop:4}}>€ {fattThisMonth.toFixed(0)}</div>
               {fattLastMonth > 0 && <div style={{fontSize:11,color:fattThisMonth>=fattLastMonth?"#059669":"#ef4444",fontWeight:700,marginTop:2}}>
                 {fattThisMonth>=fattLastMonth?"📈":"📉"} {fattLastMonth>0?Math.round(((fattThisMonth-fattLastMonth)/fattLastMonth)*100):0}% vs mese scorso
               </div>}
             </div>
-            <div style={{background:"#fff",borderRadius:18,padding:18,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+            <div style={{background:"#fff",borderRadius:2,padding:18,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
               <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.5px"}}>Pratiche Totali</div>
               <div style={{fontSize:24,fontWeight:900,color:"#7c3aed",letterSpacing:"-0.5px",marginTop:4}}>{totPratiche}</div>
               <div style={{fontSize:11,color:"#64748b",fontWeight:600,marginTop:2}}>{totClienti} clienti</div>
             </div>
-            <div style={{background:"#fff",borderRadius:18,padding:18,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+            <div style={{background:"#fff",borderRadius:2,padding:18,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
               <div style={{fontSize:11,fontWeight:800,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.5px"}}>Completamento</div>
               <div style={{fontSize:24,fontWeight:900,color:tasso>=70?"#059669":tasso>=40?"#d97706":"#ef4444",letterSpacing:"-0.5px",marginTop:4}}>{tasso}%</div>
-              <div style={{height:6,background:"#e2e8f0",borderRadius:10,marginTop:6,overflow:"hidden"}}>
-                <div style={{height:"100%",borderRadius:10,width:`${tasso}%`,background:tasso>=70?"#059669":tasso>=40?"linear-gradient(90deg,#d97706,#f59e0b)":"#ef4444",transition:"width 0.4s"}} />
+              <div style={{height:6,background:"#e2e8f0",borderRadius:2,marginTop:6,overflow:"hidden"}}>
+                <div style={{height:"100%",borderRadius:2,width:`${tasso}%`,background:tasso>=70?"#059669":tasso>=40?"#d4820e":"#ef4444",transition:"width 0.4s"}} />
               </div>
             </div>
           </div>
 
           {/* Status Breakdown */}
-          <div style={{background:"#fff",borderRadius:18,padding:18,marginBottom:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
-            <h3 style={{fontSize:15,fontWeight:900,color:"#1e293b",margin:"0 0 14px",letterSpacing:"-0.3px"}}>📋 Stato Pratiche</h3>
+          <div style={{background:"#fff",borderRadius:2,padding:18,marginBottom:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+            <h3 style={{fontSize:15,fontWeight:900,color:"#1e293b",margin:"0 0 14px",letterSpacing:"-0.3px"}}> Stato Pratiche</h3>
             {[{label:"Da fare",count:totDaFare,color:"#ef4444",bg:"#fef2f2"},{label:"In corso",count:totInCorso,color:"#d97706",bg:"#fffbeb"},{label:"Completate",count:totCompletate,color:"#059669",bg:"#ecfdf5"}].map(s => (
               <div key={s.label} style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
-                <div style={{width:40,height:40,borderRadius:12,background:s.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,color:s.color}}>{s.count}</div>
+                <div style={{width:40,height:40,borderRadius:2,background:s.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,color:s.color}}>{s.count}</div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{s.label}</div>
-                  <div style={{height:6,background:"#f1f5f9",borderRadius:10,marginTop:4,overflow:"hidden"}}>
-                    <div style={{height:"100%",borderRadius:10,width:`${totPratiche>0?(s.count/totPratiche*100):0}%`,background:s.color,transition:"width 0.4s"}} />
+                  <div style={{height:6,background:"#f1f5f9",borderRadius:2,marginTop:4,overflow:"hidden"}}>
+                    <div style={{height:"100%",borderRadius:2,width:`${totPratiche>0?(s.count/totPratiche*100):0}%`,background:s.color,transition:"width 0.4s"}} />
                   </div>
                 </div>
                 <span style={{fontSize:12,fontWeight:700,color:"#64748b"}}>{totPratiche>0?Math.round(s.count/totPratiche*100):0}%</span>
@@ -1582,40 +1701,40 @@ export default function FrameFlowApp() {
           </div>
 
           {/* Monthly Chart */}
-          <div style={{background:"#fff",borderRadius:18,padding:18,marginBottom:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+          <div style={{background:"#fff",borderRadius:2,padding:18,marginBottom:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
             <h3 style={{fontSize:15,fontWeight:900,color:"#1e293b",margin:"0 0 16px",letterSpacing:"-0.3px"}}>📈 Pratiche per Mese</h3>
             <div style={{display:"flex",alignItems:"flex-end",gap:8,height:140}}>
               {pratichePerMese.map(m => (
                 <div key={m.mese} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
                   <span style={{fontSize:12,fontWeight:800,color:"#1e293b"}}>{m.totale}</span>
                   <div style={{width:"100%",display:"flex",flexDirection:"column",gap:2,alignItems:"center"}}>
-                    <div style={{width:"80%",height:Math.max(4, (m.totale/maxPratiche)*100),background:"linear-gradient(180deg,#ff6b35,#ff3d71)",borderRadius:8,transition:"height 0.4s"}} />
-                    {m.completate > 0 && <div style={{width:"80%",height:Math.max(2, (m.completate/maxPratiche)*100),background:"#059669",borderRadius:8,transition:"height 0.4s",opacity:0.6}} />}
+                    <div style={{width:"80%",height:Math.max(4, (m.totale/maxPratiche)*100),background:"#e07a2f",borderRadius:2,transition:"height 0.4s"}} />
+                    {m.completate > 0 && <div style={{width:"80%",height:Math.max(2, (m.completate/maxPratiche)*100),background:"#059669",borderRadius:2,transition:"height 0.4s",opacity:0.6}} />}
                   </div>
-                  <span style={{fontSize:10,fontWeight:700,color:m.mese===thisMonth?"#ff6b35":"#94a3b8"}}>{m.label}</span>
+                  <span style={{fontSize:10,fontWeight:700,color:m.mese===thisMonth?"#e07a2f":"#94a3b8"}}>{m.label}</span>
                 </div>
               ))}
             </div>
             <div style={{display:"flex",gap:16,marginTop:12,justifyContent:"center"}}>
-              <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:3,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}} /><span style={{fontSize:11,color:"#64748b",fontWeight:600}}>Totale</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:3,background:"#e07a2f"}} /><span style={{fontSize:11,color:"#64748b",fontWeight:600}}>Totale</span></div>
               <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:10,height:10,borderRadius:3,background:"#059669",opacity:0.6}} /><span style={{fontSize:11,color:"#64748b",fontWeight:600}}>Completate</span></div>
             </div>
           </div>
 
           {/* Top Actions */}
           {topActions.length > 0 && (
-            <div style={{background:"#fff",borderRadius:18,padding:18,marginBottom:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
-              <h3 style={{fontSize:15,fontWeight:900,color:"#1e293b",margin:"0 0 14px",letterSpacing:"-0.3px"}}>🔧 Azioni più utilizzate</h3>
+            <div style={{background:"#fff",borderRadius:2,padding:18,marginBottom:20,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+              <h3 style={{fontSize:15,fontWeight:900,color:"#1e293b",margin:"0 0 14px",letterSpacing:"-0.3px"}}> Azioni più utilizzate</h3>
               {topActions.map(([key, count]) => {
                 const cfg = ACTIONS_CFG.find(a => a.key === key);
                 const maxCount = topActions[0][1] as number;
                 return (
                   <div key={key} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                    <span style={{fontSize:20}}>{cfg?.icon||"📋"}</span>
+                    <span style={{fontSize:20}}>{cfg?.icon||""}</span>
                     <div style={{flex:1}}>
                       <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>{cfg?.label||key}</div>
-                      <div style={{height:5,background:"#f1f5f9",borderRadius:10,marginTop:3,overflow:"hidden"}}>
-                        <div style={{height:"100%",borderRadius:10,width:`${((count as number)/maxCount)*100}%`,background:cfg?.color||"#6b7280",transition:"width 0.4s"}} />
+                      <div style={{height:5,background:"#f1f5f9",borderRadius:2,marginTop:3,overflow:"hidden"}}>
+                        <div style={{height:"100%",borderRadius:2,width:`${((count as number)/maxCount)*100}%`,background:cfg?.color||"#6b7280",transition:"width 0.4s"}} />
                       </div>
                     </div>
                     <span style={{fontSize:14,fontWeight:800,color:cfg?.color||"#6b7280"}}>{count as number}</span>
@@ -1643,7 +1762,7 @@ export default function FrameFlowApp() {
 
     // Build map: date string -> array of pratiche
     const praticheByDate: Record<string, any[]> = {};
-    db.pratiche.forEach((p: any) => {
+    myPratiche.forEach((p: any) => {
       if (p.data) {
         if (!praticheByDate[p.data]) praticheByDate[p.data] = [];
         praticheByDate[p.data].push(p);
@@ -1665,18 +1784,18 @@ export default function FrameFlowApp() {
     return (
       <div style={S.container}>
         <div style={{...S.header,padding:"16px 20px 12px"}}>
-          <h2 style={{...S.logo,fontSize:18}}>📅 Agenda</h2>
+          <h2 style={{...S.logo,fontSize:18}}> Agenda</h2>
           <button onClick={goToday} style={{...S.addBtn,padding:"8px 16px",fontSize:13}}>Oggi</button>
         </div>
         <div style={{padding:"16px 16px 0"}}>
           {/* Month Navigation */}
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-            <button onClick={prevMonth} style={{background:"#fff",border:"none",borderRadius:12,width:40,height:40,fontSize:18,cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
+            <button onClick={prevMonth} style={{background:"#fff",border:"none",borderRadius:2,width:40,height:40,fontSize:18,cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
             <div style={{textAlign:"center"}}>
               <div style={{fontSize:20,fontWeight:900,color:"#1e293b",letterSpacing:"-0.5px"}}>{MESI[month]}</div>
               <div style={{fontSize:13,color:"#64748b",fontWeight:600}}>{year}</div>
             </div>
-            <button onClick={nextMonth} style={{background:"#fff",border:"none",borderRadius:12,width:40,height:40,fontSize:18,cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>→</button>
+            <button onClick={nextMonth} style={{background:"#fff",border:"none",borderRadius:2,width:40,height:40,fontSize:18,cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>→</button>
           </div>
 
           {/* Day Headers */}
@@ -1701,8 +1820,8 @@ export default function FrameFlowApp() {
               return (
                 <button key={dateStr} onClick={() => setCalSelDay(isSelected ? null : dateStr)} style={{
                   position:"relative",
-                  background: isSelected ? "linear-gradient(135deg,#ff6b35,#ff3d71)" : isToday ? "#fff" : "transparent",
-                  border: isToday && !isSelected ? "2.5px solid #ff6b35" : "none",
+                  background: isSelected ? "#e07a2f" : isToday ? "#fff" : "transparent",
+                  border: isToday && !isSelected ? "2.5px solid #e07a2f" : "none",
                   borderRadius: 14,
                   padding: "10px 2px 8px",
                   cursor: "pointer",
@@ -1714,13 +1833,13 @@ export default function FrameFlowApp() {
                   boxShadow: isSelected ? "0 4px 14px rgba(255,107,53,0.35)" : isToday ? "0 2px 8px rgba(255,107,53,0.15)" : "none",
                   transition: "all 0.2s",
                 }}>
-                  <span style={{fontSize:15,fontWeight:isToday||isSelected?900:600,color:isSelected?"#fff":isToday?"#ff6b35":isPast?"#94a3b8":"#1e293b"}}>{day}</span>
+                  <span style={{fontSize:15,fontWeight:isToday||isSelected?900:600,color:isSelected?"#fff":isToday?"#e07a2f":isPast?"#94a3b8":"#1e293b"}}>{day}</span>
                   {hasEvents && (
                     <div style={{display:"flex",gap:2,alignItems:"center"}}>
                       {eventCount <= 3 ? Array.from({length:eventCount}).map((_,j) => (
-                        <div key={j} style={{width:5,height:5,borderRadius:"50%",background:isSelected?"rgba(255,255,255,0.8)":hasOverdue?"#ef4444":"#ff6b35"}} />
+                        <div key={j} style={{width:5,height:5,borderRadius:"50%",background:isSelected?"rgba(255,255,255,0.8)":hasOverdue?"#ef4444":"#e07a2f"}} />
                       )) : (
-                        <span style={{fontSize:10,fontWeight:800,color:isSelected?"rgba(255,255,255,0.9)":"#ff6b35"}}>{eventCount}</span>
+                        <span style={{fontSize:10,fontWeight:800,color:isSelected?"rgba(255,255,255,0.9)":"#e07a2f"}}>{eventCount}</span>
                       )}
                     </div>
                   )}
@@ -1733,13 +1852,13 @@ export default function FrameFlowApp() {
           {calSelDay && (
             <div style={{marginBottom:16}}>
               <h3 style={{fontSize:16,fontWeight:900,color:"#1e293b",margin:"0 0 12px",letterSpacing:"-0.3px"}}>
-                {calSelDay === todayStr ? "📌 Oggi" : fmtDate(calSelDay)} — {selDayPratiche.length} appuntament{selDayPratiche.length===1?"o":"i"}
+                {calSelDay === todayStr ? " Oggi" : fmtDate(calSelDay)} — {selDayPratiche.length} appuntament{selDayPratiche.length===1?"o":"i"}
               </h3>
               {selDayPratiche.length === 0 && (
-                <div style={{background:"#fff",borderRadius:16,padding:"24px 16px",textAlign:"center",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+                <div style={{background:"#fff",borderRadius:2,padding:"24px 16px",textAlign:"center",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
                   <div style={{fontSize:32,marginBottom:8}}>📭</div>
                   <p style={{fontSize:14,color:"#94a3b8",fontWeight:600}}>Nessun appuntamento</p>
-                  <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={{marginTop:12,padding:"10px 20px",borderRadius:12,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",color:"#fff",border:"none",fontSize:13,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 14px rgba(255,107,53,0.3)"}}>+ Nuova Pratica</button>
+                  <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={{marginTop:12,padding:"10px 20px",borderRadius:2,background:"#e07a2f",color:"#fff",border:"none",fontSize:13,fontWeight:800,cursor:"pointer"}}>+ Nuova Pratica</button>
                 </div>
               )}
               {selDayPratiche.sort((a: any,b: any) => (a.ora||"").localeCompare(b.ora||"")).map((p: any) => {
@@ -1752,18 +1871,18 @@ export default function FrameFlowApp() {
                       <div style={{...S.appointTime,background:sc.bg,color:sc.color}}>{p.ora||"--:--"}</div>
                       <div style={{flex:1}}>
                         <div style={{fontSize:16,fontWeight:800,color:"#0f172a",letterSpacing:"-0.3px"}}>{c?.nome||"—"}</div>
-                        <div style={{fontSize:13,color:"#64748b",fontWeight:500}}>{p.numero} · 📍 {p.indirizzo||"—"}</div>
+                        <div style={{fontSize:13,color:"#64748b",fontWeight:500}}>{p.numero} ·  {p.indirizzo||"—"}</div>
                       </div>
                       <span style={{...S.praticaStatus,background:sc.bg,color:sc.color}}>{sc.icon} {sc.label}</span>
                     </div>
                     {actions.length > 0 && (
                       <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
                         {actions.map((a: any) => (
-                          <span key={a.key} style={{fontSize:11,fontWeight:700,color:a.color,background:`${a.color}15`,padding:"3px 10px",borderRadius:8}}>{a.icon} {a.label}</span>
+                          <span key={a.key} style={{fontSize:11,fontWeight:700,color:a.color,background:`${a.color}15`,padding:"3px 10px",borderRadius:2}}>{a.icon} {a.label}</span>
                         ))}
                       </div>
                     )}
-                    {p.note && <div style={{fontSize:12,color:"#64748b",marginTop:6,fontStyle:"italic"}}>📝 {p.note}</div>}
+                    {p.note && <div style={{fontSize:12,color:"#64748b",marginTop:6,fontStyle:"italic"}}> {p.note}</div>}
                   </button>
                 );
               })}
@@ -1773,7 +1892,7 @@ export default function FrameFlowApp() {
           {/* Upcoming if no day selected */}
           {!calSelDay && (
             <div>
-              <h3 style={{fontSize:16,fontWeight:900,color:"#1e293b",margin:"0 0 12px",letterSpacing:"-0.3px"}}>📋 Prossimi Appuntamenti</h3>
+              <h3 style={{fontSize:16,fontWeight:900,color:"#1e293b",margin:"0 0 12px",letterSpacing:"-0.3px"}}> Prossimi Appuntamenti</h3>
               {upcomingPratiche.length === 0 && <p style={{fontSize:13,color:"#94a3b8",fontWeight:500}}>Nessun appuntamento in programma</p>}
               {upcomingPratiche.slice(0,8).map((p: any) => {
                 const c = getClient(p.clientId);
@@ -1787,7 +1906,7 @@ export default function FrameFlowApp() {
                     </div>
                     <div style={{flex:1}}>
                       <div style={{fontSize:15,fontWeight:800,color:"#0f172a"}}>{c?.nome||"—"}</div>
-                      <div style={{fontSize:12,color:"#64748b",fontWeight:500}}>{p.numero} · 📍 {p.indirizzo||"—"}</div>
+                      <div style={{fontSize:12,color:"#64748b",fontWeight:500}}>{p.numero} ·  {p.indirizzo||"—"}</div>
                     </div>
                     <span style={{fontSize:18}}>→</span>
                   </button>
@@ -1796,6 +1915,7 @@ export default function FrameFlowApp() {
             </div>
           )}
         </div>
+        {saveError&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#dc2626",color:"#fff",padding:"10px 20px",borderRadius:2,fontSize:13,fontWeight:700,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:340,textAlign:"center"}}>{saveError}</div>}
         <BottomNav items={navItems} active={view} onNav={setView} />
       </div>
     );
@@ -1806,12 +1926,12 @@ export default function FrameFlowApp() {
     return (
       <div style={S.container}>
         <div style={{...S.header,padding:"16px 20px 12px"}}>
-          <h2 style={{...S.logo,fontSize:18}}>📋 Pratiche</h2>
+          <h2 style={{...S.logo,fontSize:18}}> Pratiche</h2>
           <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ Nuova</button>
         </div>
         <div style={S.stats}>
-          {[{k:"tutti",l:"Totale",i:"📋"},{k:"da_fare",l:"Da fare",i:"🔴"},{k:"in_corso",l:"In corso",i:"🟡"},{k:"completato",l:"Fatti",i:"🟢"}].map(s=>(
-            <button key={s.k} onClick={()=>setFilter(s.k)} style={{...S.statCard,borderBottom:filter===s.k?"3px solid #ff6b35":"3px solid transparent",background:filter===s.k?"#fff7ed":"#fff"}}>
+          {[{k:"tutti",l:"Totale",i:""},{k:"da_fare",l:"Da fare",i:"🔴"},{k:"in_corso",l:"In corso",i:"🟡"},{k:"completato",l:"Fatti",i:"🟢"}].map(s=>(
+            <button key={s.k} onClick={()=>setFilter(s.k)} style={{...S.statCard,borderBottom:filter===s.k?"3px solid #e07a2f":"3px solid transparent",background:filter===s.k?"#fff7ed":"#fff"}}>
               <span style={{fontSize:16}}>{s.i}</span>
               <span style={S.statNum}>{counts[s.k as keyof typeof counts]}</span>
               <span style={S.statLbl}>{s.l}</span>
@@ -1819,7 +1939,7 @@ export default function FrameFlowApp() {
           ))}
         </div>
         <div style={{padding:"0 16px 8px"}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Cerca pratica, cliente..." style={S.searchInp} />
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder=" Cerca pratica, cliente..." style={S.searchInp} />
         </div>
         {filteredPratiche.length===0 ? <div style={S.empty}><div style={{fontSize:56}}>📂</div><p style={S.emptyTitle}>Nessun risultato</p></div>
         : <div style={{padding:"0 16px"}}>{filteredPratiche.map((p: any)=>{
@@ -1831,15 +1951,16 @@ export default function FrameFlowApp() {
             <button key={p.id} onClick={()=>{setSelPratica(p.id);setView("pratica");}} style={S.praticaCard}>
               <div style={S.praticaTop}><span style={S.praticaNum}>{p.numero}</span><span style={{...S.praticaStatus,background:sc.bg,color:sc.color}}>{sc.label}</span></div>
               <h3 style={S.praticaCliente}>{c?.nome||"—"}</h3>
-              {p.indirizzo && <p style={S.praticaAddr}>📍 {p.indirizzo}</p>}
+              {p.indirizzo && <p style={S.praticaAddr}> {p.indirizzo}</p>}
               <div style={S.praticaMeta}>
-                <span style={{fontSize:12,color:"#64748b"}}>📅 {dateLabel(p.data)} {p.ora}</span>
+                <span style={{fontSize:12,color:"#64748b"}}> {dateLabel(p.data)} {p.ora}</span>
                 {p.actions.length>0 && <span style={S.praticaActions}>{p.actions.length} azioni</span>}
               </div>
-              {totalTasks>0 && <div style={S.progRow}><div style={S.progBar}><div style={{...S.progFill,width:`${prog}%`,background:prog===100?"#059669":"linear-gradient(90deg,#ff6b35,#ff3d71)"}} /></div><span style={{fontSize:12,color:"#64748b",fontWeight:600}}>{doneTasks}/{totalTasks}</span></div>}
+              {totalTasks>0 && <div style={S.progRow}><div style={S.progBar}><div style={{...S.progFill,width:`${prog}%`,background:prog===100?"#059669":"#e07a2f"}} /></div><span style={{fontSize:12,color:"#64748b",fontWeight:600}}>{doneTasks}/{totalTasks}</span></div>}
             </button>
           );
         })}</div>}
+        {saveError&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#dc2626",color:"#fff",padding:"10px 20px",borderRadius:2,fontSize:13,fontWeight:700,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:340,textAlign:"center"}}>{saveError}</div>}
         <BottomNav items={navItems} active={view} onNav={setView} />
       </div>
     );
@@ -1851,16 +1972,16 @@ export default function FrameFlowApp() {
     return (
       <div style={S.container}>
         <div style={{...S.header,padding:"16px 20px 12px"}}>
-          <h2 style={{...S.logo,fontSize:18}}>👤 Rubrica ({db.clients.length})</h2>
+          <h2 style={{...S.logo,fontSize:18}}> Rubrica ({db.clients.length})</h2>
           <button onClick={()=>{setClientForm({nome:"",telefono:"",email:"",indirizzo:"",codiceFiscale:"",piva:"",note:""});setView("new_client");}} style={S.addBtn}>+ Nuovo</button>
         </div>
         <div style={{padding:"0 16px"}}>
-          <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder="🔍 Cerca per nome, telefono, email, indirizzo..." style={{...S.searchInp,marginTop:12}} />
+          <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder=" Cerca per nome, telefono, email, indirizzo..." style={{...S.searchInp,marginTop:12}} />
           
           {/* Summary */}
           <div style={{display:"flex",gap:8,margin:"12px 0",overflowX:"auto"}}>
-            {[{l:"Tutti",v:db.clients.length,c:"#1e293b"},{l:"Con pratiche",v:db.clients.filter((c: any)=>db.pratiche.some((p: any)=>p.clientId===c.id)).length,c:"#7c3aed"},{l:"Attivi",v:db.clients.filter((c: any)=>db.pratiche.some((p: any)=>p.clientId===c.id&&p.status!=="completato")).length,c:"#ff6b35"}].map(s => (
-              <div key={s.l} style={{background:"#fff",borderRadius:12,padding:"8px 14px",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
+            {[{l:"Tutti",v:db.clients.length,c:"#1e293b"},{l:"Con pratiche",v:db.clients.filter((c: any)=>db.pratiche.some((p: any)=>p.clientId===c.id)).length,c:"#7c3aed"},{l:"Attivi",v:db.clients.filter((c: any)=>db.pratiche.some((p: any)=>p.clientId===c.id&&p.status!=="completato")).length,c:"#e07a2f"}].map(s => (
+              <div key={s.l} style={{background:"#fff",borderRadius:2,padding:"8px 14px",boxShadow:"0 2px 8px rgba(0,0,0,0.04)",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:6}}>
                 <span style={{fontSize:18,fontWeight:900,color:s.c}}>{s.v}</span>
                 <span style={{fontSize:11,fontWeight:700,color:"#64748b"}}>{s.l}</span>
               </div>
@@ -1880,28 +2001,28 @@ export default function FrameFlowApp() {
                   <div style={S.clientAvatar}>{c.nome.charAt(0).toUpperCase()}</div>
                   <div style={{flex:1}}>
                     <div style={{fontSize:16,fontWeight:800,color:"#0f172a",letterSpacing:"-0.2px"}}>{c.nome}</div>
-                    {c.indirizzo && <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}>📍 {c.indirizzo}</div>}
+                    {c.indirizzo && <div style={{fontSize:12,color:"#94a3b8",marginTop:2}}> {c.indirizzo}</div>}
                   </div>
-                  {activeCount > 0 && <span style={{background:"linear-gradient(135deg,#ff6b35,#ff3d71)",color:"#fff",fontSize:11,fontWeight:800,padding:"3px 10px",borderRadius:10}}>{activeCount} attiv{activeCount===1?"a":"e"}</span>}
+                  {activeCount > 0 && <span style={{background:"#e07a2f",color:"#fff",fontSize:11,fontWeight:800,padding:"3px 10px",borderRadius:2}}>{activeCount} attiv{activeCount===1?"a":"e"}</span>}
                 </div>
                 
                 {/* Contact row */}
                 <div style={{display:"flex",gap:8,marginTop:12}}>
-                  {c.telefono && <a href={`tel:${c.telefono}`} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"9px 8px",borderRadius:12,background:"linear-gradient(135deg,#ecfdf5,#d1fae5)",color:"#059669",fontSize:13,fontWeight:700,textDecoration:"none",border:"none"}}>📞 {c.telefono}</a>}
-                  {c.email && <a href={`mailto:${c.email}`} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"9px 8px",borderRadius:12,background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",color:"#7c3aed",fontSize:13,fontWeight:700,textDecoration:"none",border:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>✉️ Email</a>}
+                  {c.telefono && <a href={`tel:${c.telefono}`} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"9px 8px",borderRadius:2,background:"#ecfdf5",color:"#059669",fontSize:13,fontWeight:700,textDecoration:"none",border:"none"}}> {c.telefono}</a>}
+                  {c.email && <a href={`mailto:${c.email}`} style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"9px 8px",borderRadius:2,background:"#eaf1fb",color:"#7c3aed",fontSize:13,fontWeight:700,textDecoration:"none",border:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}> Email</a>}
                 </div>
 
                 {/* Stats row */}
                 <div style={{display:"flex",gap:8,marginTop:10}}>
-                  <div style={{flex:1,background:"#f8fafc",borderRadius:10,padding:"8px 10px",textAlign:"center"}}>
+                  <div style={{flex:1,background:"#f8fafc",borderRadius:2,padding:"8px 10px",textAlign:"center"}}>
                     <div style={{fontSize:16,fontWeight:900,color:"#7c3aed"}}>{pCount}</div>
                     <div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>Pratiche</div>
                   </div>
-                  {fatturato > 0 && <div style={{flex:1,background:"#f8fafc",borderRadius:10,padding:"8px 10px",textAlign:"center"}}>
+                  {fatturato > 0 && <div style={{flex:1,background:"#f8fafc",borderRadius:2,padding:"8px 10px",textAlign:"center"}}>
                     <div style={{fontSize:16,fontWeight:900,color:"#059669"}}>€{fatturato.toFixed(0)}</div>
                     <div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>Fatturato</div>
                   </div>}
-                  {lastPratica && <div style={{flex:1,background:"#f8fafc",borderRadius:10,padding:"8px 10px",textAlign:"center"}}>
+                  {lastPratica && <div style={{flex:1,background:"#f8fafc",borderRadius:2,padding:"8px 10px",textAlign:"center"}}>
                     <div style={{fontSize:12,fontWeight:800,color:"#1e293b"}}>{fmtDate(lastPratica.data)}</div>
                     <div style={{fontSize:10,color:"#94a3b8",fontWeight:600}}>Ultima</div>
                   </div>}
@@ -1909,8 +2030,8 @@ export default function FrameFlowApp() {
 
                 {/* Actions */}
                 <div style={{display:"flex",gap:8,marginTop:10}}>
-                  <button onClick={()=>{setSelClient(c.id);setClientSearch("");setView("new_pratica");}} style={{flex:1,padding:"9px",borderRadius:12,border:"2px solid #ff6b35",background:"#fff",color:"#ff6b35",fontSize:12,fontWeight:800,cursor:"pointer"}}>+ Pratica</button>
-                  <button onClick={()=>{setClientForm({...c});setView("new_client");}} style={{flex:1,padding:"9px",borderRadius:12,border:"2px solid #94a3b8",background:"#fff",color:"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}}>✏️ Modifica</button>
+                  <button onClick={()=>{setSelClient(c.id);setClientSearch("");setView("new_pratica");}} style={{flex:1,padding:"9px",borderRadius:2,border:"2px solid #e07a2f",background:"#fff",color:"#e07a2f",fontSize:12,fontWeight:800,cursor:"pointer"}}>+ Pratica</button>
+                  <button onClick={()=>{setClientForm({...c});setView("new_client");}} style={{flex:1,padding:"9px",borderRadius:2,border:"2px solid #94a3b8",background:"#fff",color:"#64748b",fontSize:12,fontWeight:800,cursor:"pointer"}}>✏️ Modifica</button>
                 </div>
 
                 {/* Pratiche list */}
@@ -1922,7 +2043,7 @@ export default function FrameFlowApp() {
                         <button key={p.id} onClick={()=>{setSelPratica(p.id);setView("pratica");}} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"6px 0",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
                           <span style={{fontSize:11,fontWeight:800,color:"#7c3aed"}}>{p.numero}</span>
                           <span style={{fontSize:11,color:"#64748b",flex:1}}>{p.indirizzo||"—"}</span>
-                          <span style={{fontSize:10,fontWeight:700,color:sc.color,background:sc.bg,padding:"2px 8px",borderRadius:8}}>{sc.icon} {sc.label}</span>
+                          <span style={{fontSize:10,fontWeight:700,color:sc.color,background:sc.bg,padding:"2px 8px",borderRadius:2}}>{sc.icon} {sc.label}</span>
                         </button>
                       );
                     })}
@@ -1933,6 +2054,7 @@ export default function FrameFlowApp() {
             );
           })}
         </div>
+        {saveError&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#dc2626",color:"#fff",padding:"10px 20px",borderRadius:2,fontSize:13,fontWeight:700,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:340,textAlign:"center"}}>{saveError}</div>}
         <BottomNav items={navItems} active={view} onNav={setView} />
       </div>
     );
@@ -1943,22 +2065,23 @@ export default function FrameFlowApp() {
     return (
       <div style={S.container}>
         <div style={{...S.header,padding:"16px 20px 12px"}}>
-          <h2 style={{...S.logo,fontSize:18}}>📝 Note</h2>
+          <h2 style={{...S.logo,fontSize:18}}> Note</h2>
           <button onClick={()=>{setNoteEdit({testo:"",colore:"#fffbeb",praticaId:""});setView("note_edit");}} style={S.addBtn}>+ Nuova</button>
         </div>
         <div style={{padding:"0 16px",paddingTop:12}}>
-          {(db.notes||[]).length===0 ? <div style={S.empty}><div style={{fontSize:48}}>📝</div><p style={S.emptyTitle}>Nessuna nota</p><p style={S.emptySub}>Aggiungi note per ricordare cose importanti</p></div>
+          {(db.notes||[]).length===0 ? <div style={S.empty}><div style={{fontSize:48}}></div><p style={S.emptyTitle}>Nessuna nota</p><p style={S.emptySub}>Aggiungi note per ricordare cose importanti</p></div>
           : (db.notes||[]).map((n: any)=>(
             <div key={n.id} style={{...S.noteCardFull,background:n.colore||"#fffbeb"}}>
               <button onClick={()=>{setNoteEdit(n);setView("note_edit");}} style={{...S.noteCardBtn}}>
                 <div style={{fontSize:14,color:"#0f172a",whiteSpace:"pre-wrap"}}>{n.testo||"Nota vuota"}</div>
-                {n.praticaId && <div style={{fontSize:12,color:"#7c3aed",marginTop:6}}>📋 {getPratica(n.praticaId)?.numero||""} · {getClient(getPratica(n.praticaId)?.clientId)?.nome||""}</div>}
+                {n.praticaId && <div style={{fontSize:12,color:"#7c3aed",marginTop:6}}> {getPratica(n.praticaId)?.numero||""} · {getClient(getPratica(n.praticaId)?.clientId)?.nome||""}</div>}
                 <div style={{fontSize:11,color:"#94a3b8",marginTop:6}}>{n.updatedAt?new Date(n.updatedAt).toLocaleString("it-IT"):""}</div>
               </button>
-              <button onClick={()=>{if(confirm("Eliminare nota?"))deleteNote(n.id);}} style={S.noteDelBtn}>🗑️</button>
+              <button onClick={()=>{if(confirm("Eliminare nota?"))deleteNote(n.id);}} style={S.noteDelBtn}></button>
             </div>
           ))}
         </div>
+        {saveError&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#dc2626",color:"#fff",padding:"10px 20px",borderRadius:2,fontSize:13,fontWeight:700,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:340,textAlign:"center"}}>{saveError}</div>}
         <BottomNav items={navItems} active={view} onNav={setView} />
       </div>
     );
@@ -1969,7 +2092,7 @@ export default function FrameFlowApp() {
     return (
       <div style={S.container}>
         <div style={{...S.header,padding:"16px 20px 12px"}}>
-          <h2 style={{...S.logo,fontSize:18}}>👥 Team</h2>
+          <h2 style={{...S.logo,fontSize:18}}> Team</h2>
           {org && isAdmin && <button onClick={()=>setView("team_add")} style={S.addBtn}>+ Membro</button>}
         </div>
         <div style={{padding:"0 16px",paddingTop:12}}>
@@ -1978,20 +2101,20 @@ export default function FrameFlowApp() {
           ) : (
             <>
               {/* Org header */}
-              <div style={{background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:20,padding:20,marginBottom:16,color:"#fff"}}>
+              <div style={{background:"#3a7bd5",borderRadius:2,padding:20,marginBottom:16,color:"#fff"}}>
                 <div style={{fontSize:18,fontWeight:800}}>{org.nome}</div>
                 <div style={{fontSize:13,opacity:0.8,marginTop:4}}>{teamMembers.length} membri · Piano {org.piano||"free"}</div>
-                {myMember && <div style={{fontSize:12,marginTop:8,background:"rgba(255,255,255,0.2)",padding:"4px 12px",borderRadius:20,display:"inline-block"}}>Il tuo ruolo: <b>{myMember.ruolo === "admin" ? "👑 Admin" : "👷 Operatore"}</b></div>}
+                {myMember && <div style={{fontSize:12,marginTop:8,background:"rgba(255,255,255,0.2)",padding:"4px 12px",borderRadius:2,display:"inline-block"}}>Il tuo ruolo: <b>{ROLES[myMember.ruolo]?.icon||"👷"} {ROLES[myMember.ruolo]?.label||myMember.ruolo}</b></div>}
               </div>
 
               {/* I miei permessi */}
               {!isAdmin && myPermissions.length > 0 && (
-                <div style={{background:"#f8fafc",borderRadius:14,padding:14,marginBottom:16,border:"1px solid #e2e8f0"}}>
+                <div style={{background:"#f8fafc",borderRadius:2,padding:14,marginBottom:16,border:"1px solid #e2e8f0"}}>
                   <div style={{fontSize:12,fontWeight:800,color:"#374151",marginBottom:8}}>I TUOI COMPITI</div>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                     {myPermissions.map((p: string) => {
                       const phase = [...WORKFLOW_NUOVO, ...WORKFLOW_RIP].find(w => w.key === p);
-                      return phase ? <span key={p} style={{padding:"6px 12px",borderRadius:12,background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:700}}>{phase.icon} {phase.label}</span> : null;
+                      return phase ? <span key={p} style={{padding:"6px 12px",borderRadius:2,background:"#eff6ff",color:"#2563eb",fontSize:12,fontWeight:700}}>{phase.icon} {phase.label}</span> : null;
                     })}
                   </div>
                 </div>
@@ -2000,18 +2123,23 @@ export default function FrameFlowApp() {
               {/* Team members list */}
               <div style={{fontSize:13,fontWeight:800,color:"#374151",marginBottom:10,textTransform:"uppercase",letterSpacing:"0.5px"}}>Membri del Team</div>
               {teamMembers.map((m: any) => (
-                <div key={m.id} style={{display:"flex",alignItems:"center",gap:12,padding:14,background:"#fff",borderRadius:16,marginBottom:10,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
-                  <div style={{width:44,height:44,borderRadius:"50%",background:m.ruolo==="admin"?"linear-gradient(135deg,#f59e0b,#d97706)":"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:800,flexShrink:0}}>{m.nome?.charAt(0)?.toUpperCase()}</div>
+                <div key={m.id} style={{display:"flex",alignItems:"center",gap:12,padding:14,background:"#fff",borderRadius:2,marginBottom:10,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+                  <div style={{width:44,height:44,borderRadius:"50%",background:ROLES[m.ruolo]?`${ROLES[m.ruolo].color}`:"#3a7bd5",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:18,fontWeight:800,flexShrink:0}}>{m.nome?.charAt(0)?.toUpperCase()}</div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:15,fontWeight:700,color:"#0f172a"}}>{m.nome}</div>
                     <div style={{fontSize:12,color:"#64748b"}}>{m.email}</div>
                     <div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:4}}>
-                      <span style={{fontSize:10,padding:"2px 8px",borderRadius:8,background:m.ruolo==="admin"?"#fef3c7":"#eff6ff",color:m.ruolo==="admin"?"#92400e":"#1e40af",fontWeight:700}}>{m.ruolo==="admin"?"👑 Admin":"👷 Operatore"}</span>
-                      {!m.invite_accepted && <span style={{fontSize:10,padding:"2px 8px",borderRadius:8,background:"#fef2f2",color:"#dc2626",fontWeight:700}}>⏳ In attesa</span>}
+                      <span style={{fontSize:10,padding:"2px 8px",borderRadius:2,background:ROLES[m.ruolo]?.bg||"#eff6ff",color:ROLES[m.ruolo]?.color||"#1e40af",fontWeight:700}}>{ROLES[m.ruolo]?.icon||"👷"} {ROLES[m.ruolo]?.label||m.ruolo}</span>
+                      {!m.invite_accepted && <span style={{fontSize:10,padding:"2px 8px",borderRadius:2,background:"#fef2f2",color:"#dc2626",fontWeight:700}}>⏳ In attesa</span>}
                     </div>
                   </div>
                   {isAdmin && m.user_id !== user?.id && (
-                    <button onClick={()=>{if(confirm(`Rimuovere ${m.nome}?`))removeTeamMember(m.id);}} style={{width:32,height:32,borderRadius:10,background:"#fef2f2",border:"none",color:"#dc2626",fontSize:14,cursor:"pointer"}}>🗑️</button>
+                    <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
+                      <select value={m.ruolo} onChange={(e: any)=>{updateTeamMember(m.id,{ruolo:e.target.value,permessi:ROLES[e.target.value]?.permessi||[]});}} style={{padding:"4px 8px",borderRadius:2,border:"1.5px solid #c4b5fd",fontSize:11,fontWeight:700,outline:"none",cursor:"pointer"}}>
+                        {Object.entries(ROLES).map(([k,r])=><option key={k} value={k}>{r.icon} {r.label}</option>)}
+                      </select>
+                      <button onClick={()=>{if(confirm(`Rimuovere ${m.nome}?`))removeTeamMember(m.id);}} style={{width:28,height:28,borderRadius:2,background:"#fef2f2",border:"none",color:"#dc2626",fontSize:12,cursor:"pointer"}}></button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -2028,8 +2156,8 @@ export default function FrameFlowApp() {
                         const phaseIdx = getPhaseIndex(p.tipo, p.fase);
                         const phase = wf[phaseIdx];
                         return (
-                          <button key={p.id} onClick={()=>{setSelPratica(p.id);setView("pratica");}} style={{display:"flex",alignItems:"center",gap:12,width:"100%",textAlign:"left",padding:14,background:"#fff",borderRadius:16,border:"none",marginBottom:10,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
-                            <span style={{fontSize:22}}>{phase?.icon||"📋"}</span>
+                          <button key={p.id} onClick={()=>{setSelPratica(p.id);setView("pratica");}} style={{display:"flex",alignItems:"center",gap:12,width:"100%",textAlign:"left",padding:14,background:"#fff",borderRadius:2,border:"none",marginBottom:10,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+                            <span style={{fontSize:22}}>{phase?.icon||""}</span>
                             <div style={{flex:1}}>
                               <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{p.numero}</div>
                               <div style={{fontSize:12,color:"#64748b"}}>{c?.nome} · {phase?.label}</div>
@@ -2043,6 +2171,7 @@ export default function FrameFlowApp() {
             </>
           )}
         </div>
+        {saveError&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#dc2626",color:"#fff",padding:"10px 20px",borderRadius:2,fontSize:13,fontWeight:700,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:340,textAlign:"center"}}>{saveError}</div>}
         <BottomNav items={navItems} active={view} onNav={setView} />
       </div>
     );
@@ -2056,7 +2185,8 @@ export default function FrameFlowApp() {
     }} onBack={()=>setView("team")} />;
   }
 
-  return <div style={S.container}><BottomNav items={navItems} active={view} onNav={setView} /></div>;
+  return <div style={S.container}>{saveError&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#dc2626",color:"#fff",padding:"10px 20px",borderRadius:2,fontSize:13,fontWeight:700,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:340,textAlign:"center"}}>{saveError}</div>}
+        <BottomNav items={navItems} active={view} onNav={setView} /></div>;
 }
 
 // ==================== FIRMA CORRETTA POSA ====================
@@ -2068,15 +2198,15 @@ function FirmaCorrettaPosa({ onSave }: any) {
     <div>
       <p style={{fontSize:12,color:"#374151",marginBottom:10}}>Il cliente firma per confermare la corretta posa in opera degli infissi.</p>
       <div style={{marginBottom:10}}>
-        <label style={{fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:4}}>⚠️ Non conformità (se presenti)</label>
-        <textarea value={nonConformita} onChange={(e: any)=>setNonConformita(e.target.value)} placeholder="Nessuna non conformità rilevata" style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #d1d5db",fontSize:13,resize:"vertical",minHeight:50,outline:"none",boxSizing:"border-box"}} />
+        <label style={{fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:4}}> Non conformità (se presenti)</label>
+        <textarea value={nonConformita} onChange={(e: any)=>setNonConformita(e.target.value)} placeholder="Nessuna non conformità rilevata" style={{width:"100%",padding:"10px 12px",borderRadius:2,border:"1.5px solid #d1d5db",fontSize:13,resize:"vertical",minHeight:50,outline:"none",boxSizing:"border-box"}} />
       </div>
       <div style={{marginBottom:10}}>
-        <label style={{fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:4}}>📝 Note finali</label>
-        <textarea value={noteFinali} onChange={(e: any)=>setNoteFinali(e.target.value)} placeholder="Note sulla posa..." style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #d1d5db",fontSize:13,resize:"vertical",minHeight:50,outline:"none",boxSizing:"border-box"}} />
+        <label style={{fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:4}}> Note finali</label>
+        <textarea value={noteFinali} onChange={(e: any)=>setNoteFinali(e.target.value)} placeholder="Note sulla posa..." style={{width:"100%",padding:"10px 12px",borderRadius:2,border:"1.5px solid #d1d5db",fontSize:13,resize:"vertical",minHeight:50,outline:"none",boxSizing:"border-box"}} />
       </div>
       {!showSign ? (
-        <button onClick={()=>setShowSign(true)} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}>✍️ Firma del Cliente</button>
+        <button onClick={()=>setShowSign(true)} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}> Firma del Cliente</button>
       ) : (
         <SignaturePad onSave={(img: string) => { onSave({ firma: img, nonConformita, noteFinali }); setShowSign(false); }} onCancel={() => setShowSign(false)} />
       )}
@@ -2094,18 +2224,18 @@ function TeamSetup({ onCreate, userName }: any) {
   return (
     <div style={{padding:"20px 0"}}>
       <div style={{textAlign:"center",marginBottom:20}}>
-        <div style={{fontSize:56,marginBottom:12}}>🏢</div>
+        <div style={{fontSize:56,marginBottom:12}}></div>
         <h3 style={{fontSize:20,fontWeight:800,color:"#0f172a",marginBottom:6}}>Crea la tua Organizzazione</h3>
         <p style={{fontSize:13,color:"#64748b"}}>Per usare il team, crea prima l'azienda. Potrai invitare dipendenti e assegnare compiti.</p>
       </div>
-      <div style={{background:"#fff",borderRadius:16,padding:16,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
+      <div style={{background:"#fff",borderRadius:2,padding:16,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"}}>
         <Field label="Nome Azienda *" value={nome} onChange={setNome} placeholder="es. Walter Cozza Serramenti SRL" autoFocus />
         <Field label="Telefono" value={telefono} onChange={setTelefono} placeholder="+39 0984 ..." type="tel" />
         <Field label="Email Azienda" value={email} onChange={setEmail} placeholder="info@azienda.it" type="email" />
         <Field label="Indirizzo Sede" value={indirizzo} onChange={setIndirizzo} placeholder="Via Roma 1, Cosenza" />
         <Field label="P.IVA" value={piva} onChange={setPiva} placeholder="IT01234567890" />
       </div>
-      <button onClick={()=>{if(nome.trim())onCreate({nome:nome.trim(),telefono,email,indirizzo,piva});}} disabled={!nome.trim()} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:nome.trim()?"linear-gradient(135deg,#6366f1,#a855f7)":"#e2e8f0",color:nome.trim()?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:nome.trim()?"pointer":"default",marginTop:16}}>🚀 Crea Organizzazione</button>
+      <button onClick={()=>{if(nome.trim())onCreate({nome:nome.trim(),telefono,email,indirizzo,piva});}} disabled={!nome.trim()} style={{width:"100%",padding:"16px",borderRadius:2,border:"none",background:nome.trim()?"#3a7bd5":"#e2e8f0",color:nome.trim()?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:nome.trim()?"pointer":"default",marginTop:16}}> Crea Organizzazione</button>
     </div>
   );
 }
@@ -2114,56 +2244,60 @@ function TeamSetup({ onCreate, userName }: any) {
 function TeamAddMember({ onAdd, onBack }: any) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [ruolo, setRuolo] = useState("operatore");
-  const [permessi, setPermessi] = useState<string[]>(["sopralluogo","posa"]);
+  const [ruolo, setRuolo] = useState("geometra");
+  const [permessi, setPermessi] = useState<string[]>(ROLES.geometra.permessi);
   const allPermessi = [
-    { key: "sopralluogo", label: "🔍 Sopralluogo" },
-    { key: "misure", label: "📐 Misure" },
-    { key: "preventivo", label: "💰 Preventivo" },
-    { key: "conferma", label: "✍️ Conferma" },
-    { key: "fattura", label: "🧾 Fattura" },
-    { key: "posa", label: "🔧 Posa" },
-    { key: "riparazione", label: "🛠️ Riparazione" },
+    { key: "sopralluogo", label: " Sopralluogo" },
+    { key: "misure", label: " Misure" },
+    { key: "preventivo", label: " Preventivo" },
+    { key: "conferma", label: " Conferma" },
+    { key: "fattura", label: " Fattura" },
+    { key: "posa", label: " Posa" },
+    { key: "riparazione", label: " Riparazione" },
+    { key: "clienti", label: " Clienti" },
+    { key: "email", label: " Email" },
+    { key: "note", label: " Note" },
   ];
+  function selectRole(key: string) {
+    setRuolo(key);
+    setPermessi([...(ROLES[key]?.permessi || [])]);
+  }
   function togglePerm(key: string) {
     setPermessi(prev => prev.includes(key) ? prev.filter(p=>p!==key) : [...prev, key]);
   }
   return (
     <div style={S.container}>
-      <div style={{...S.secHdr,background:"linear-gradient(135deg,#6366f1,#a855f7)"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>👥 Nuovo Membro</h2></div>
+      <div style={{...S.secHdr,background:"#3a7bd5"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}> Nuovo Membro</h2></div>
       <div style={{padding:20}}>
         <Field label="Nome" value={nome} onChange={setNome} placeholder="Mario Rossi" autoFocus />
         <Field label="Email" value={email} onChange={setEmail} placeholder="mario@esempio.it" type="email" />
         <div style={S.fGroup}>
           <label style={S.fLabel}>Ruolo</label>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>setRuolo("operatore")} style={{flex:1,padding:"14px",borderRadius:14,border:ruolo==="operatore"?"3px solid #6366f1":"2px solid #e2e8f0",background:ruolo==="operatore"?"#eff6ff":"#fff",cursor:"pointer",textAlign:"center"}}>
-              <div style={{fontSize:24}}>👷</div>
-              <div style={{fontSize:13,fontWeight:700,color:ruolo==="operatore"?"#4338ca":"#374151",marginTop:4}}>Operatore</div>
-              <div style={{fontSize:10,color:"#94a3b8"}}>Vede solo pratiche assegnate</div>
-            </button>
-            <button onClick={()=>{setRuolo("admin");setPermessi(allPermessi.map(p=>p.key));}} style={{flex:1,padding:"14px",borderRadius:14,border:ruolo==="admin"?"3px solid #f59e0b":"2px solid #e2e8f0",background:ruolo==="admin"?"#fffbeb":"#fff",cursor:"pointer",textAlign:"center"}}>
-              <div style={{fontSize:24}}>👑</div>
-              <div style={{fontSize:13,fontWeight:700,color:ruolo==="admin"?"#92400e":"#374151",marginTop:4}}>Admin</div>
-              <div style={{fontSize:10,color:"#94a3b8"}}>Accesso completo</div>
-            </button>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {Object.entries(ROLES).map(([key, r]) => (
+              <button key={key} onClick={()=>selectRole(key)} style={{padding:"14px 10px",borderRadius:2,border:ruolo===key?`3px solid ${r.color}`:"2px solid #e2e8f0",background:ruolo===key?r.bg:"#fff",cursor:"pointer",textAlign:"center"}}>
+                <div style={{fontSize:24}}>{r.icon}</div>
+                <div style={{fontSize:13,fontWeight:700,color:ruolo===key?r.color:"#374151",marginTop:4}}>{r.label}</div>
+                <div style={{fontSize:10,color:"#94a3b8"}}>{r.desc}</div>
+              </button>
+            ))}
           </div>
         </div>
-        {ruolo === "operatore" && (
+        {ruolo !== "admin" && (
           <div style={S.fGroup}>
-            <label style={S.fLabel}>Cosa può fare?</label>
+            <label style={S.fLabel}>Personalizza Permessi</label>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {allPermessi.map(p => (
-                <button key={p.key} onClick={()=>togglePerm(p.key)} style={{padding:"10px 14px",borderRadius:12,border:permessi.includes(p.key)?"2px solid #6366f1":"2px solid #e2e8f0",background:permessi.includes(p.key)?"#eff6ff":"#fff",color:permessi.includes(p.key)?"#4338ca":"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>{p.label}</button>
+                <button key={p.key} onClick={()=>togglePerm(p.key)} style={{padding:"10px 14px",borderRadius:2,border:permessi.includes(p.key)?"2px solid #3a7bd5":"2px solid #e2e8f0",background:permessi.includes(p.key)?"#eff6ff":"#fff",color:permessi.includes(p.key)?"#4338ca":"#64748b",fontSize:13,fontWeight:700,cursor:"pointer"}}>{p.label}</button>
               ))}
             </div>
           </div>
         )}
-        <div style={{background:"#f0fdf4",borderRadius:14,padding:14,marginBottom:16,border:"1px solid #86efac"}}>
+        <div style={{background:"#f0fdf4",borderRadius:2,padding:14,marginBottom:16,border:"1px solid #86efac"}}>
           <div style={{fontSize:12,fontWeight:700,color:"#166534",marginBottom:4}}>📩 Come invitare</div>
-          <div style={{fontSize:12,color:"#374151"}}>Il membro dovrà registrarsi su FrameFlow con la stessa email <b>{email||"..."}</b>. Appena accede, vedrà le pratiche assegnate.</div>
+          <div style={{fontSize:12,color:"#374151"}}>Il membro dovrà registrarsi su FrameFlow con la stessa email <b>{email||"..."}</b>. Appena accede, vedrà solo le pratiche assegnate e le funzioni del suo ruolo.</div>
         </div>
-        <button onClick={()=>{if(nome.trim()&&email.trim())onAdd(nome.trim(),email.trim(),ruolo,ruolo==="admin"?allPermessi.map(p=>p.key):permessi);}} disabled={!nome.trim()||!email.trim()} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",background:nome.trim()&&email.trim()?"linear-gradient(135deg,#6366f1,#a855f7)":"#e2e8f0",color:nome.trim()&&email.trim()?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:nome.trim()&&email.trim()?"pointer":"default"}}>✅ Aggiungi al Team</button>
+        <button onClick={()=>{if(nome.trim()&&email.trim())onAdd(nome.trim(),email.trim(),ruolo,ruolo==="admin"?allPermessi.map(p=>p.key):permessi);}} disabled={!nome.trim()||!email.trim()} style={{width:"100%",padding:"16px",borderRadius:2,border:"none",background:nome.trim()&&email.trim()?"#3a7bd5":"#e2e8f0",color:nome.trim()&&email.trim()?"#fff":"#94a3b8",fontSize:16,fontWeight:800,cursor:nome.trim()&&email.trim()?"pointer":"default"}}> Aggiungi al Team</button>
       </div>
     </div>
   );
@@ -2223,94 +2357,94 @@ function SetupWizard({ userSettings, onComplete, onSkip }: any) {
 
   const steps = [
     { title: "Benvenuto!", icon: "👋" },
-    { title: "Materiali", icon: "🔷" },
-    { title: "Colori", icon: "🎨" },
-    { title: "Prodotti", icon: "🪟" },
-    { title: "Tipologie", icon: "📋" },
-    { title: "La tua azienda", icon: "🏢" },
+    { title: "Materiali", icon: "" },
+    { title: "Colori", icon: "" },
+    { title: "Prodotti", icon: "" },
+    { title: "Tipologie", icon: "" },
+    { title: "La tua azienda", icon: "" },
   ];
 
   return (
-    <div style={{...S.container,background:"linear-gradient(180deg,#1e293b 0%,#0f172a 100%)"}}>
+    <div style={{...S.container,background:"#1a1a2e"}}>
       <div style={{padding:"30px 20px 16px",textAlign:"center"}}>
         <div style={{fontSize:38}}>{steps[step].icon}</div>
         <h1 style={{fontSize:22,fontWeight:900,color:"#fff",margin:"8px 0 4px"}}>{steps[step].title}</h1>
-        <div style={{display:"flex",gap:6,justifyContent:"center",margin:"16px 0"}}>{steps.map((_,i)=><div key={i} style={{width:i===step?24:8,height:8,borderRadius:4,background:i<=step?"#ff6b35":"rgba(255,255,255,0.2)",transition:"all 0.3s"}} />)}</div>
+        <div style={{display:"flex",gap:6,justifyContent:"center",margin:"16px 0"}}>{steps.map((_,i)=><div key={i} style={{width:i===step?24:8,height:8,borderRadius:4,background:i<=step?"#e07a2f":"rgba(255,255,255,0.2)",transition:"all 0.3s"}} />)}</div>
       </div>
       <div style={{flex:1,background:"#fff",borderRadius:"24px 24px 0 0",padding:20,overflow:"auto"}}>
         {step===0 && (
           <div style={{textAlign:"center",padding:"20px 0"}}>
             <p style={{fontSize:16,color:"#374151",lineHeight:1.6,marginBottom:20}}>Configura FrameFlow per la tua attività. Scegli i materiali, i colori e i prodotti che usi di più.</p>
-            <p style={{fontSize:14,color:"#64748b",marginBottom:30}}>Puoi sempre modificare queste impostazioni dopo dal tasto ⚙️</p>
-            <button onClick={()=>setStep(1)} style={{...S.saveBtn,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",fontSize:18}}>Iniziamo! →</button>
+            <p style={{fontSize:14,color:"#64748b",marginBottom:30}}>Puoi sempre modificare queste impostazioni dopo dal tasto </p>
+            <button onClick={()=>setStep(1)} style={{...S.saveBtn,background:"#e07a2f",fontSize:18}}>Iniziamo! →</button>
             <button onClick={onSkip} style={{...S.saveBtn,background:"transparent",color:"#64748b",boxShadow:"none",marginTop:8,fontSize:14}}>Salta per ora</button>
           </div>
         )}
         {step===1 && (<>
           <p style={{fontSize:14,color:"#64748b",marginBottom:16}}>Seleziona i materiali che tratti nella tua attività:</p>
           <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
-            {DEFAULT_SISTEMI.map(s=><button key={s.id} onClick={()=>toggleSistema(s)} style={{...S.pill,padding:"12px 18px",fontSize:14,background:sistemi.find((x: any)=>x.id===s.id)?"#ff6b35":"#f3f4f6",color:sistemi.find((x: any)=>x.id===s.id)?"#fff":"#374151",fontWeight:700,borderRadius:14}}>{s.icon} {s.nome}</button>)}
+            {DEFAULT_SISTEMI.map(s=><button key={s.id} onClick={()=>toggleSistema(s)} style={{...S.pill,padding:"12px 18px",fontSize:14,background:sistemi.find((x: any)=>x.id===s.id)?"#e07a2f":"#f3f4f6",color:sistemi.find((x: any)=>x.id===s.id)?"#fff":"#374151",fontWeight:700,borderRadius:2}}>{s.icon} {s.nome}</button>)}
           </div>
           <div style={{display:"flex",gap:8,marginTop:16}}>
             <input value={customSistema} onChange={e=>setCustomSistema(e.target.value)} placeholder="Aggiungi materiale..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCustomSistema()} />
-            <button onClick={addCustomSistema} style={{...S.pill,background:"#ff6b35",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
+            <button onClick={addCustomSistema} style={{...S.pill,background:"#e07a2f",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
           </div>
-          {sistemi.filter((s: any)=>!DEFAULT_SISTEMI.find(d=>d.id===s.id)).map((s: any)=><div key={s.id} style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"#f0f9ff",borderRadius:10}}><span>{s.icon} {s.nome}</span><button onClick={()=>setSistemi(sistemi.filter((x: any)=>x.id!==s.id))} style={{marginLeft:"auto",background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          {sistemi.filter((s: any)=>!DEFAULT_SISTEMI.find(d=>d.id===s.id)).map((s: any)=><div key={s.id} style={{display:"flex",alignItems:"center",gap:8,marginTop:8,padding:"8px 12px",background:"#f0f9ff",borderRadius:2}}><span>{s.icon} {s.nome}</span><button onClick={()=>setSistemi(sistemi.filter((x: any)=>x.id!==s.id))} style={{marginLeft:"auto",background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
           <div style={{marginTop:20,display:"flex",gap:10}}>
             <button onClick={()=>setStep(0)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
-            <button onClick={()=>{if(!selectedSistemaForColors && sistemi.length>0) setSelectedSistemaForColors(sistemi[0].id); setStep(2);}} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Avanti →</button>
+            <button onClick={()=>{if(!selectedSistemaForColors && sistemi.length>0) setSelectedSistemaForColors(sistemi[0].id); setStep(2);}} style={{...S.saveBtn,flex:2,background:"#e07a2f"}}>Avanti →</button>
           </div>
         </>)}
         {step===2 && (<>
           <p style={{fontSize:14,color:"#64748b",marginBottom:12}}>Per ogni materiale, seleziona o aggiungi i colori disponibili:</p>
           {sistemi.length===0 ? <p style={{color:"#ef4444",fontWeight:600}}>Torna indietro e seleziona almeno un materiale</p> : <>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-              {sistemi.map((s: any)=><button key={s.id} onClick={()=>setSelectedSistemaForColors(s.id)} style={{...S.pill,padding:"10px 14px",background:selectedSistemaForColors===s.id?"#ff6b35":"#f3f4f6",color:selectedSistemaForColors===s.id?"#fff":"#374151",fontWeight:700,borderRadius:12}}>{s.icon} {s.nome}</button>)}
+              {sistemi.map((s: any)=><button key={s.id} onClick={()=>setSelectedSistemaForColors(s.id)} style={{...S.pill,padding:"10px 14px",background:selectedSistemaForColors===s.id?"#e07a2f":"#f3f4f6",color:selectedSistemaForColors===s.id?"#fff":"#374151",fontWeight:700,borderRadius:2}}>{s.icon} {s.nome}</button>)}
             </div>
             {selectedSistemaForColors && <>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                {(DEFAULT_COLORI[selectedSistemaForColors]||[]).map((c: string)=><button key={c} onClick={()=>toggleColore(selectedSistemaForColors,c)} style={{...S.pill,padding:"10px 14px",background:(colori[selectedSistemaForColors]||[]).includes(c)?"#059669":"#f3f4f6",color:(colori[selectedSistemaForColors]||[]).includes(c)?"#fff":"#374151",fontWeight:600,borderRadius:10}}>{c}</button>)}
+                {(DEFAULT_COLORI[selectedSistemaForColors]||[]).map((c: string)=><button key={c} onClick={()=>toggleColore(selectedSistemaForColors,c)} style={{...S.pill,padding:"10px 14px",background:(colori[selectedSistemaForColors]||[]).includes(c)?"#059669":"#f3f4f6",color:(colori[selectedSistemaForColors]||[]).includes(c)?"#fff":"#374151",fontWeight:600,borderRadius:2}}>{c}</button>)}
               </div>
-              {(colori[selectedSistemaForColors]||[]).filter(c=>!(DEFAULT_COLORI[selectedSistemaForColors]||[]).includes(c)).map(c=><div key={c} style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:6,padding:"6px 12px",background:"#ecfdf5",borderRadius:8,marginRight:6}}><span style={{fontSize:13}}>{c}</span><button onClick={()=>toggleColore(selectedSistemaForColors,c)} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer"}}>×</button></div>)}
+              {(colori[selectedSistemaForColors]||[]).filter(c=>!(DEFAULT_COLORI[selectedSistemaForColors]||[]).includes(c)).map(c=><div key={c} style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:6,padding:"6px 12px",background:"#ecfdf5",borderRadius:2,marginRight:6}}><span style={{fontSize:13}}>{c}</span><button onClick={()=>toggleColore(selectedSistemaForColors,c)} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer"}}>×</button></div>)}
               <div style={{display:"flex",gap:8,marginTop:12}}>
                 <input value={customColore} onChange={e=>setCustomColore(e.target.value)} placeholder="Aggiungi colore..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCustomColore(selectedSistemaForColors)} />
                 <button onClick={()=>addCustomColore(selectedSistemaForColors)} style={{...S.pill,background:"#059669",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
               </div>
-              <button onClick={()=>{const all = DEFAULT_COLORI[selectedSistemaForColors]||[]; setColori({...colori,[selectedSistemaForColors]:all});}} style={{marginTop:8,background:"none",border:"none",color:"#ff6b35",fontSize:13,fontWeight:700,cursor:"pointer"}}>Seleziona tutti i predefiniti</button>
+              <button onClick={()=>{const all = DEFAULT_COLORI[selectedSistemaForColors]||[]; setColori({...colori,[selectedSistemaForColors]:all});}} style={{marginTop:8,background:"none",border:"none",color:"#e07a2f",fontSize:13,fontWeight:700,cursor:"pointer"}}>Seleziona tutti i predefiniti</button>
             </>}
           </>}
           <div style={{marginTop:20,display:"flex",gap:10}}>
             <button onClick={()=>setStep(1)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
-            <button onClick={()=>setStep(3)} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Avanti →</button>
+            <button onClick={()=>setStep(3)} style={{...S.saveBtn,flex:2,background:"#e07a2f"}}>Avanti →</button>
           </div>
         </>)}
         {step===3 && (<>
           <p style={{fontSize:14,color:"#64748b",marginBottom:12}}>Seleziona le categorie di prodotti che offri:</p>
           <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
-            {DEFAULT_CATEGORIE.map(c=><button key={c.id} onClick={()=>toggleCategoria(c)} style={{...S.pill,padding:"12px 18px",fontSize:14,background:categorie.find((x: any)=>x.id===c.id)?"#8b5cf6":"#f3f4f6",color:categorie.find((x: any)=>x.id===c.id)?"#fff":"#374151",fontWeight:700,borderRadius:14}}>{c.icon} {c.nome}</button>)}
+            {DEFAULT_CATEGORIE.map(c=><button key={c.id} onClick={()=>toggleCategoria(c)} style={{...S.pill,padding:"12px 18px",fontSize:14,background:categorie.find((x: any)=>x.id===c.id)?"#8b5cf6":"#f3f4f6",color:categorie.find((x: any)=>x.id===c.id)?"#fff":"#374151",fontWeight:700,borderRadius:2}}>{c.icon} {c.nome}</button>)}
           </div>
           <div style={{display:"flex",gap:8,marginTop:16}}>
-            <input value={customCategoria} onChange={e=>setCustomCategoria(e.target.value)} placeholder="Aggiungi categoria..." style={{...S.input,flex:1}} onKeyDown={e=>{if(e.key==="Enter"&&customCategoria.trim()){const id=customCategoria.trim().toLowerCase().replace(/\s+/g,"_");if(!categorie.find((c: any)=>c.id===id)){setCategorie([...categorie,{id,nome:customCategoria.trim(),icon:"📦"}]);}setCustomCategoria("");}}} />
-            <button onClick={()=>{if(customCategoria.trim()){const id=customCategoria.trim().toLowerCase().replace(/\s+/g,"_");if(!categorie.find((c: any)=>c.id===id)){setCategorie([...categorie,{id,nome:customCategoria.trim(),icon:"📦"}]);}setCustomCategoria("");}}} style={{...S.pill,background:"#8b5cf6",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
+            <input value={customCategoria} onChange={e=>setCustomCategoria(e.target.value)} placeholder="Aggiungi categoria..." style={{...S.input,flex:1}} onKeyDown={e=>{if(e.key==="Enter"&&customCategoria.trim()){const id=customCategoria.trim().toLowerCase().replace(/\s+/g,"_");if(!categorie.find((c: any)=>c.id===id)){setCategorie([...categorie,{id,nome:customCategoria.trim(),icon:""}]);}setCustomCategoria("");}}} />
+            <button onClick={()=>{if(customCategoria.trim()){const id=customCategoria.trim().toLowerCase().replace(/\s+/g,"_");if(!categorie.find((c: any)=>c.id===id)){setCategorie([...categorie,{id,nome:customCategoria.trim(),icon:""}]);}setCustomCategoria("");}}} style={{...S.pill,background:"#8b5cf6",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
           </div>
           <div style={{marginTop:20,display:"flex",gap:10}}>
             <button onClick={()=>setStep(2)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
-            <button onClick={()=>setStep(4)} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Avanti →</button>
+            <button onClick={()=>setStep(4)} style={{...S.saveBtn,flex:2,background:"#e07a2f"}}>Avanti →</button>
           </div>
         </>)}
         {step===4 && (<>
           <p style={{fontSize:14,color:"#64748b",marginBottom:12}}>Seleziona le tipologie infisso che usi nelle misure:</p>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-            {DEFAULT_TIPOLOGIE.map(t=><button key={t} onClick={()=>toggleTipologia(t)} style={{...S.pill,padding:"10px 14px",background:tipologie.includes(t)?"#2563eb":"#f3f4f6",color:tipologie.includes(t)?"#fff":"#374151",fontWeight:600,borderRadius:10}}>{t}</button>)}
+            {DEFAULT_TIPOLOGIE.map(t=><button key={t} onClick={()=>toggleTipologia(t)} style={{...S.pill,padding:"10px 14px",background:tipologie.includes(t)?"#2563eb":"#f3f4f6",color:tipologie.includes(t)?"#fff":"#374151",fontWeight:600,borderRadius:2}}>{t}</button>)}
           </div>
           <div style={{display:"flex",gap:8,marginTop:12}}>
             <input value={customTipologia} onChange={e=>setCustomTipologia(e.target.value)} placeholder="Aggiungi tipologia..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCustomTipologia()} />
             <button onClick={addCustomTipologia} style={{...S.pill,background:"#2563eb",color:"#fff",padding:"10px 16px",fontWeight:700}}>+</button>
           </div>
-          {tipologie.filter(t=>!DEFAULT_TIPOLOGIE.includes(t)).map(t=><div key={t} style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:6,padding:"6px 12px",background:"#eff6ff",borderRadius:8,marginRight:6}}><span style={{fontSize:13}}>{t}</span><button onClick={()=>setTipologie(tipologie.filter(x=>x!==t))} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer"}}>×</button></div>)}
+          {tipologie.filter(t=>!DEFAULT_TIPOLOGIE.includes(t)).map(t=><div key={t} style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:6,padding:"6px 12px",background:"#eff6ff",borderRadius:2,marginRight:6}}><span style={{fontSize:13}}>{t}</span><button onClick={()=>setTipologie(tipologie.filter(x=>x!==t))} style={{background:"none",border:"none",color:"#ef4444",cursor:"pointer"}}>×</button></div>)}
           <div style={{marginTop:20,display:"flex",gap:10}}>
             <button onClick={()=>setStep(3)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
-            <button onClick={()=>setStep(5)} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Avanti →</button>
+            <button onClick={()=>setStep(5)} style={{...S.saveBtn,flex:2,background:"#e07a2f"}}>Avanti →</button>
           </div>
         </>)}
         {step===5 && (<>
@@ -2322,7 +2456,7 @@ function SetupWizard({ userSettings, onComplete, onSkip }: any) {
           <Field label="P.IVA" value={azienda.piva} onChange={(v: string)=>setAzienda({...azienda,piva:v})} placeholder="01234567890" />
           <div style={{marginTop:20,display:"flex",gap:10}}>
             <button onClick={()=>setStep(4)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>← Indietro</button>
-            <button onClick={()=>onComplete({sistemi,categorie,colori,tipologie,listino:userSettings.listino||[],azienda})} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",fontSize:16}}>✅ Completa Setup</button>
+            <button onClick={()=>onComplete({sistemi,categorie,colori,tipologie,listino:userSettings.listino||[],azienda})} style={{...S.saveBtn,flex:2,background:"#e07a2f",fontSize:16}}> Completa Setup</button>
           </div>
         </>)}
       </div>
@@ -2331,7 +2465,7 @@ function SetupWizard({ userSettings, onComplete, onSkip }: any) {
 }
 
 // ==================== SETTINGS VIEW ====================
-function SettingsView({ userSettings, onSave, onBack }: any) {
+function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }: any) {
   const [tab, setTab] = useState("materiali");
   const [sistemi, setSistemi] = useState<any[]>(userSettings.sistemi?.length > 0 ? userSettings.sistemi : [...DEFAULT_SISTEMI]);
   const [categorie, setCategorie] = useState<any[]>(userSettings.categorie?.length > 0 ? userSettings.categorie : [...DEFAULT_CATEGORIE]);
@@ -2340,6 +2474,14 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
   const [vetri, setVetri] = useState<string[]>(userSettings.vetri?.length > 0 ? userSettings.vetri : [...DEFAULT_VETRI]);
   const [listino, setListino] = useState<any[]>(userSettings.listino || []);
   const [azienda, setAzienda] = useState(userSettings.azienda || {});
+  const [checklists, setChecklists] = useState<Record<string,string[]>>(() => {
+    const c = userSettings.checklists || {};
+    // Initialize with defaults if empty
+    const merged: Record<string,string[]> = {};
+    Object.keys(DEFAULT_TASKS).forEach(k => { merged[k] = c[k]?.length > 0 ? [...c[k]] : [...DEFAULT_TASKS[k]]; });
+    return merged;
+  });
+  const [selPhase, setSelPhase] = useState("sopralluogo");
   const [customInput, setCustomInput] = useState("");
   const [selMat, setSelMat] = useState(sistemi[0]?.id || "");
   const [listinoForm, setListinoForm] = useState<any>(null);
@@ -2347,7 +2489,7 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
   function removeSistema(id: string) { setSistemi(sistemi.filter((s: any) => s.id !== id)); }
   function addSistema() { if(!customInput.trim()) return; const id=customInput.trim().toLowerCase().replace(/\s+/g,"_"); if(!sistemi.find((s: any)=>s.id===id)) setSistemi([...sistemi,{id,nome:customInput.trim(),icon:"🔹"}]); setCustomInput(""); }
   function removeCategoria(id: string) { setCategorie(categorie.filter((c: any) => c.id !== id)); }
-  function addCategoria() { if(!customInput.trim()) return; const id=customInput.trim().toLowerCase().replace(/\s+/g,"_"); if(!categorie.find((c: any)=>c.id===id)) setCategorie([...categorie,{id,nome:customInput.trim(),icon:"📦"}]); setCustomInput(""); }
+  function addCategoria() { if(!customInput.trim()) return; const id=customInput.trim().toLowerCase().replace(/\s+/g,"_"); if(!categorie.find((c: any)=>c.id===id)) setCategorie([...categorie,{id,nome:customInput.trim(),icon:""}]); setCustomInput(""); }
   function addColore(matId: string, col: string) { if(!col.trim()) return; const cur=colori[matId]||[]; if(!cur.includes(col.trim())) setColori({...colori,[matId]:[...cur,col.trim()]}); setCustomInput(""); }
   function removeColore(matId: string, col: string) { setColori({...colori,[matId]:(colori[matId]||[]).filter(c=>c!==col)}); }
   function addTipologia() { if(!customInput.trim()||tipologie.includes(customInput.trim())) return; setTipologie([...tipologie,customInput.trim()]); setCustomInput(""); }
@@ -2358,61 +2500,83 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
   function removeListinoItem(id: string) { setListino(listino.filter((l: any)=>l.id!==id)); }
 
   const tabs = [
-    {key:"materiali",label:"Materiali",icon:"🔷"},
-    {key:"colori",label:"Colori",icon:"🎨"},
-    {key:"tipologie",label:"Tipologie",icon:"📋"},
-    {key:"vetri",label:"Vetri",icon:"🔲"},
-    {key:"prodotti",label:"Categorie",icon:"🪟"},
-    {key:"listino",label:"Listino",icon:"💰"},
-    {key:"azienda",label:"Azienda",icon:"🏢"},
+    {key:"tema",label:"Tema",icon:""},
+    {key:"materiali",label:"Materiali",icon:""},
+    {key:"colori",label:"Colori",icon:""},
+    {key:"tipologie",label:"Tipologie",icon:""},
+    {key:"vetri",label:"Vetri",icon:""},
+    {key:"prodotti",label:"Categorie",icon:""},
+    {key:"listino",label:"Listino",icon:""},
+    {key:"checklists",label:"Checklist",icon:""},
+    {key:"azienda",label:"Azienda",icon:""},
   ];
 
   return (
     <div style={S.container}>
-      <div style={{...S.secHdr,background:"linear-gradient(135deg,#475569,#334155)",boxShadow:"0 4px 14px rgba(71,85,105,0.3)"}}>
-        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,vetri,listino,azienda,setupCompleted:true})} style={{...S.backBtn,color:"#fff"}}>← Salva</button>
-        <h2 style={{...S.secTitle,color:"#fff"}}>⚙️ Impostazioni</h2>
+      <div style={{...S.secHdr,background:"#1a1a2e",borderBottom:"3px solid #e07a2f"}}>
+        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,vetri,listino,checklists,azienda,setupCompleted:true})} style={{...S.backBtn,color:"#e07a2f"}}>← SALVA</button>
+        <h2 style={{...S.secTitle,color:"#fff",fontFamily:"'JetBrains Mono','SF Mono',monospace",letterSpacing:'1px',textTransform:'uppercase',fontSize:14}}>IMPOSTAZIONI</h2>
       </div>
       <div style={{display:"flex",gap:4,padding:"12px 12px 0",overflowX:"auto",flexShrink:0}}>
-        {tabs.map(t=><button key={t.key} onClick={()=>{setTab(t.key);setCustomInput("");}} style={{padding:"8px 12px",borderRadius:12,border:"none",background:tab===t.key?"#ff6b35":"#f3f4f6",color:tab===t.key?"#fff":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{t.icon} {t.label}</button>)}
+        {tabs.map(t=><button key={t.key} onClick={()=>{setTab(t.key);setCustomInput("");}} style={{padding:"8px 12px",borderRadius:2,border:"none",background:tab===t.key?(THEMES[appTheme]?.primary||"#e07a2f"):"#f3f4f6",color:tab===t.key?"#fff":"#64748b",fontSize:12,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{t.icon} {t.label}</button>)}
       </div>
       <div style={{padding:16,flex:1,overflow:"auto"}}>
+        {tab==="tema" && (<>
+          <p style={{fontSize:13,color:"#5c6370",marginBottom:12}}>Scegli il tema dell'app:</p>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+            {Object.entries(THEMES).map(([key, theme]) => (
+              <button key={key} onClick={()=>onChangeTheme(key)} style={{padding:14,borderRadius:2,border:appTheme===key?`3px solid ${theme.primary}`:"1px solid #d5d8de",background:theme.bg,cursor:"pointer",textAlign:"center",position:"relative",overflow:"hidden",transition:"all 0.15s"}}>
+                <div style={{fontSize:13,fontWeight:800,color:theme.primary,fontFamily:"'JetBrains Mono','SF Mono',monospace",textTransform:"uppercase",letterSpacing:"1px"}}>{theme.name}</div>
+                <div style={{display:"flex",gap:4,justifyContent:"center",marginTop:8}}>
+                  <div style={{width:14,height:14,borderRadius:2,background:theme.primary}} />
+                  <div style={{width:14,height:14,borderRadius:2,background:theme.secondary}} />
+                  <div style={{width:14,height:14,borderRadius:2,background:theme.accent}} />
+                </div>
+                {appTheme===key && <div style={{position:"absolute",top:4,right:4,background:theme.primary,color:"#fff",borderRadius:2,padding:"2px 8px",fontSize:9,fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>ATTIVO</div>}
+              </button>
+            ))}
+          </div>
+          <div style={{marginTop:14,padding:12,background:THEMES[appTheme]?.primaryLight||"#f0f0f0",borderRadius:2,border:`1.5px solid ${THEMES[appTheme]?.primary||"#666"}33`}}>
+            <div style={{fontSize:11,fontWeight:700,color:THEMES[appTheme]?.primary||"#333",fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>TEMA: {THEMES[appTheme]?.name}</div>
+            <div style={{fontSize:11,color:"#64748b",marginTop:4}}>Il tema viene applicato immediatamente a tutta l'app.</div>
+          </div>
+        </>)}
         {tab==="materiali" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>I materiali/sistemi che tratti:</p>
-          {sistemi.map((s: any)=><div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:12,marginBottom:8}}><span style={{fontSize:20}}>{s.icon}</span><span style={{flex:1,fontWeight:700,fontSize:15}}>{s.nome}</span><button onClick={()=>removeSistema(s.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:20,cursor:"pointer"}}>×</button></div>)}
-          <div style={{display:"flex",gap:8,marginTop:12}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuovo materiale..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addSistema()} /><button onClick={addSistema} style={{...S.pill,background:"#ff6b35",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
+          {sistemi.map((s: any)=><div key={s.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:2,marginBottom:8}}><span style={{fontSize:20}}>{s.icon}</span><span style={{flex:1,fontWeight:700,fontSize:15}}>{s.nome}</span><button onClick={()=>removeSistema(s.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:20,cursor:"pointer"}}>×</button></div>)}
+          <div style={{display:"flex",gap:8,marginTop:12}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuovo materiale..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addSistema()} /><button onClick={addSistema} style={{...S.pill,background:"#e07a2f",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
         </>)}
         {tab==="colori" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Colori per ogni materiale:</p>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-            {sistemi.map((s: any)=><button key={s.id} onClick={()=>setSelMat(s.id)} style={{...S.pill,padding:"10px 14px",background:selMat===s.id?"#ff6b35":"#f3f4f6",color:selMat===s.id?"#fff":"#374151",fontWeight:700,borderRadius:12}}>{s.icon} {s.nome}</button>)}
+            {sistemi.map((s: any)=><button key={s.id} onClick={()=>setSelMat(s.id)} style={{...S.pill,padding:"10px 14px",background:selMat===s.id?"#e07a2f":"#f3f4f6",color:selMat===s.id?"#fff":"#374151",fontWeight:700,borderRadius:2}}>{s.icon} {s.nome}</button>)}
           </div>
           {selMat && <>
-            {(colori[selMat]||[]).map((c: string)=><div key={c} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#f0f9ff",borderRadius:10,marginBottom:6,marginRight:6}}><span style={{fontSize:13,fontWeight:600}}>{c}</span><button onClick={()=>removeColore(selMat,c)} style={{background:"none",border:"none",color:"#ef4444",fontSize:16,cursor:"pointer"}}>×</button></div>)}
+            {(colori[selMat]||[]).map((c: string)=><div key={c} style={{display:"inline-flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#f0f9ff",borderRadius:2,marginBottom:6,marginRight:6}}><span style={{fontSize:13,fontWeight:600}}>{c}</span><button onClick={()=>removeColore(selMat,c)} style={{background:"none",border:"none",color:"#ef4444",fontSize:16,cursor:"pointer"}}>×</button></div>)}
             <div style={{display:"flex",gap:8,marginTop:8}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuovo colore..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addColore(selMat,customInput)} /><button onClick={()=>addColore(selMat,customInput)} style={{...S.pill,background:"#059669",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
           </>}
         </>)}
         {tab==="tipologie" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Tipologie infisso per le misure:</p>
-          {tipologie.map(t=><div key={t} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#f8fafc",borderRadius:10,marginBottom:6}}><span style={{flex:1,fontSize:14,fontWeight:600}}>{t}</span><button onClick={()=>removeTipologia(t)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          {tipologie.map(t=><div key={t} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#f8fafc",borderRadius:2,marginBottom:6}}><span style={{flex:1,fontSize:14,fontWeight:600}}>{t}</span><button onClick={()=>removeTipologia(t)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
           <div style={{display:"flex",gap:8,marginTop:10}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuova tipologia..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addTipologia()} /><button onClick={addTipologia} style={{...S.pill,background:"#2563eb",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
         </>)}
         {tab==="vetri" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Tipi di vetro disponibili:</p>
-          {vetri.map(v=><div key={v} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#f8fafc",borderRadius:10,marginBottom:6}}><span style={{flex:1,fontSize:14,fontWeight:600}}>{v}</span><button onClick={()=>removeVetro(v)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          {vetri.map(v=><div key={v} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"#f8fafc",borderRadius:2,marginBottom:6}}><span style={{flex:1,fontSize:14,fontWeight:600}}>{v}</span><button onClick={()=>removeVetro(v)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
           <div style={{display:"flex",gap:8,marginTop:10}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuovo tipo vetro (es. 4/20/4 BE)..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addVetro()} /><button onClick={addVetro} style={{...S.pill,background:"#0891b2",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
         </>)}
         {tab==="prodotti" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Categorie di prodotti che offri:</p>
-          {categorie.map((c: any)=><div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:12,marginBottom:8}}><span style={{fontSize:20}}>{c.icon}</span><span style={{flex:1,fontWeight:700,fontSize:15}}>{c.nome}</span><button onClick={()=>removeCategoria(c.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:20,cursor:"pointer"}}>×</button></div>)}
+          {categorie.map((c: any)=><div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:2,marginBottom:8}}><span style={{fontSize:20}}>{c.icon}</span><span style={{flex:1,fontWeight:700,fontSize:15}}>{c.nome}</span><button onClick={()=>removeCategoria(c.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:20,cursor:"pointer"}}>×</button></div>)}
           <div style={{display:"flex",gap:8,marginTop:12}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuova categoria..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCategoria()} /><button onClick={addCategoria} style={{...S.pill,background:"#8b5cf6",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
         </>)}
         {tab==="listino" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Il tuo listino prezzi (usato nei preventivi):</p>
           {listino.length===0 && <div style={{textAlign:"center",padding:30,color:"#94a3b8"}}><p style={{fontSize:14}}>Nessun articolo nel listino</p></div>}
-          {listino.map((l: any)=><div key={l.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:12,marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:700}}>{l.descrizione}</div><div style={{fontSize:12,color:"#64748b"}}>{l.categoria||"—"} · {l.tipo==="mq"?"€/mq":"€/pz"}</div></div><div style={{fontWeight:800,color:"#059669",fontSize:15}}>€{(l.prezzo||0).toFixed(2)}</div><button onClick={()=>removeListinoItem(l.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          {listino.map((l: any)=><div key={l.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:2,marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:700}}>{l.descrizione}</div><div style={{fontSize:12,color:"#64748b"}}>{l.categoria||"—"} · {l.tipo==="mq"?"€/mq":"€/pz"}</div></div><div style={{fontWeight:800,color:"#059669",fontSize:15}}>€{(l.prezzo||0).toFixed(2)}</div><button onClick={()=>removeListinoItem(l.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
           {listinoForm ? (
-            <div style={{padding:16,background:"#fffbeb",borderRadius:14,border:"2px solid #f59e0b",marginTop:12}}>
+            <div style={{padding:16,background:"#fffbeb",borderRadius:2,border:"2px solid #f59e0b",marginTop:12}}>
               <Field label="Descrizione" value={listinoForm.descrizione||""} onChange={(v: string)=>setListinoForm({...listinoForm,descrizione:v})} placeholder="Es. Finestra 2 ante PVC" />
               <div style={{display:"flex",gap:8}}>
                 <div style={{flex:1}}><label style={S.fLabel}>Prezzo (€)</label><input type="number" value={listinoForm.prezzo||""} onChange={e=>setListinoForm({...listinoForm,prezzo:parseFloat(e.target.value)||0})} style={S.input} placeholder="0.00" /></div>
@@ -2421,10 +2585,38 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
               <div style={{flex:1}}><label style={S.fLabel}>Categoria</label><select value={listinoForm.categoria||""} onChange={e=>setListinoForm({...listinoForm,categoria:e.target.value})} style={S.input}><option value="">—</option>{categorie.map((c: any)=><option key={c.id} value={c.nome}>{c.nome}</option>)}</select></div>
               <div style={{display:"flex",gap:8,marginTop:10}}>
                 <button onClick={()=>setListinoForm(null)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>Annulla</button>
-                <button onClick={addListinoItem} disabled={!listinoForm.descrizione?.trim()} style={{...S.saveBtn,flex:2,background:"linear-gradient(135deg,#f59e0b,#d97706)",opacity:listinoForm.descrizione?.trim()?1:0.5}}>💾 Aggiungi</button>
+                <button onClick={addListinoItem} disabled={!listinoForm.descrizione?.trim()} style={{...S.saveBtn,flex:2,background:"#d4820e",opacity:listinoForm.descrizione?.trim()?1:0.5}}> Aggiungi</button>
               </div>
             </div>
-          ) : <button onClick={()=>setListinoForm({descrizione:"",prezzo:0,tipo:"pezzo",categoria:""})} style={{...S.saveBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",marginTop:12}}>+ Aggiungi Articolo al Listino</button>}
+          ) : <button onClick={()=>setListinoForm({descrizione:"",prezzo:0,tipo:"pezzo",categoria:""})} style={{...S.saveBtn,background:"#d4820e",marginTop:12}}>+ Aggiungi Articolo al Listino</button>}
+        </>)}
+        {tab==="checklists" && (<>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Personalizza le checklist per ogni fase. Aggiungi, rimuovi o riordina i task.</p>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+            {[{k:"sopralluogo",l:" Sopralluogo"},{k:"misure",l:" Misure"},{k:"preventivo",l:" Preventivo"},{k:"posa",l:" Posa"},{k:"riparazione",l:" Riparazione"},{k:"followup",l:" Follow-up"}].map(ph=>
+              <button key={ph.k} onClick={()=>setSelPhase(ph.k)} style={{padding:"10px 14px",borderRadius:2,border:"none",background:selPhase===ph.k?"#059669":"#f3f4f6",color:selPhase===ph.k?"#fff":"#374151",fontWeight:700,fontSize:13,cursor:"pointer"}}>{ph.l} ({(checklists[ph.k]||[]).length})</button>
+            )}
+          </div>
+          {selPhase && <>
+            <div style={{marginBottom:12}}>
+              {(checklists[selPhase]||[]).map((task: string, idx: number) => (
+                <div key={idx} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",background:"#f8fafc",borderRadius:2,marginBottom:6,border:"1px solid #e2e8f0"}}>
+                  <span style={{fontSize:14,color:"#94a3b8",fontWeight:700,width:24,textAlign:"center"}}>{idx+1}</span>
+                  <span style={{flex:1,fontSize:14,fontWeight:600,color:"#1f2937"}}>{task}</span>
+                  <button onClick={()=>{
+                    if(idx>0){const n=[...(checklists[selPhase]||[])];[n[idx-1],n[idx]]=[n[idx],n[idx-1]];setChecklists({...checklists,[selPhase]:n});}
+                  }} disabled={idx===0} style={{background:"none",border:"none",color:idx>0?"#3a7bd5":"#d1d5db",fontSize:16,cursor:idx>0?"pointer":"default",padding:"2px 6px"}}>↑</button>
+                  <button onClick={()=>{
+                    const arr=checklists[selPhase]||[];if(idx<arr.length-1){const n=[...arr];[n[idx],n[idx+1]]=[n[idx+1],n[idx]];setChecklists({...checklists,[selPhase]:n});}
+                  }} disabled={idx>=(checklists[selPhase]||[]).length-1} style={{background:"none",border:"none",color:idx<(checklists[selPhase]||[]).length-1?"#3a7bd5":"#d1d5db",fontSize:16,cursor:idx<(checklists[selPhase]||[]).length-1?"pointer":"default",padding:"2px 6px"}}>↓</button>
+                  <button onClick={()=>{setChecklists({...checklists,[selPhase]:(checklists[selPhase]||[]).filter((_: any,i: number)=>i!==idx)});}} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer",padding:"2px 6px"}}>×</button>
+                </div>
+              ))}
+              {(checklists[selPhase]||[]).length===0 && <div style={{textAlign:"center",padding:20,color:"#94a3b8",fontSize:13}}>Nessun task. Aggiungi il primo!</div>}
+            </div>
+            <div style={{display:"flex",gap:8}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuovo task..." style={{...S.input,flex:1}} onKeyDown={e=>{if(e.key==="Enter"&&customInput.trim()){setChecklists({...checklists,[selPhase]:[...(checklists[selPhase]||[]),customInput.trim()]});setCustomInput("");}}} /><button onClick={()=>{if(customInput.trim()){setChecklists({...checklists,[selPhase]:[...(checklists[selPhase]||[]),customInput.trim()]});setCustomInput("");}}} style={{...S.pill,background:"#059669",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
+            <button onClick={()=>{if(confirm("Ripristinare i task predefiniti per questa fase?"))setChecklists({...checklists,[selPhase]:[...(DEFAULT_TASKS[selPhase]||[])]});}} style={{marginTop:10,padding:"8px 14px",borderRadius:2,border:"1.5px solid #d1d5db",background:"#fff",color:"#64748b",fontSize:12,fontWeight:600,cursor:"pointer",width:"100%"}}>🔄 Ripristina Predefiniti</button>
+          </>}
         </>)}
         {tab==="azienda" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Dati aziendali (appaiono nei documenti):</p>
@@ -2437,7 +2629,7 @@ function SettingsView({ userSettings, onSave, onBack }: any) {
         </>)}
       </div>
       <div style={{padding:"12px 16px 24px",borderTop:"1px solid #e2e8f0"}}>
-        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,vetri,listino,azienda,setupCompleted:true})} style={{...S.saveBtn,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",width:"100%"}}>💾 Salva Impostazioni</button>
+        <button onClick={()=>onSave({sistemi,categorie,colori,tipologie,vetri,listino,checklists,azienda,setupCompleted:true})} style={{...S.saveBtn,background:"#e07a2f",width:"100%"}}> Salva Impostazioni</button>
       </div>
     </div>
   );
@@ -2447,9 +2639,9 @@ function BottomNav({ items, active, onNav }: any) {
   return (
     <div style={S.bottomNav}>
       {items.map((it: any) => (
-        <button key={it.key} onClick={()=>onNav(it.key)} style={{...S.navItem,color:active===it.key?"#ff6b35":"#94a3b8"}}>
-          <span style={{fontSize:22}}>{it.icon}</span>
-          <span style={{fontSize:10,fontWeight:active===it.key?700:500}}>{it.label}</span>
+        <button key={it.key} onClick={()=>onNav(it.key)} style={{...S.navItem,color:active===it.key?(THEMES[typeof window!=="undefined"?localStorage.getItem("ff-theme")||"classic":"classic"]||THEMES.classic).primary:"#7a8194"}}>
+          <span style={{fontSize:14,fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>{it.icon}</span>
+          <span style={{fontSize:9,fontWeight:active===it.key?700:500,letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>{it.label}</span>
         </button>
       ))}
     </div>
@@ -2471,13 +2663,13 @@ function NewPraticaView({ client, onCreate, onBack }: any) {
         <div style={{marginBottom:16}}>
           <label style={S.fLabel}>Tipo Pratica</label>
           <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setTipo("nuovo_infisso")} style={{flex:1,padding:"16px 12px",borderRadius:16,border:tipo==="nuovo_infisso"?"3px solid #ff6b35":"2px solid #e2e8f0",background:tipo==="nuovo_infisso"?"#fff7ed":"#fff",cursor:"pointer",textAlign:"center"}}>
-              <div style={{fontSize:28}}>🪟</div>
-              <div style={{fontSize:14,fontWeight:800,color:tipo==="nuovo_infisso"?"#ff6b35":"#374151",marginTop:4}}>Nuovo Infisso</div>
+            <button onClick={()=>setTipo("nuovo_infisso")} style={{flex:1,padding:"16px 12px",borderRadius:2,border:tipo==="nuovo_infisso"?"3px solid #e07a2f":"2px solid #e2e8f0",background:tipo==="nuovo_infisso"?"#fff7ed":"#fff",cursor:"pointer",textAlign:"center"}}>
+              <div style={{fontSize:28}}></div>
+              <div style={{fontSize:14,fontWeight:800,color:tipo==="nuovo_infisso"?"#e07a2f":"#374151",marginTop:4}}>Nuovo Infisso</div>
               <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Sopralluogo → Misure → Preventivo → Conferma → Fattura → Posa</div>
             </button>
-            <button onClick={()=>setTipo("riparazione")} style={{flex:1,padding:"16px 12px",borderRadius:16,border:tipo==="riparazione"?"3px solid #dc2626":"2px solid #e2e8f0",background:tipo==="riparazione"?"#fef2f2":"#fff",cursor:"pointer",textAlign:"center"}}>
-              <div style={{fontSize:28}}>🛠️</div>
+            <button onClick={()=>setTipo("riparazione")} style={{flex:1,padding:"16px 12px",borderRadius:2,border:tipo==="riparazione"?"3px solid #dc2626":"2px solid #e2e8f0",background:tipo==="riparazione"?"#fef2f2":"#fff",cursor:"pointer",textAlign:"center"}}>
+              <div style={{fontSize:28}}></div>
               <div style={{fontSize:14,fontWeight:800,color:tipo==="riparazione"?"#dc2626":"#374151",marginTop:4}}>Riparazione</div>
               <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Sopralluogo → Riparazione → Fattura</div>
             </button>
@@ -2487,7 +2679,7 @@ function NewPraticaView({ client, onCreate, onBack }: any) {
         <div style={{display:"flex",gap:12}}><Field label="Data" value={data} onChange={setData} type="date" style={{flex:1}} /><Field label="Ora" value={ora} onChange={setOra} type="time" style={{flex:1}} /></div>
         <Field label="Note" value={note} onChange={setNote} placeholder="Note pratica..." textarea />
         <div style={S.infoNote}>ℹ️ La pratica inizierà dalla fase Sopralluogo.</div>
-        <button onClick={()=>onCreate(ind,tipo,data,ora,note)} style={{...S.saveBtn,background:tipo==="riparazione"?"linear-gradient(135deg,#ef4444,#dc2626)":"linear-gradient(135deg,#ff6b35,#ff3d71)"}}>Crea Pratica →</button>
+        <button onClick={()=>onCreate(ind,tipo,data,ora,note)} style={{...S.saveBtn,background:tipo==="riparazione"?"#c44040":"#e07a2f"}}>Crea Pratica →</button>
       </div>
     </div>
   );
@@ -2547,25 +2739,38 @@ function SignaturePad({ onSave, onCancel }: any) {
   };
 
   return (
-    <div style={{background:"#fff",borderRadius:18,padding:16,boxShadow:"0 4px 20px rgba(0,0,0,0.1)"}}>
-      <h3 style={{fontSize:16,fontWeight:900,color:"#1e293b",margin:"0 0 12px"}}>✍️ Firma del Cliente</h3>
+    <div style={{background:"#fff",borderRadius:2,padding:16,boxShadow:"0 4px 20px rgba(0,0,0,0.1)"}}>
+      <h3 style={{fontSize:16,fontWeight:900,color:"#1e293b",margin:"0 0 12px"}}> Firma del Cliente</h3>
       <p style={{fontSize:13,color:"#64748b",margin:"0 0 12px"}}>Chiedi al cliente di firmare qui sotto con il dito o lo stilo</p>
       <canvas ref={canvasRef} width={460} height={180}
         onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw}
         onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}
-        style={{width:"100%",height:180,border:"2.5px dashed #cbd5e1",borderRadius:14,background:"#fafafa",touchAction:"none",cursor:"crosshair"}}
+        style={{width:"100%",height:180,border:"2.5px dashed #cbd5e1",borderRadius:2,background:"#fafafa",touchAction:"none",cursor:"crosshair"}}
       />
       <div style={{display:"flex",gap:8,marginTop:12}}>
-        <button onClick={clear} style={{flex:1,padding:"10px",borderRadius:12,border:"2px solid #94a3b8",background:"#fff",color:"#64748b",fontSize:13,fontWeight:800,cursor:"pointer"}}>🗑️ Cancella</button>
-        <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:12,border:"2px solid #ef4444",background:"#fff",color:"#ef4444",fontSize:13,fontWeight:800,cursor:"pointer"}}>✕ Annulla</button>
-        <button onClick={save} disabled={!hasDrawn} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:hasDrawn?"linear-gradient(135deg,#059669,#0d9488)":"#e2e8f0",color:hasDrawn?"#fff":"#94a3b8",fontSize:13,fontWeight:800,cursor:hasDrawn?"pointer":"default"}}>✅ Conferma Firma</button>
+        <button onClick={clear} style={{flex:1,padding:"10px",borderRadius:2,border:"2px solid #94a3b8",background:"#fff",color:"#64748b",fontSize:13,fontWeight:800,cursor:"pointer"}}> Cancella</button>
+        <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:2,border:"2px solid #ef4444",background:"#fff",color:"#ef4444",fontSize:13,fontWeight:800,cursor:"pointer"}}>✕ Annulla</button>
+        <button onClick={save} disabled={!hasDrawn} style={{flex:2,padding:"10px",borderRadius:2,border:"none",background:hasDrawn?"#2d8a4e":"#e2e8f0",color:hasDrawn?"#fff":"#94a3b8",fontSize:13,fontWeight:800,cursor:hasDrawn?"pointer":"default"}}> Conferma Firma</button>
       </div>
     </div>
   );
 }
 
 // ==================== PRATICA DETAIL ====================
-function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, onBack, onDelete, onAddAction, onToggleTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica, onAssign }: any) {
+function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, permissions, onBack, onDelete, onAddAction, onToggleTask, onAddTask, onRemoveTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica, onAssign }: any) {
+  const [newTaskText, setNewTaskText] = useState("");
+  const [msgText, setMsgText] = useState("");
+  const [msgDest, setMsgDest] = useState("");
+  const perms: string[] = permissions || [];
+  const canDo = (p: string) => isAdmin || perms.includes(p);
+  function sendMsg() {
+    if (!msgText.trim()) return;
+    const myName = teamMembers?.find((m: any)=>m.userId===userId)?.nome || "Admin";
+    const destName = msgDest ? teamMembers?.find((m: any)=>m.id===msgDest)?.nome : "";
+    const msg = { id: Date.now().toString(), userId, autore: myName, destinatarioId: msgDest||null, destinatario: destName||"Tutti", testo: msgText.trim(), data: new Date().toISOString() };
+    onUpdatePratica({ messaggi: [...(p.messaggi||[]), msg] });
+    setMsgText("");
+  }
   const sc = STATUS[p.status];
   const totalT = p.actions.reduce((s: number,a: any)=>s+a.tasks.length,0);
   const doneT = p.actions.reduce((s: number,a: any)=>s+a.tasks.filter((t: any)=>t.done).length,0);
@@ -2581,17 +2786,17 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, on
 
   return (
     <div style={S.container}>
-      <div style={S.detailHdr}><button onClick={onBack} style={S.backBtn}>← Indietro</button><div style={{display:"flex",gap:8}}><button onClick={onOpenEmail} style={S.emailBtn}>✉️</button><button onClick={onDelete} style={S.delBtn}>🗑️</button></div></div>
+      <div style={S.detailHdr}><button onClick={onBack} style={S.backBtn}>← Indietro</button><div style={{display:"flex",gap:8}}>{canDo("email") && <button onClick={onOpenEmail} style={S.emailBtn}></button>}{isAdmin && <button onClick={onDelete} style={S.delBtn}></button>}</div></div>
       <div style={{padding:20}}>
         <div style={S.praticaHdrCard}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={S.praticaNumBig}>{p.numero}</span><span style={{...S.statusBdg,background:sc.bg,color:sc.color,border:`1.5px solid ${sc.color}`}}>{sc.label}</span></div>
           <h2 style={S.detailName}>{c?.nome||"—"}</h2>
           <div style={S.detailInfo}>
-            <InfoRow icon="📅" val={<>{dateLabel(p.data)} alle {p.ora}{p.data===today()&&<span style={S.todayChip}>OGGI</span>}</>} />
-            {p.indirizzo && <InfoRow icon="📍" val={p.indirizzo} />}
-            {c?.telefono && <InfoRow icon="📞" val={<a href={`tel:${c.telefono}`} style={{color:"#ff6b35",textDecoration:"none",fontWeight:600}}>{c.telefono}</a>} />}
-            {c?.email && <InfoRow icon="✉️" val={c.email} />}
-            {p.note && <InfoRow icon="📝" val={p.note} />}
+            <InfoRow icon="" val={<>{dateLabel(p.data)} alle {p.ora}{p.data===today()&&<span style={S.todayChip}>OGGI</span>}</>} />
+            {p.indirizzo && <InfoRow icon="" val={p.indirizzo} />}
+            {c?.telefono && <InfoRow icon="" val={<a href={`tel:${c.telefono}`} style={{color:"#e07a2f",textDecoration:"none",fontWeight:600}}>{c.telefono}</a>} />}
+            {c?.email && <InfoRow icon="" val={c.email} />}
+            {p.note && <InfoRow icon="" val={p.note} />}
           </div>
         </div>
 
@@ -2602,10 +2807,10 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, on
           const canAdv = canAdvance(p);
           const isComplete = curIdx >= wf.length - 1 && canAdv;
           return (
-            <div style={{background:"linear-gradient(135deg,#1e293b,#334155)",borderRadius:18,padding:18,marginBottom:18,color:"#fff"}}>
+            <div style={{background:"#1a1a2e",borderRadius:2,padding:18,marginBottom:18,color:"#fff"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                <h3 style={{fontSize:16,fontWeight:900,margin:0,letterSpacing:"-0.3px"}}>{p.tipo==="riparazione"?"🛠️ Riparazione":"🪟 Nuovo Infisso"}</h3>
-                {isComplete && <span style={{background:"#059669",padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:800}}>✅ COMPLETATO</span>}
+                <h3 style={{fontSize:16,fontWeight:900,margin:0,letterSpacing:"-0.3px"}}>{p.tipo==="riparazione"?" Riparazione":" Nuovo Infisso"}</h3>
+                {isComplete && <span style={{background:"#059669",padding:"4px 12px",borderRadius:2,fontSize:12,fontWeight:800}}> COMPLETATO</span>}
               </div>
               <div style={{display:"flex",gap:2,marginBottom:16}}>
                 {wf.map((phase: any,i: number) => {
@@ -2613,63 +2818,62 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, on
                   const isCurrent = i === curIdx;
                   return (
                     <div key={phase.key} style={{flex:1,textAlign:"center"}}>
-                      <div style={{width:38,height:38,borderRadius:"50%",background:isDone?"#059669":isCurrent?phase.color:"rgba(255,255,255,0.1)",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,border:isCurrent?"3px solid "+phase.color:"3px solid transparent",transition:"all 0.3s",boxShadow:isCurrent?"0 0 12px "+phase.color+"40":"none"}}>{isDone?"✅":phase.icon}</div>
+                      <div style={{width:38,height:38,borderRadius:"50%",background:isDone?"#059669":isCurrent?phase.color:"rgba(255,255,255,0.1)",margin:"0 auto 4px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,border:isCurrent?"3px solid "+phase.color:"3px solid transparent",transition:"all 0.3s",boxShadow:isCurrent?"0 0 12px "+phase.color+"40":"none"}}>{isDone?"":phase.icon}</div>
                       <div style={{fontSize:9,fontWeight:800,color:isCurrent?"#fff":isDone?"#4ade80":"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:"0.3px"}}>{phase.label}</div>
                     </div>
                   );
                 })}
               </div>
-              {!isComplete && (
-                <div style={{background:"rgba(255,255,255,0.08)",borderRadius:14,padding:14}}>
+              {isComplete && <div style={{padding:"14px",background:"rgba(5,150,105,0.2)",borderRadius:2,textAlign:"center",marginBottom:14}}><div style={{fontSize:18,fontWeight:900,color:"#4ade80"}}>🎉 Pratica Completata!</div><p style={{fontSize:12,color:"rgba(255,255,255,0.7)",margin:"6px 0 0"}}>Tutte le fasi sono state completate.</p></div>}
+              <div style={{background:"rgba(255,255,255,0.08)",borderRadius:2,padding:14}}>
                   <div style={{fontSize:15,fontWeight:800,marginBottom:8}}>{wf[curIdx]?.icon} Fase: {wf[curIdx]?.label}</div>
-                  {p.fase==="sopralluogo" && (() => { const act=p.actions?.find((a: any)=>a.type==="sopralluogo"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}{userId && <div style={{marginTop:12}}><PhotoGallery photos={p.fotoSopralluogo||[]} label="📸 Foto Sopralluogo" userId={userId} folder={`sopralluogo/${p.id}`} onUpdate={(photos: string[])=>onUpdatePratica({fotoSopralluogo:photos})} /></div>}</>); })()}
-                  {p.fase==="misure" && (<div>{p.misure?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Misure compilate</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Vani: {p.misure.vani?.length||0}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda misure.</p>}<button onClick={onOpenMisure} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>📐 {p.misure?"Modifica":"Compila"} Misure</button></div>)}
-                  {p.fase==="preventivo" && (<div>{p.preventivo?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Preventivo compilato</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Totale: € {(p.preventivo.totaleFinale||0).toFixed(2)}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Prepara il preventivo.</p>}<button onClick={onOpenPrev} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#a855f7,#8b5cf6)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>💰 {p.preventivo?"Modifica":"Compila"} Preventivo</button></div>)}
-                  {p.fase==="conferma" && (<div>{p.confermaOrdine?.firmata?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Ordine confermato</div>{p.confermaOrdine.firmaImg&&<img src={p.confermaOrdine.firmaImg} alt="Firma" style={{height:40,borderRadius:6,background:"#fff",padding:3,marginTop:6}} />}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Raccogli la firma del cliente.</p><div style={{marginBottom:10}}><input value={orderNote} onChange={(e: any)=>setOrderNote(e.target.value)} placeholder="Note ordine..." style={{width:"100%",padding:"10px 14px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} /></div>{!showSignPad?<button onClick={()=>setShowSignPad(true)} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}>✍️ Firma Conferma</button>:<SignaturePad onSave={(img: string)=>{onConfirmOrder(img,orderNote);setShowSignPad(false);}} onCancel={()=>setShowSignPad(false)} />}</>)}</div>)}
-                  {p.fase==="riparazione" && (<div>{p.riparazione?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Riparazione compilata</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>{p.riparazione.problema||"—"}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda riparazione.</p>}<button onClick={onOpenRip} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#ef4444,#dc2626)",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}>🛠️ {p.riparazione?"Modifica":"Compila"} Riparazione</button></div>)}
-                  {p.fase==="fattura" && (<div>{p.fattura?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:10,padding:12}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>✅ Fattura {p.fattura.numero}</span><span style={{fontSize:11,padding:"2px 8px",borderRadius:8,background:p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",fontWeight:700}}>{p.fattura.statoPagamento==="pagato"?"Pagata":p.fattura.statoPagamento==="acconto"?"Acconto":"Non Pagata"}</span></div><div style={{fontSize:20,fontWeight:900,color:"#4ade80",marginTop:6}}>€ {(p.preventivo?.totaleFinale||p.riparazione?.costoStimato||0).toFixed?.(2)||"0.00"}</div><div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>📄 PDF</button><button onClick={()=>{setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||""});setShowPaymentEdit(true);}} style={{flex:1,padding:"10px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}>💰 Pagamento</button></div>{showPaymentEdit&&(<div style={{background:"rgba(255,255,255,0.1)",borderRadius:14,padding:14,marginTop:10}}><div style={{display:"flex",gap:6,marginBottom:12}}>{[{k:"non_pagato",l:"❌ Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:"✅ Pagata",c:"#059669"}].map(s=><button key={s.k} onClick={()=>setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:12,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>)}</div>{payForm.stato==="acconto"&&<div style={{marginBottom:10}}><input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} /></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{["Bonifico","Contanti","Assegno","Carta","Ri.Ba."].map(m=><button key={m} onClick={()=>setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:10,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#ff6b35":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>)}</div><div style={{display:"flex",gap:8}}><button onClick={()=>setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button><button onClick={()=>{onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo});setShowPaymentEdit(false);}} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}>💾 Salva</button></div></div>)}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Genera la fattura.</p><button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer"}}>🧾 Genera Fattura</button></>)}</div>)}
-                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} small />)}{userId && <><div style={{marginTop:12}}><PhotoGallery photos={p.fotoPosaInizio||[]} label="📸 Foto Inizio Lavori" userId={userId} folder={`posa/${p.id}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaInizio:photos})} /></div><PhotoGallery photos={p.fotoPosaFine||[]} label="📸 Foto Fine Lavori" userId={userId} folder={`posa/${p.id}/fine`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaFine:photos})} /></>}</>); })()}
-                  {canAdv && curIdx < wf.length-1 && <button onClick={onAdvancePhase} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#059669,#0d9488)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 14px rgba(5,150,105,0.4)"}}>✅ Avanza a: {wf[curIdx+1].icon} {wf[curIdx+1].label} →</button>}
-                  {!canAdv && <div style={{marginTop:10,padding:"10px 14px",background:"rgba(255,255,255,0.05)",borderRadius:10,fontSize:12,color:"rgba(255,255,255,0.5)",textAlign:"center",fontWeight:600}}>🔒 Completa questa fase per avanzare</div>}
+                  {p.fase==="sopralluogo" && (() => { const act=p.actions?.find((a: any)=>a.type==="sopralluogo"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}<div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <div style={{marginTop:12}}><PhotoGallery photos={p.fotoSopralluogo||[]} label=" Foto Sopralluogo" userId={userId} folder={`sopralluogo/${p.id}`} onUpdate={(photos: string[])=>onUpdatePratica({fotoSopralluogo:photos})} /></div>}</>); })()}
+                  {p.fase==="misure" && (<div>{p.misure?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Misure compilate</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Vani: {p.misure.vani?.length||0}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda misure.</p>}<button onClick={onOpenMisure} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#d4820e",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.misure?"Modifica":"Compila"} Misure</button></div>)}
+                  {p.fase==="preventivo" && (<div>{p.preventivo?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Preventivo compilato</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Totale: € {(p.preventivo.totaleFinale||0).toFixed(2)}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Prepara il preventivo.</p>}<button onClick={onOpenPrev} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#6b4c8a",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.preventivo?"Modifica":"Compila"} Preventivo</button></div>)}
+                  {p.fase==="conferma" && (<div>{p.confermaOrdine?.firmata?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Ordine confermato</div>{p.confermaOrdine.firmaImg&&<img src={p.confermaOrdine.firmaImg} alt="Firma" style={{height:40,borderRadius:6,background:"#fff",padding:3,marginTop:6}} />}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Raccogli la firma del cliente.</p><div style={{marginBottom:10}}><input value={orderNote} onChange={(e: any)=>setOrderNote(e.target.value)} placeholder="Note ordine..." style={{width:"100%",padding:"10px 14px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} /></div>{!showSignPad?<button onClick={()=>setShowSignPad(true)} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}> Firma Conferma</button>:<SignaturePad onSave={(img: string)=>{onConfirmOrder(img,orderNote);setShowSignPad(false);}} onCancel={()=>setShowSignPad(false)} />}</>)}</div>)}
+                  {p.fase==="riparazione" && (<div>{p.riparazione?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Riparazione compilata</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>{p.riparazione.problema||"—"}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda riparazione.</p>}<button onClick={onOpenRip} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#c44040",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.riparazione?"Modifica":"Compila"} Riparazione</button></div>)}
+                  {p.fase==="fattura" && (<div>{p.fattura?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Fattura {p.fattura.numero}</span><span style={{fontSize:11,padding:"2px 8px",borderRadius:2,background:p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",fontWeight:700}}>{p.fattura.statoPagamento==="pagato"?"Pagata":p.fattura.statoPagamento==="acconto"?"Acconto":"Non Pagata"}</span></div><div style={{fontSize:20,fontWeight:900,color:"#4ade80",marginTop:6}}>€ {(p.preventivo?.totaleFinale||p.riparazione?.costoStimato||0).toFixed?.(2)||"0.00"}</div><div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}> PDF</button><button onClick={()=>{setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||""});setShowPaymentEdit(true);}} style={{flex:1,padding:"10px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}> Pagamento</button></div>{showPaymentEdit&&(<div style={{background:"rgba(255,255,255,0.1)",borderRadius:2,padding:14,marginTop:10}}><div style={{display:"flex",gap:6,marginBottom:12}}>{[{k:"non_pagato",l:" Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:" Pagata",c:"#059669"}].map(s=><button key={s.k} onClick={()=>setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:2,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>)}</div>{payForm.stato==="acconto"&&<div style={{marginBottom:10}}><input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} /></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{["Bonifico","Contanti","Assegno","Carta","Ri.Ba."].map(m=><button key={m} onClick={()=>setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:2,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#e07a2f":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>)}</div><div style={{display:"flex",gap:8}}><button onClick={()=>setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button><button onClick={()=>{onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo});setShowPaymentEdit(false);}} style={{flex:2,padding:"10px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}> Salva</button></div></div>)}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Genera la fattura.</p><button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer"}}> Genera Fattura</button></>)}</div>)}
+                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; const vani=p.misure?.vani||[]; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}<div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <>{vani.length>0 ? vani.map((v: any,vi: number)=>(<div key={vi} style={{marginTop:12,background:"rgba(255,255,255,0.06)",borderRadius:2,padding:10}}><div style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:6}}> Vano {vi+1}{v.ambiente?" — "+v.ambiente:""} ({v.sistema||"Infisso"} {v.l}×{v.h})</div><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_inizio`]||[]} label={` Prima - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_inizio`]:photos}})} /><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_dopo`]||[]} label={` Dopo - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/dopo`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_dopo`]:photos}})} /></div>)) : <><div style={{marginTop:12}}><PhotoGallery photos={p.fotoPosaInizio||[]} label=" Foto Inizio Lavori" userId={userId} folder={`posa/${p.id}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaInizio:photos})} /></div><PhotoGallery photos={p.fotoPosaFine||[]} label=" Foto Fine Lavori" userId={userId} folder={`posa/${p.id}/fine`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaFine:photos})} /></>}</>}</>); })()}
+                  {canAdv && curIdx < wf.length-1 && <button onClick={onAdvancePhase} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}> Avanza a: {wf[curIdx+1].icon} {wf[curIdx+1].label} →</button>}
+                  {!canAdv && !isComplete && <div style={{marginTop:10,padding:"10px 14px",background:"rgba(255,255,255,0.05)",borderRadius:2,fontSize:12,color:"rgba(255,255,255,0.5)",textAlign:"center",fontWeight:600}}> Completa questa fase per avanzare</div>}
                 </div>
-              )}
             </div>
           );
         })()}
 
-        <div style={S.statusChanger}><span style={S.statusLbl}>Stato:</span><div style={{display:"flex",gap:6,flex:1}}>{Object.entries(STATUS).map(([k,v])=><button key={k} onClick={()=>onStatusChange(k)} style={{...S.statusTgl,background:p.status===k?v.color:"transparent",color:p.status===k?"#fff":v.color,border:"2px solid "+v.color}}>{v.label}</button>)}</div></div>
+        {isAdmin && <div style={S.statusChanger}><span style={S.statusLbl}>Stato:</span><div style={{display:"flex",gap:6,flex:1}}>{Object.entries(STATUS).map(([k,v])=><button key={k} onClick={()=>onStatusChange(k)} style={{...S.statusTgl,background:p.status===k?v.color:"transparent",color:p.status===k?"#fff":v.color,border:"2px solid "+v.color}}>{v.label}</button>)}</div></div>}
 
-        {p.misure && <div style={S.dataSummary}><h4 style={S.dataSumTitle}>📐 Misure</h4><p style={S.dataSumLine}>Vani: {p.misure.vani?.length||0}</p><button onClick={onOpenMisure} style={{...S.openFormBtn,marginTop:6}}>Apri →</button></div>}
-        {p.riparazione && <div style={{...S.dataSummary,borderLeftColor:"#dc2626"}}><h4 style={{...S.dataSumTitle,color:"#dc2626"}}>🛠️ Riparazione</h4><p style={S.dataSumLine}>{p.riparazione.problema||"—"}</p><button onClick={onOpenRip} style={{...S.openFormBtn,marginTop:6,background:"#fef2f2",color:"#dc2626"}}>Apri →</button></div>}
-        {p.preventivo && <div style={{...S.dataSummary,borderLeftColor:"#8b5cf6"}}><h4 style={{...S.dataSumTitle,color:"#8b5cf6"}}>💰 Preventivo</h4><p style={S.dataSumLine}>€ {(p.preventivo.totaleFinale||0).toFixed(2)}</p><button onClick={onOpenPrev} style={{...S.openFormBtn,marginTop:6,background:"#f5f3ff",color:"#8b5cf6"}}>Apri →</button></div>}
-        {(p.emails||[]).length>0 && <div style={{marginTop:16}}><h3 style={S.sectionTitle}>✉️ Email ({p.emails.length})</h3>{p.emails.map((e: any)=><div key={e.id} style={S.emailCard}><div style={{fontSize:13,fontWeight:600,color:"#0f172a"}}>{e.oggetto}</div><div style={{fontSize:12,color:"#64748b"}}>A: {e.destinatario} · {new Date(e.sentAt).toLocaleString("it-IT")}</div></div>)}</div>}
-        <button onClick={onOpenEmail} style={S.sendEmailBtn}>✉️ Invia Email</button>
+        {p.misure && canDo("misure") && <div style={S.dataSummary}><h4 style={S.dataSumTitle}> Misure</h4><p style={S.dataSumLine}>Vani: {p.misure.vani?.length||0}</p><button onClick={onOpenMisure} style={{...S.openFormBtn,marginTop:6}}>Apri →</button></div>}
+        {p.riparazione && canDo("riparazione") && <div style={{...S.dataSummary,borderLeftColor:"#dc2626"}}><h4 style={{...S.dataSumTitle,color:"#dc2626"}}> Riparazione</h4><p style={S.dataSumLine}>{p.riparazione.problema||"—"}</p><button onClick={onOpenRip} style={{...S.openFormBtn,marginTop:6,background:"#fef2f2",color:"#dc2626"}}>Apri →</button></div>}
+        {p.preventivo && canDo("preventivo") && <div style={{...S.dataSummary,borderLeftColor:"#8b5cf6"}}><h4 style={{...S.dataSumTitle,color:"#8b5cf6"}}> Preventivo</h4><p style={S.dataSumLine}>€ {(p.preventivo.totaleFinale||0).toFixed(2)}</p><button onClick={onOpenPrev} style={{...S.openFormBtn,marginTop:6,background:"#f5f3ff",color:"#8b5cf6"}}>Apri →</button></div>}
+        {(p.emails||[]).length>0 && <div style={{marginTop:16}}><h3 style={S.sectionTitle}> Email ({p.emails.length})</h3>{p.emails.map((e: any)=><div key={e.id} style={S.emailCard}><div style={{fontSize:13,fontWeight:600,color:"#0f172a"}}>{e.oggetto}</div><div style={{fontSize:12,color:"#64748b"}}>A: {e.destinatario} · {new Date(e.sentAt).toLocaleString("it-IT")}</div></div>)}</div>}
+        {canDo("email") && <button onClick={onOpenEmail} style={S.sendEmailBtn}> Invia Email</button>}
 
         {/* ASSEGNA A MEMBRO TEAM */}
         {teamMembers && teamMembers.length > 0 && isAdmin && (
-          <div style={{marginTop:16,padding:14,background:"#f5f3ff",borderRadius:14,border:"2px solid #c4b5fd"}}>
-            <div style={{fontSize:12,fontWeight:800,color:"#4338ca",textTransform:"uppercase",marginBottom:8}}>👥 Assegna Pratica</div>
-            <select value={p.assegnatoA||""} onChange={(e: any)=>onAssign(e.target.value||null)} style={{width:"100%",padding:"12px 14px",borderRadius:12,border:"2px solid #c4b5fd",fontSize:14,fontWeight:600,background:"#fff",outline:"none"}}>
+          <div style={{marginTop:16,padding:14,background:"#f5f3ff",borderRadius:2,border:"2px solid #c4b5fd"}}>
+            <div style={{fontSize:12,fontWeight:800,color:"#4338ca",textTransform:"uppercase",marginBottom:8}}> Assegna Pratica</div>
+            <select value={p.assegnatoA||""} onChange={(e: any)=>onAssign(e.target.value||null)} style={{width:"100%",padding:"12px 14px",borderRadius:2,border:"2px solid #c4b5fd",fontSize:14,fontWeight:600,background:"#fff",outline:"none"}}>
               <option value="">— Non assegnata —</option>
               {teamMembers.map((m: any)=><option key={m.id} value={m.id}>{m.nome} ({m.ruolo})</option>)}
             </select>
             {p.assegnatoA && (() => {
               const member = teamMembers.find((m: any) => m.id === p.assegnatoA);
-              return member ? <div style={{fontSize:12,color:"#6366f1",marginTop:6,fontWeight:600}}>✅ Assegnata a: {member.nome}</div> : null;
+              return member ? <div style={{fontSize:12,color:"#3a7bd5",marginTop:6,fontWeight:600}}> Assegnata a: {member.nome}</div> : null;
             })()}
           </div>
         )}
 
         {/* FIRMA CORRETTA POSA */}
         {p.fase === "posa" && (
-          <div style={{marginTop:16,padding:16,background:"linear-gradient(135deg,#ecfdf5,#d1fae5)",borderRadius:16,border:"2px solid #059669"}}>
-            <div style={{fontSize:14,fontWeight:800,color:"#065f46",marginBottom:10}}>✍️ Firma Corretta Posa</div>
+          <div style={{marginTop:16,padding:16,background:"#ecfdf5",borderRadius:2,border:"2px solid #059669"}}>
+            <div style={{fontSize:14,fontWeight:800,color:"#065f46",marginBottom:10}}> Firma Corretta Posa</div>
             {p.firmaPosa ? (
               <div>
-                <div style={{fontSize:13,color:"#059669",fontWeight:700,marginBottom:6}}>✅ Documento firmato dal cliente</div>
-                {p.firmaPosa.firma && <img src={p.firmaPosa.firma} alt="Firma" style={{height:50,borderRadius:8,background:"#fff",padding:4,border:"1px solid #d1d5db"}} />}
+                <div style={{fontSize:13,color:"#059669",fontWeight:700,marginBottom:6}}> Documento firmato dal cliente</div>
+                {p.firmaPosa.firma && <img src={p.firmaPosa.firma} alt="Firma" style={{height:50,borderRadius:2,background:"#fff",padding:4,border:"1px solid #d1d5db"}} />}
                 <div style={{fontSize:11,color:"#64748b",marginTop:4}}>Firmato il: {p.firmaPosa.data ? new Date(p.firmaPosa.data).toLocaleString("it-IT") : "—"}</div>
-                {p.firmaPosa.nonConformita && <div style={{fontSize:12,color:"#dc2626",marginTop:6,fontWeight:600}}>⚠️ Non conformità: {p.firmaPosa.nonConformita}</div>}
+                {p.firmaPosa.nonConformita && <div style={{fontSize:12,color:"#dc2626",marginTop:6,fontWeight:600}}> Non conformità: {p.firmaPosa.nonConformita}</div>}
               </div>
             ) : (
               <FirmaCorrettaPosa onSave={(data: any) => onUpdatePratica({ firmaPosa: { ...data, data: new Date().toISOString() } })} />
@@ -2677,18 +2881,142 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, on
           </div>
         )}
 
-        <div style={{marginTop:16,padding:14,background:"#f8fafc",borderRadius:12,border:"1px solid #e2e8f0"}}>
-          <h4 style={{fontSize:14,fontWeight:700,color:"#0f172a",margin:"0 0 10px"}}>🖨️ Esporta / Stampa</h4>
+        {/* MESSAGGI INTERNI PRATICA */}
+        {teamMembers && teamMembers.length > 0 && (
+          <div style={{marginTop:16,padding:14,background:"#f0f9ff",borderRadius:2,border:"2px solid #93c5fd"}}>
+            <div style={{fontSize:12,fontWeight:800,color:"#1d4ed8",textTransform:"uppercase",marginBottom:8}}> Messaggi Pratica</div>
+            {(p.messaggi||[]).length > 0 && (
+              <div style={{maxHeight:250,overflowY:"auto",marginBottom:10}}>
+                {(p.messaggi||[]).map((msg: any)=>(
+                  <div key={msg.id} style={{padding:"8px 12px",borderRadius:2,marginBottom:6,background:msg.userId===userId?"#dbeafe":"#fff",border:"1px solid #e2e8f0"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
+                      <span style={{fontSize:11,fontWeight:700,color:"#1d4ed8"}}>{msg.autore||"Utente"}</span>
+                      {msg.destinatario && <span style={{fontSize:10,color:"#6b7280"}}>→ {msg.destinatario}</span>}
+                    </div>
+                    <div style={{fontSize:13,color:"#0f172a"}}>{msg.testo}</div>
+                    <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{msg.data?new Date(msg.data).toLocaleString("it-IT"):""}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{display:"flex",gap:6}}>
+              <select value={msgDest} onChange={(e: any)=>setMsgDest(e.target.value)} style={{flex:"0 0 120px",padding:"8px",borderRadius:2,border:"1.5px solid #93c5fd",fontSize:12,outline:"none"}}>
+                <option value="">Tutti</option>
+                {teamMembers.map((m: any)=><option key={m.id} value={m.id}>{m.nome}</option>)}
+              </select>
+              <input value={msgText} onChange={(e: any)=>setMsgText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&msgText.trim()){sendMsg();}}} placeholder="Scrivi messaggio..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid #93c5fd",fontSize:13,outline:"none"}} />
+              <button onClick={sendMsg} disabled={!msgText.trim()} style={{padding:"8px 14px",borderRadius:2,border:"none",background:msgText.trim()?"#2563eb":"#cbd5e1",color:"#fff",fontSize:14,fontWeight:700,cursor:msgText.trim()?"pointer":"default"}}>↑</button>
+            </div>
+          </div>
+        )}
+
+        <div style={{marginTop:16,padding:14,background:"#f8fafc",borderRadius:2,border:"1px solid #e2e8f0"}}>
+          <h4 style={{fontSize:14,fontWeight:700,color:"#0f172a",margin:"0 0 10px"}}> Esporta / Stampa</h4>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <button onClick={()=>exportPratica(p,c)} style={S.exportBtn}>📋 Riepilogo</button>
-            {p.misure && <button onClick={()=>exportMisure(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}>📐 Misure</button>}
-            {p.riparazione && <button onClick={()=>exportRiparazione(p,c)} style={{...S.exportBtn,background:"#fef2f2",color:"#dc2626",border:"1.5px solid #dc2626"}}>🛠️ Riparazione</button>}
-            {p.preventivo && <button onClick={()=>exportPreventivo(p,c,true)} style={{...S.exportBtn,background:"#f5f3ff",color:"#8b5cf6",border:"1.5px solid #8b5cf6"}}>💰 Preventivo</button>}
-            {hasConferma && <button onClick={()=>exportConfermaOrdine(p,c)} style={{...S.exportBtn,background:"#ecfdf5",color:"#059669",border:"1.5px solid #059669"}}>✅ Conferma</button>}
-            {hasFattura && <button onClick={()=>exportFattura(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}>🧾 Fattura</button>}
+            <button onClick={()=>exportPratica(p,c)} style={S.exportBtn}> Riepilogo</button>
+            {p.misure && <button onClick={()=>exportMisure(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}> Misure</button>}
+            {p.riparazione && <button onClick={()=>exportRiparazione(p,c)} style={{...S.exportBtn,background:"#fef2f2",color:"#dc2626",border:"1.5px solid #dc2626"}}> Riparazione</button>}
+            {p.preventivo && <button onClick={()=>exportPreventivo(p,c,true)} style={{...S.exportBtn,background:"#f5f3ff",color:"#8b5cf6",border:"1.5px solid #8b5cf6"}}> Preventivo</button>}
+            {hasConferma && <button onClick={()=>exportConfermaOrdine(p,c)} style={{...S.exportBtn,background:"#ecfdf5",color:"#059669",border:"1.5px solid #059669"}}> Conferma</button>}
+            {hasFattura && <button onClick={()=>exportFattura(p,c)} style={{...S.exportBtn,background:"#fffbeb",color:"#d97706",border:"1.5px solid #d97706"}}> Fattura</button>}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ==================== FREEHAND CANVAS ====================
+function FreehandCanvas({ drawing, onSave, label, color }: any) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(!!drawing);
+  const strokeColor = color || "#2563eb";
+  
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    // Set canvas size
+    canvas.width = canvas.offsetWidth * 2;
+    canvas.height = canvas.offsetHeight * 2;
+    ctx.scale(2, 2);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = strokeColor;
+    // Restore saved drawing
+    if (drawing) {
+      const img = new Image();
+      img.onload = () => { ctx.drawImage(img, 0, 0, canvas.offsetWidth, canvas.offsetHeight); };
+      img.src = drawing;
+    }
+  }, []);
+  
+  function getPos(e: any) {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+  }
+  
+  function startDraw(e: any) {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx) return;
+    setIsDrawing(true);
+    setHasDrawn(true);
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  }
+  
+  function draw(e: any) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx) return;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+  }
+  
+  function endDraw() {
+    setIsDrawing(false);
+    saveCanvas();
+  }
+  
+  function saveCanvas() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const data = canvas.toDataURL("image/png");
+    onSave(data);
+  }
+  
+  function clearCanvas() {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasDrawn(false);
+    onSave("");
+  }
+  
+  return (
+    <div style={{marginBottom:12,background:"#f8fafc",borderRadius:2,padding:12,border:`1.5px solid ${strokeColor}33`}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{fontSize:12,fontWeight:700,color:"#374151"}}>{label||"✏️ Disegno"}</span>
+        {hasDrawn && <button onClick={clearCanvas} style={{padding:"4px 10px",borderRadius:2,border:"none",background:"#fee2e2",color:"#dc2626",fontSize:11,fontWeight:700,cursor:"pointer"}}> Cancella</button>}
+      </div>
+      <canvas ref={canvasRef} style={{width:"100%",height:200,border:"2px solid #d1d5db",borderRadius:2,background:"#fff",cursor:"crosshair",touchAction:"none"}}
+        onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
+        onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
+      />
+      <p style={{fontSize:9,color:"#94a3b8",textAlign:"center",marginTop:4}}>Disegna con il dito o il mouse</p>
     </div>
   );
 }
@@ -2756,8 +3084,7 @@ function VetrataDesigner({ design, onChange }: any) {
   
   return (
     <div style={{marginBottom:12}}>
-      <label style={{fontSize:11,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:8}}>✏️ Schema Infisso</label>
-      <div style={{background:"#f8fafc",borderRadius:14,padding:12,border:"1.5px solid #d1d5db"}}>
+      <div style={{background:"#f8fafc",borderRadius:2,padding:12,border:"1.5px solid #d1d5db"}}>
         
         {/* VISUAL PREVIEW */}
         <div style={{display:"flex",border:"4px solid #1e293b",borderRadius:3,minHeight:120,overflow:"hidden",maxWidth:340,margin:"0 auto",background:"#fff"}}>
@@ -2788,9 +3115,9 @@ function VetrataDesigner({ design, onChange }: any) {
         
         {/* CONTROLS */}
         <div style={{marginTop:10,display:"flex",gap:6,justifyContent:"center",flexWrap:"wrap"}}>
-          <button onClick={addMontante} disabled={columns.length>=6} style={{padding:"5px 12px",borderRadius:8,border:"1.5px solid #1e293b",background:"#fff",color:"#1e293b",fontSize:11,fontWeight:700,cursor:columns.length<6?"pointer":"default",opacity:columns.length<6?1:0.4}}>┃ + Montante</button>
+          <button onClick={addMontante} disabled={columns.length>=6} style={{padding:"5px 12px",borderRadius:2,border:"1.5px solid #1e293b",background:"#fff",color:"#1e293b",fontSize:11,fontWeight:700,cursor:columns.length<6?"pointer":"default",opacity:columns.length<6?1:0.4}}>┃ + Montante</button>
           {columns.map((_: any, ci: number) => (
-            <button key={ci} onClick={()=>addTraverso(ci)} disabled={columns[ci].cells.length>=4} style={{padding:"5px 12px",borderRadius:8,border:"1.5px solid #d97706",background:"#fffbeb",color:"#92400e",fontSize:11,fontWeight:700,cursor:columns[ci].cells.length<4?"pointer":"default",opacity:columns[ci].cells.length<4?1:0.4}}>━ Traverso Col.{ci+1}</button>
+            <button key={ci} onClick={()=>addTraverso(ci)} disabled={columns[ci].cells.length>=4} style={{padding:"5px 12px",borderRadius:2,border:"1.5px solid #d97706",background:"#fffbeb",color:"#92400e",fontSize:11,fontWeight:700,cursor:columns[ci].cells.length<4?"pointer":"default",opacity:columns[ci].cells.length<4?1:0.4}}>━ Traverso Col.{ci+1}</button>
           ))}
         </div>
         
@@ -2823,32 +3150,34 @@ function MisureForm({ pratica, client, sistemi, tipologie, vetri, coloriMap, all
   const [coloreEst, setColoreEst] = useState(m?.coloreEst||"Bianco");
   const [vetro, setVetro] = useState(m?.vetro||"");
   const [piano, setPiano] = useState(m?.piano||"");
+  const [mezziSalita, setMezziSalita] = useState(m?.mezziSalita||"");
   const [noteGen, setNoteGen] = useState(m?.noteGen||"");
   const [vani, setVani] = useState(m?.vani||[makeVano()]);
   const coloriPerMat = materialeId && coloriMap[materialeId] ? coloriMap[materialeId] : allColori || [];
-  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",vetro:"",note:"",photos:{},altroColore:false,coloreIntVano:"",coloreEstVano:"",design:{columns:[{cells:[{apertura:"DX"}]}]}}; }
+  function makeVano() { return {id:gid(),ambiente:"",l:"",h:"",q:"1",apertura:"DX",sistema:"",vetro:"",note:"",photos:{},altroColore:false,coloreIntVano:"",coloreEstVano:"",design:{columns:[{cells:[{apertura:"DX"}]}]},showFreehand:false,showVetrata:false,showLamiera:false,freehandData:"",lamieraData:""}; }
   function uv(i: number,f: string,v: any) { const n=[...vani]; n[i]={...n[i],[f]:v}; setVani(n); }
   const useTipologie = tipologie?.length > 0 ? tipologie : SISTEMI;
   return (
     <div style={S.container}>
-      <div style={{...S.secHdr,background:"linear-gradient(135deg,#f59e0b,#d97706)",boxShadow:"0 4px 14px rgba(245,158,11,0.3)"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>📐 Scheda Misure</h2></div>
+      <div style={{...S.secHdr,background:"#d4820e",}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>SCHEDA MISURE</h2></div>
       <div style={{padding:20}}>
         <div style={S.praticaRef}>{pratica?.numero} · {client?.nome}</div>
         <Field label="Cantiere" value={cantiere} onChange={setCantiere} placeholder="Rif. cantiere" />
         <Field label="Indirizzo" value={indirizzo} onChange={setIndirizzo} placeholder="Indirizzo" />
         {/* === DATI GENERALI IN ALTO === */}
-        <div style={{background:"linear-gradient(135deg,#fffbeb,#fef3c7)",borderRadius:16,padding:16,marginBottom:16,border:"2px solid #f59e0b"}}>
-          <h4 style={{fontSize:14,fontWeight:800,color:"#92400e",margin:"0 0 12px"}}>⚙️ Impostazioni Commessa</h4>
+        <div style={{background:"#fdf3eb",borderRadius:2,padding:16,marginBottom:16,border:"2px solid #f59e0b"}}>
+          <h4 style={{fontSize:14,fontWeight:800,color:"#92400e",margin:"0 0 12px"}}>IMPOSTAZIONI COMMESSA</h4>
           <div style={{display:"flex",gap:12}}>
             <div style={{flex:1}}><label style={S.fLabel}>Materiale</label><select value={materialeId} onChange={(e: any)=>setMaterialeId(e.target.value)} style={S.input}><option value="">— Seleziona —</option>{(sistemi||DEFAULT_SISTEMI).map((s: any)=><option key={s.id} value={s.id}>{s.icon} {s.nome}</option>)}</select></div>
-            <div style={{flex:1}}><label style={S.fLabel}>Piano</label><select value={piano} onChange={(e: any)=>setPiano(e.target.value)} style={S.input}><option value="">—</option>{["Terra","1°","2°","3°","4°","5°","6°","7°","8°","9°","10°","11°","12°","13°"].map(p=><option key={p}>{p}</option>)}</select></div>
+            <div style={{flex:1}}><label style={S.fLabel}>Piano di Salita</label><select value={piano} onChange={(e: any)=>setPiano(e.target.value)} autoComplete="off" name="floor-level" style={S.input}><option value="">—</option>{["Terra","1°","2°","3°","4°","5°","6°","7°","8°","9°","10°","11°","12°","13°"].map(p=><option key={p}>{p}</option>)}</select></div>
+            <div style={{flex:1}}><label style={S.fLabel}>Mezzi di Salita</label><input value={mezziSalita} onChange={(e: any)=>setMezziSalita(e.target.value)} placeholder="Es. piattaforma aerea, a mano..." style={S.input} /></div>
           </div>
           <div style={{display:"flex",gap:12}}>
             <div style={{flex:1}}><label style={S.fLabel}>Colore Int. (default)</label><select value={coloreInt} onChange={(e: any)=>setColoreInt(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreInt==="__custom"&&<input value="" onChange={(e: any)=>setColoreInt(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
             <div style={{flex:1}}><label style={S.fLabel}>Colore Est. (default)</label><select value={coloreEst} onChange={(e: any)=>setColoreEst(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreEst==="__custom"&&<input value="" onChange={(e: any)=>setColoreEst(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
           </div>
           <div style={{marginTop:8}}>
-            <label style={S.fLabel}>🔲 Vetro (default)</label>
+            <label style={S.fLabel}>VETRO (DEFAULT)</label>
             <select value={vetro} onChange={(e: any)=>setVetro(e.target.value)} style={S.input}>
               <option value="">— Seleziona vetro —</option>
               {(vetri||DEFAULT_VETRI).map((v: string)=><option key={v}>{v}</option>)}
@@ -2863,20 +3192,29 @@ function MisureForm({ pratica, client, sistemi, tipologie, vetri, coloriMap, all
             <div style={S.vanoHdr}><span style={S.vanoNum}>{i+1}</span><span style={{fontSize:15,fontWeight:700,flex:1}}>Vano {i+1}</span>{vani.length>1 && <button onClick={()=>setVani(vani.filter((_: any,j: number)=>j!==i))} style={S.vanoRm}>×</button>}</div>
             <Field label="Ambiente" value={v.ambiente} onChange={(val: string)=>uv(i,"ambiente",val)} placeholder="Soggiorno, Camera..." />
             <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>Tipologia</label><select value={v.sistema||sistema} onChange={(e: any)=>uv(i,"sistema",e.target.value)} style={S.input}><option value="">—</option>{useTipologie.map((s: string)=><option key={s}>{s}</option>)}</select></div>
-            <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>🔲 Vetro</label><select value={v.vetro||vetro} onChange={(e: any)=>uv(i,"vetro",e.target.value)} style={S.input}><option value="">{vetro ? `Default: ${vetro}` : "— Seleziona —"}</option>{(vetri||DEFAULT_VETRI).map((vt: string)=><option key={vt}>{vt}</option>)}<option value="__custom">+ Personalizzato</option></select>{v.vetro==="__custom"&&<input onChange={(e: any)=>uv(i,"vetro",e.target.value)} placeholder="Vetro personalizzato..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+            <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>VETRO</label><select value={v.vetro||vetro} onChange={(e: any)=>uv(i,"vetro",e.target.value)} style={S.input}><option value="">{vetro ? `Default: ${vetro}` : "— Seleziona —"}</option>{(vetri||DEFAULT_VETRI).map((vt: string)=><option key={vt}>{vt}</option>)}<option value="__custom">+ Personalizzato</option></select>{v.vetro==="__custom"&&<input onChange={(e: any)=>uv(i,"vetro",e.target.value)} placeholder="Vetro personalizzato..." style={{...S.input,marginTop:4}} autoFocus />}</div>
             <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q.tà" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
             <div style={S.fGroup}><label style={S.fLabel}>Apertura</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{APERTURE.map(a=><button key={a} onClick={()=>uv(i,"apertura",a)} style={{...S.pill,background:v.apertura===a?"#d97706":"#f3f4f6",color:v.apertura===a?"#fff":"#6b7280"}}>{a}</button>)}</div></div>
-            {/* DISEGNO VETRATA */}
-            <VetrataDesigner design={v.design} onChange={(d: any)=>uv(i,"design",d)} />
+            {/* DISEGNO - sempre visibili */}
+            <div style={{marginBottom:12}}>
+              <label style={{fontSize:11,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:8,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>SCHEMA VETRATA</label>
+              <VetrataDesigner design={v.design} onChange={(d: any)=>uv(i,"design",d)} />
+              <div style={{marginTop:12}}>
+                <FreehandCanvas drawing={v.freehandData} onSave={(data: string)=>uv(i,"freehandData",data)} label="DISEGNO A MANO LIBERA" />
+              </div>
+              <div style={{marginTop:12}}>
+                <FreehandCanvas drawing={v.lamieraData} onSave={(data: string)=>uv(i,"lamieraData",data)} label="DISEGNO LAMIERA" color="#d97706" />
+              </div>
+            </div>
             {/* FLAG ALTRO COLORE */}
             <div style={{marginBottom:8}}>
               <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,fontWeight:600,color:"#374151"}}>
                 <input type="checkbox" checked={v.altroColore||false} onChange={(e: any)=>uv(i,"altroColore",e.target.checked)} style={{width:18,height:18,accentColor:"#d97706"}} />
-                🎨 Colore diverso per questo vano
+                Colore diverso per questo vano
               </label>
             </div>
             {v.altroColore && (
-              <div style={{display:"flex",gap:8,marginBottom:8,background:"#fffbeb",padding:10,borderRadius:12,border:"1px solid #fbbf24"}}>
+              <div style={{display:"flex",gap:8,marginBottom:8,background:"#fffbeb",padding:10,borderRadius:2,border:"1px solid #fbbf24"}}>
                 <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Int.</label><select value={v.coloreIntVano||""} onChange={(e: any)=>uv(i,"coloreIntVano",e.target.value)} style={{...S.input,fontSize:12}}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Custom</option></select>{v.coloreIntVano==="__custom"&&<input onChange={(e: any)=>uv(i,"coloreIntVano",e.target.value)} placeholder="Colore..." style={{...S.input,fontSize:12,marginTop:4}} />}</div>
                 <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Est.</label><select value={v.coloreEstVano||""} onChange={(e: any)=>uv(i,"coloreEstVano",e.target.value)} style={{...S.input,fontSize:12}}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Custom</option></select>{v.coloreEstVano==="__custom"&&<input onChange={(e: any)=>uv(i,"coloreEstVano",e.target.value)} placeholder="Colore..." style={{...S.input,fontSize:12,marginTop:4}} />}</div>
               </div>
@@ -2887,8 +3225,8 @@ function MisureForm({ pratica, client, sistemi, tipologie, vetri, coloriMap, all
         ))}
         <button onClick={()=>setVani([...vani,makeVano()])} style={S.addVanoBtn}>+ Aggiungi Vano</button>
         <Field label="Note Generali" value={noteGen} onChange={setNoteGen} placeholder="Note generali..." textarea />
-        <button onClick={()=>onSave({cantiere,indirizzo,sistema,materialeId,coloreInt,coloreEst,vetro,piano,noteGen,vani})} style={{...S.saveBtn,background:"linear-gradient(135deg,#f59e0b,#d97706)",boxShadow:"0 4px 14px rgba(245,158,11,0.3)"}}>💾 Salva Misure</button>
-        {pratica?.misure && <button onClick={()=>exportMisure(pratica,client)} style={{...S.saveBtn,background:"#fff",color:"#d97706",border:"2px solid #d97706",boxShadow:"none",marginTop:8}}>🖨️ Stampa / PDF Misure</button>}
+        <button onClick={()=>onSave({cantiere,indirizzo,sistema,materialeId,coloreInt,coloreEst,vetro,piano,mezziSalita,noteGen,vani})} style={{...S.saveBtn,background:"#d4820e",}}>SALVA MISURE</button>
+        {pratica?.misure && <button onClick={()=>exportMisure(pratica,client)} style={{...S.saveBtn,background:"#fff",color:"#d97706",border:"2px solid #d97706",boxShadow:"none",marginTop:8}}>STAMPA / PDF</button>}
       </div>
     </div>
   );
@@ -2909,21 +3247,21 @@ function RipForm({ pratica, client, userId, onSave, onBack }: any) {
   const [fotoRiparazione, setFotoRiparazione] = useState<string[]>(r?.fotoRiparazione||[]);
   return (
     <div style={S.container}>
-      <div style={{...S.secHdr,background:"linear-gradient(135deg,#ef4444,#dc2626)",boxShadow:"0 4px 14px rgba(239,68,68,0.3)"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>🛠️ Scheda Riparazione</h2></div>
+      <div style={{...S.secHdr,background:"#c44040"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}> Scheda Riparazione</h2></div>
       <div style={{padding:20}}>
         <div style={{...S.praticaRef,borderLeftColor:"#dc2626"}}>{pratica?.numero} · {client?.nome}</div>
         <div style={S.fGroup}><label style={S.fLabel}>Urgenza</label><div style={{display:"flex",gap:8}}>{URGENZE.map(u=><button key={u.k} onClick={()=>setUrgenza(u.k)} style={{...S.urgBtn,background:urgenza===u.k?u.c:"#f3f4f6",color:urgenza===u.k?"#fff":"#6b7280"}}>{u.i} {u.l}</button>)}</div></div>
         <div style={S.fGroup}><label style={S.fLabel}>Tipo Problema</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{PROBLEMI.map(p=><button key={p} onClick={()=>setProblema(p)} style={{...S.pill,background:problema===p?"#dc2626":"#f3f4f6",color:problema===p?"#fff":"#6b7280"}}>{p}</button>)}</div></div>
         <Field label="Descrizione" value={descrizione} onChange={setDescrizione} placeholder="Dettagli problema..." textarea rows={4} />
-        {userId && <PhotoGallery photos={fotoDanno} label="📸 Foto Danno" userId={userId} folder={`riparazione/${pratica?.id}/danno`} onUpdate={setFotoDanno} />}
+        {userId && <PhotoGallery photos={fotoDanno} label=" Foto Danno" userId={userId} folder={`riparazione/${pratica?.id}/danno`} onUpdate={setFotoDanno} />}
         <Field label="Tipo Infisso" value={tipoInfisso} onChange={setTipoInfisso} placeholder="es. Finestra 2 ante PVC" />
         <Field label="Materiale" value={materiale} onChange={setMateriale} placeholder="PVC, Alluminio, Legno..." />
         <Field label="Ricambi" value={ricambi} onChange={setRicambi} placeholder="Pezzi necessari..." textarea />
         <Field label="Costo Stimato (€)" value={costoStimato} onChange={setCostoStimato} type="number" placeholder="0.00" />
-        {userId && <PhotoGallery photos={fotoRiparazione} label="📸 Foto Dopo Intervento" userId={userId} folder={`riparazione/${pratica?.id}/dopo`} onUpdate={setFotoRiparazione} />}
+        {userId && <PhotoGallery photos={fotoRiparazione} label=" Foto Dopo Intervento" userId={userId} folder={`riparazione/${pratica?.id}/dopo`} onUpdate={setFotoRiparazione} />}
         <Field label="Note" value={noteRip} onChange={setNoteRip} placeholder="Altre note..." textarea />
-        <button onClick={()=>onSave({problema,descrizione,urgenza,tipoInfisso,materiale,ricambi,costoStimato,noteRip,fotoDanno,fotoRiparazione})} style={{...S.saveBtn,background:"linear-gradient(135deg,#ef4444,#dc2626)",boxShadow:"0 4px 14px rgba(239,68,68,0.3)"}}>💾 Salva Riparazione</button>
-        {pratica?.riparazione && <button onClick={()=>exportRiparazione(pratica,client)} style={{...S.saveBtn,background:"#fff",color:"#dc2626",border:"2px solid #dc2626",boxShadow:"none",marginTop:8}}>🖨️ Stampa / PDF Riparazione</button>}
+        <button onClick={()=>onSave({problema,descrizione,urgenza,tipoInfisso,materiale,ricambi,costoStimato,noteRip,fotoDanno,fotoRiparazione})} style={{...S.saveBtn,background:"#c44040"}}> Salva Riparazione</button>
+        {pratica?.riparazione && <button onClick={()=>exportRiparazione(pratica,client)} style={{...S.saveBtn,background:"#fff",color:"#dc2626",border:"2px solid #dc2626",boxShadow:"none",marginTop:8}}> Stampa / PDF Riparazione</button>}
       </div>
     </div>
   );
@@ -2943,6 +3281,33 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
   const [listino, setListino] = useState<any[]>(prev?.listino || userListino || []);
   const [showListino, setShowListino] = useState(false);
   const [showImport, setShowImport] = useState(false);
+
+  // Recalculate all totals on mount (fixes saved data with stale totals)
+  useEffect(() => {
+    if (prodotti.length === 0) return;
+    let changed = false;
+    const fixed = prodotti.map((p: any) => {
+      const lm = parseFloat(String(p.larghezza)) || 0;
+      const hm = parseFloat(String(p.altezza)) || 0;
+      const mq = (lm > 0 && hm > 0) ? parseFloat(((lm * hm) / 1000000).toFixed(4)) : (parseFloat(String(p.mq)) || 0);
+      const prezzo = parseFloat(String(p.prezzoUnitario)) || 0;
+      const qty = parseInt(String(p.quantita)) || 1;
+      let totale: number;
+      if (p.tipoPrezzo === "mq") {
+        totale = parseFloat((prezzo * mq * qty).toFixed(2));
+      } else if (p.tipoPrezzo === "manuale") {
+        totale = parseFloat(String(p.totale)) || 0;
+      } else {
+        totale = parseFloat((prezzo * qty).toFixed(2));
+      }
+      if (totale !== (parseFloat(String(p.totale)) || 0) || mq !== (parseFloat(String(p.mq)) || 0)) {
+        changed = true;
+        return { ...p, mq, totale };
+      }
+      return p;
+    });
+    if (changed) setProdotti(fixed);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Import vani da misure
   function importDaMisure() {
@@ -2985,23 +3350,29 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
   function updateProdotto(i: number, field: string, value: any) {
     const n = [...prodotti];
     n[i] = { ...n[i], [field]: value };
-    // Recalculate total
     const p = n[i];
     if (field === "tipoPrezzo") {
       const labels: Record<string, string> = { mq: "€/mq", pezzo: "€/pezzo", listino: "Listino", manuale: "Manuale" };
       p.tipoPrezzoLabel = labels[value] || value;
     }
-    if (field === "larghezza" || field === "altezza") {
-      const lm = parseFloat(p.larghezza) || 0;
-      const hm = parseFloat(p.altezza) || 0;
-      p.mq = (lm * hm) / 1000000;
-    }
-    const prezzo = parseFloat(p.prezzoUnitario) || 0;
-    const qty = parseInt(p.quantita) || 1;
-    if (p.tipoPrezzo === "mq") {
-      p.totale = prezzo * (p.mq || 0) * qty;
+    // Always recalculate mq from dimensions
+    const lm = parseFloat(String(p.larghezza)) || 0;
+    const hm = parseFloat(String(p.altezza)) || 0;
+    if (lm > 0 && hm > 0) {
+      p.mq = parseFloat(((lm * hm) / 1000000).toFixed(4));
     } else {
-      p.totale = prezzo * qty;
+      p.mq = 0;
+    }
+    // Always recalculate total as a NUMBER
+    const prezzo = parseFloat(String(p.prezzoUnitario)) || 0;
+    const qty = parseInt(String(p.quantita)) || 1;
+    if (p.tipoPrezzo === "mq") {
+      p.totale = parseFloat((prezzo * p.mq * qty).toFixed(2));
+    } else if (p.tipoPrezzo === "manuale") {
+      if (field === "totale") p.totale = parseFloat(String(value)) || 0;
+      else p.totale = parseFloat(String(p.totale)) || 0;
+    } else {
+      p.totale = parseFloat((prezzo * qty).toFixed(2));
     }
     setProdotti(n);
   }
@@ -3044,7 +3415,14 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
     }
   }
 
-  const subtotale = prodotti.reduce((s: number, p: any) => s + (p.totale || 0), 0);
+  function calcProdTotale(p: any): number {
+    const pr = parseFloat(String(p.prezzoUnitario))||0;
+    const qt = parseInt(String(p.quantita))||1;
+    if(p.tipoPrezzo==="mq"){const mq=(parseFloat(String(p.larghezza))||0)*(parseFloat(String(p.altezza))||0)/1000000; return parseFloat((pr*mq*qt).toFixed(2));}
+    if(p.tipoPrezzo==="manuale") return parseFloat(String(p.totale))||0;
+    return parseFloat((pr*qt).toFixed(2));
+  }
+  const subtotale = prodotti.reduce((s: number, p: any) => s + calcProdTotale(p), 0);
   const scontoVal = subtotale * (sconto || 0) / 100;
   const imponibile = subtotale - scontoVal;
   const ivaVal = imponibile * (iva || 22) / 100;
@@ -3056,9 +3434,9 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
 
   return (
     <div style={S.container}>
-      <div style={{...S.secHdr,background:"linear-gradient(135deg,#a855f7,#8b5cf6)",boxShadow:"0 4px 14px rgba(139,92,246,0.3)"}}>
+      <div style={{...S.secHdr,background:"#6b4c8a"}}>
         <button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button>
-        <h2 style={{...S.secTitle,color:"#fff"}}>💰 Preventivo</h2>
+        <h2 style={{...S.secTitle,color:"#fff"}}> Preventivo</h2>
       </div>
       <div style={{padding:20}}>
         <div style={{...S.praticaRef,borderLeftColor:"#8b5cf6"}}>{pratica?.numero} · {client?.nome}</div>
@@ -3066,36 +3444,36 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
         {/* Import da Misure */}
         {m?.vani?.length > 0 && prodotti.length === 0 && (
           <button onClick={importDaMisure} style={{...S.saveBtn,background:"#d97706",marginBottom:16}}>
-            📐 Importa {m.vani.length} vani dalle Misure
+             Importa {m.vani.length} vani dalle Misure
           </button>
         )}
         {m?.vani?.length > 0 && prodotti.length > 0 && (
-          <button onClick={importDaMisure} style={{width:"100%",padding:10,borderRadius:10,border:"2px dashed #d97706",background:"transparent",color:"#d97706",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:12}}>
+          <button onClick={importDaMisure} style={{width:"100%",padding:10,borderRadius:2,border:"2px dashed #d97706",background:"transparent",color:"#d97706",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:12}}>
             + Importa altri vani dalle Misure
           </button>
         )}
 
         {/* Listino */}
         <div style={{display:"flex",gap:8,marginBottom:16}}>
-          <button onClick={()=>setShowImport(!showImport)} style={{flex:1,padding:10,borderRadius:10,border:"1.5px solid #8b5cf6",background:"#f5f3ff",color:"#8b5cf6",fontSize:13,fontWeight:600,cursor:"pointer"}}>
-            📊 {listino.length > 0 ? `Listino (${listino.length})` : "Importa Listino"}
+          <button onClick={()=>setShowImport(!showImport)} style={{flex:1,padding:10,borderRadius:2,border:"1.5px solid #8b5cf6",background:"#f5f3ff",color:"#8b5cf6",fontSize:13,fontWeight:600,cursor:"pointer"}}>
+             {listino.length > 0 ? `Listino (${listino.length})` : "Importa Listino"}
           </button>
           {listino.length > 0 && (
-            <button onClick={()=>setShowListino(!showListino)} style={{flex:1,padding:10,borderRadius:10,border:"1.5px solid #059669",background:"#ecfdf5",color:"#059669",fontSize:13,fontWeight:600,cursor:"pointer"}}>
-              📋 Sfoglia Listino
+            <button onClick={()=>setShowListino(!showListino)} style={{flex:1,padding:10,borderRadius:2,border:"1.5px solid #059669",background:"#ecfdf5",color:"#059669",fontSize:13,fontWeight:600,cursor:"pointer"}}>
+               Sfoglia Listino
             </button>
           )}
         </div>
 
         {/* Import Listino Modal */}
         {showImport && (
-          <div style={{background:"#f5f3ff",borderRadius:12,padding:14,marginBottom:16,border:"1.5px solid #8b5cf6"}}>
-            <h4 style={{fontSize:14,fontWeight:700,color:"#8b5cf6",margin:"0 0 8px"}}>📊 Importa Listino Prezzi</h4>
+          <div style={{background:"#f5f3ff",borderRadius:2,padding:14,marginBottom:16,border:"1.5px solid #8b5cf6"}}>
+            <h4 style={{fontSize:14,fontWeight:700,color:"#8b5cf6",margin:"0 0 8px"}}> Importa Listino Prezzi</h4>
             <p style={{fontSize:12,color:"#64748b",margin:"0 0 8px"}}>Incolla da Excel o scrivi una riga per prodotto nel formato:<br/><strong>Descrizione;Prezzo;Tipo</strong> (tipo = mq o pezzo)</p>
             <textarea value={importText} onChange={(e: any) => setImportText(e.target.value)} placeholder={"Finestra 2 ante PVC;350;pezzo\nPortoncino blindato;800;pezzo\nSerramento alluminio;280;mq"} style={{...S.textarea,minHeight:100,fontSize:13}} />
             <div style={{display:"flex",gap:8,marginTop:8}}>
-              <button onClick={() => importListino(importText)} style={{flex:1,padding:10,borderRadius:10,background:"#8b5cf6",color:"#fff",border:"none",fontWeight:700,cursor:"pointer"}}>✓ Importa</button>
-              <button onClick={() => setShowImport(false)} style={{padding:10,borderRadius:10,background:"#f1f5f9",color:"#64748b",border:"none",fontWeight:600,cursor:"pointer"}}>Annulla</button>
+              <button onClick={() => importListino(importText)} style={{flex:1,padding:10,borderRadius:2,background:"#8b5cf6",color:"#fff",border:"none",fontWeight:700,cursor:"pointer"}}>✓ Importa</button>
+              <button onClick={() => setShowImport(false)} style={{padding:10,borderRadius:2,background:"#f1f5f9",color:"#64748b",border:"none",fontWeight:600,cursor:"pointer"}}>Annulla</button>
             </div>
           </div>
         )}
@@ -3113,7 +3491,7 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
             <Field label="Ambiente / Posizione" value={p.ambiente} onChange={(v: string) => updateProdotto(i, "ambiente", v)} placeholder="es. Soggiorno, Camera..." />
             
             {/* INLINE SISTEMA / COLORE / TIPOLOGIA */}
-            <div style={{background:"#faf5ff",borderRadius:12,padding:10,marginBottom:8,border:"1px solid #e9d5ff"}}>
+            <div style={{background:"#faf5ff",borderRadius:2,padding:10,marginBottom:8,border:"1px solid #e9d5ff"}}>
               <div style={{display:"flex",gap:8,marginBottom:6}}>
                 <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Sistema</label><select value={p.sistema||""} onChange={(e: any)=>updateProdotto(i,"sistema",e.target.value)} style={{...S.input,fontSize:12,padding:"8px 10px"}}><option value="">—</option>{(userSistemi||[]).map((s: any)=><option key={s.id} value={s.nome}>{s.icon} {s.nome}</option>)}</select></div>
                 <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Tipologia</label><select value={p.tipologia||""} onChange={(e: any)=>updateProdotto(i,"tipologia",e.target.value)} style={{...S.input,fontSize:12,padding:"8px 10px"}}><option value="">—</option>{DEFAULT_TIPOLOGIE.map((t: string)=><option key={t}>{t}</option>)}</select></div>
@@ -3122,7 +3500,7 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
                 <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Int.</label><input value={p.coloreInt||""} onChange={(e: any)=>updateProdotto(i,"coloreInt",e.target.value)} placeholder="es. Bianco RAL 9010" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
                 <div style={{flex:1}}><label style={{...S.fLabel,fontSize:10}}>Colore Est.</label><input value={p.coloreEst||""} onChange={(e: any)=>updateProdotto(i,"coloreEst",e.target.value)} placeholder="es. Grigio RAL 7016" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
               </div>
-              <div style={{marginTop:6}}><label style={{...S.fLabel,fontSize:10}}>🔲 Vetro</label><input value={p.vetro||""} onChange={(e: any)=>updateProdotto(i,"vetro",e.target.value)} placeholder="es. 4/16/4 Basso Emissivo" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
+              <div style={{marginTop:6}}><label style={{...S.fLabel,fontSize:10}}>VETRO</label><input value={p.vetro||""} onChange={(e: any)=>updateProdotto(i,"vetro",e.target.value)} placeholder="es. 4/16/4 Basso Emissivo" style={{...S.input,fontSize:12,padding:"8px 10px"}} /></div>
             </div>
             
             {/* Tipo Prezzo */}
@@ -3143,14 +3521,14 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
               <div style={{display:"flex",gap:8}}>
                 <Field label="L (mm)" value={p.larghezza} onChange={(v: string) => updateProdotto(i, "larghezza", v)} type="number" placeholder="Larg." style={{flex:1}} />
                 <Field label="H (mm)" value={p.altezza} onChange={(v: string) => updateProdotto(i, "altezza", v)} type="number" placeholder="Alt." style={{flex:1}} />
-                <div style={{flex:"0 0 70px"}}><label style={S.fLabel}>MQ</label><div style={{...S.input,background:"#f8fafc",color:"#059669",fontWeight:700}}>{(p.mq||0).toFixed(2)}</div></div>
+                <div style={{flex:"0 0 70px"}}><label style={S.fLabel}>MQ</label><div style={{...S.input,background:"#f8fafc",color:"#059669",fontWeight:700}}>{((parseFloat(String(p.larghezza))||0)*(parseFloat(String(p.altezza))||0)/1000000).toFixed(2)}</div></div>
               </div>
             )}
 
             <div style={{display:"flex",gap:8}}>
               <Field label="Quantità" value={p.quantita} onChange={(v: string) => updateProdotto(i, "quantita", v)} type="number" style={{flex:"0 0 80px"}} />
               <Field label={p.tipoPrezzo === "mq" ? "Prezzo €/mq" : "Prezzo €/pz"} value={p.prezzoUnitario} onChange={(v: string) => updateProdotto(i, "prezzoUnitario", v)} type="number" placeholder="0.00" style={{flex:1}} />
-              <div style={{flex:"0 0 100px"}}><label style={S.fLabel}>Totale</label><div style={{...S.input,background:"#ecfdf5",color:"#059669",fontWeight:800,fontSize:16}}>€ {(p.totale||0).toFixed(2)}</div></div>
+              <div style={{flex:"0 0 100px"}}><label style={S.fLabel}>Totale</label><div style={{...S.input,background:"#ecfdf5",color:"#059669",fontWeight:800,fontSize:16}}>€ {calcProdTotale(p).toFixed(2)}</div></div>
             </div>
           </div>
         ))}
@@ -3161,28 +3539,28 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
 
         {/* Listino Browser */}
         {showListino && listino.length > 0 && (
-          <div style={{background:"#f5f3ff",borderRadius:12,padding:14,marginBottom:16,border:"1.5px solid #8b5cf6"}}>
-            <h4 style={{fontSize:14,fontWeight:700,color:"#8b5cf6",margin:"0 0 8px"}}>📋 Listino Prezzi ({listino.length} prodotti)</h4>
-            <input value={listinoSearch} onChange={(e: any) => setListinoSearch(e.target.value)} placeholder="🔍 Cerca nel listino..." style={{...S.searchInp,marginBottom:8}} />
+          <div style={{background:"#f5f3ff",borderRadius:2,padding:14,marginBottom:16,border:"1.5px solid #8b5cf6"}}>
+            <h4 style={{fontSize:14,fontWeight:700,color:"#8b5cf6",margin:"0 0 8px"}}> Listino Prezzi ({listino.length} prodotti)</h4>
+            <input value={listinoSearch} onChange={(e: any) => setListinoSearch(e.target.value)} placeholder=" Cerca nel listino..." style={{...S.searchInp,marginBottom:8}} />
             <div style={{maxHeight:250,overflowY:"auto"}}>
               {listino.filter((l: any) => !listinoSearch || l.descrizione.toLowerCase().includes(listinoSearch.toLowerCase())).map((l: any) => (
                 <button key={l.id} onClick={() => {
                   if (listinoTarget >= 0) { applyFromListino(listinoTarget, l); setListinoTarget(-1); }
                   else if (prodotti.length > 0) { applyFromListino(prodotti.length - 1, l); }
-                }} style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"8px 10px",background:"#fff",borderRadius:8,border:"1px solid #e2e8f0",marginBottom:4,cursor:"pointer",textAlign:"left"}}>
+                }} style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"8px 10px",background:"#fff",borderRadius:2,border:"1px solid #e2e8f0",marginBottom:4,cursor:"pointer",textAlign:"left"}}>
                   <span style={{fontSize:13,fontWeight:600,color:"#0f172a"}}>{l.descrizione}</span>
                   <span style={{fontSize:14,fontWeight:700,color:"#059669"}}>€ {l.prezzo.toFixed(2)}/{l.tipo||"pz"}</span>
                 </button>
               ))}
             </div>
-            <button onClick={() => { setShowListino(false); setListinoTarget(-1); }} style={{marginTop:8,padding:"8px 16px",borderRadius:8,background:"#f1f5f9",border:"none",color:"#64748b",fontWeight:600,cursor:"pointer",width:"100%"}}>Chiudi Listino</button>
+            <button onClick={() => { setShowListino(false); setListinoTarget(-1); }} style={{marginTop:8,padding:"8px 16px",borderRadius:2,background:"#f1f5f9",border:"none",color:"#64748b",fontWeight:600,cursor:"pointer",width:"100%"}}>Chiudi Listino</button>
           </div>
         )}
 
         {/* Riepilogo Totali */}
         {prodotti.length > 0 && (
-          <div style={{background:"#fff",borderRadius:14,padding:16,border:"2px solid #8b5cf6",marginBottom:16}}>
-            <h4 style={{fontSize:15,fontWeight:700,color:"#8b5cf6",margin:"0 0 12px"}}>📊 Riepilogo</h4>
+          <div style={{background:"#fff",borderRadius:2,padding:16,border:"2px solid #8b5cf6",marginBottom:16}}>
+            <h4 style={{fontSize:15,fontWeight:700,color:"#8b5cf6",margin:"0 0 12px"}}> Riepilogo</h4>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:14}}><span>Subtotale:</span><span style={{fontWeight:600}}>€ {subtotale.toFixed(2)}</span></div>
             <div style={{display:"flex",gap:8,marginBottom:8}}>
               <Field label="Sconto %" value={sconto} onChange={(v: string) => setSconto(parseFloat(v) || 0)} type="number" style={{flex:1}} />
@@ -3202,11 +3580,20 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
           <Field label="Note aggiuntive" value={noteP} onChange={setNoteP} placeholder="Note..." style={{flex:1}} />
         </div>
 
-        <button onClick={() => onSave({ prodotti, sconto, iva, condizioni, validita, noteP, listino, totaleFinale })} style={{...S.saveBtn,background:"linear-gradient(135deg,#a855f7,#8b5cf6)",boxShadow:"0 4px 14px rgba(139,92,246,0.3)"}}>💾 Salva Preventivo</button>
+        <button onClick={() => {
+          // Recalculate all totals before saving
+          const fixedProdotti = prodotti.map((p: any) => ({...p, mq: (parseFloat(String(p.larghezza))||0)*(parseFloat(String(p.altezza))||0)/1000000, totale: calcProdTotale(p)}));
+          const sub = fixedProdotti.reduce((s: number, p: any) => s + (p.totale || 0), 0);
+          const sv = sub * (sconto || 0) / 100;
+          const imp = sub - sv;
+          const iv = imp * (iva || 22) / 100;
+          const tf = imp + iv;
+          onSave({ prodotti: fixedProdotti, sconto, iva, condizioni, validita, noteP, listino, totaleFinale: parseFloat(tf.toFixed(2)) });
+        }} style={{...S.saveBtn,background:"#6b4c8a"}}> Salva Preventivo</button>
         {pratica?.preventivo && (
           <div style={{display:"flex",gap:8,marginTop:8}}>
-            <button onClick={() => exportPreventivo(pratica, client, true)} style={{...S.saveBtn,background:"#fff",color:"#8b5cf6",border:"2px solid #8b5cf6",boxShadow:"none",flex:1}}>🖨️ Dettagliato</button>
-            <button onClick={() => exportPreventivo(pratica, client, false)} style={{...S.saveBtn,background:"#fff",color:"#8b5cf6",border:"2px solid #8b5cf6",boxShadow:"none",flex:1}}>🖨️ Solo Totale</button>
+            <button onClick={() => exportPreventivo(pratica, client, true)} style={{...S.saveBtn,background:"#fff",color:"#8b5cf6",border:"2px solid #8b5cf6",boxShadow:"none",flex:1}}> Dettagliato</button>
+            <button onClick={() => exportPreventivo(pratica, client, false)} style={{...S.saveBtn,background:"#fff",color:"#8b5cf6",border:"2px solid #8b5cf6",boxShadow:"none",flex:1}}> Solo Totale</button>
           </div>
         )}
       </div>
@@ -3234,37 +3621,38 @@ function EmailView({ pratica, client, settings, onSend, onBack }: any) {
   
   // Detect what PDF can be attached
   const allPdfs = [
-    { icon: "📐", label: "Misure", available: !!pratica?.misure, action: () => exportMisure(pratica, client) },
-    { icon: "💰", label: "Preventivo", available: !!pratica?.preventivo, action: () => exportPreventivo(pratica, client, true) },
-    { icon: "✅", label: "Conferma Ordine", available: !!pratica?.confermaOrdine?.firmata, action: () => exportConfermaOrdine(pratica, client) },
-    { icon: "🧾", label: "Fattura", available: !!pratica?.fattura, action: () => exportFattura(pratica, client) },
-    { icon: "🛠️", label: "Riparazione", available: !!pratica?.riparazione, action: () => exportRiparazione(pratica, client) },
-    { icon: "📋", label: "Riepilogo", available: true, action: () => exportPratica(pratica, client) },
+    { icon: "", label: "Misure", available: !!pratica?.misure, action: () => exportMisure(pratica, client) },
+    { icon: "", label: "Preventivo", available: !!pratica?.preventivo, action: () => exportPreventivo(pratica, client, true) },
+    { icon: "", label: "Conferma Ordine", available: !!pratica?.confermaOrdine?.firmata, action: () => exportConfermaOrdine(pratica, client) },
+    { icon: "", label: "Fattura", available: !!pratica?.fattura, action: () => exportFattura(pratica, client) },
+    { icon: "", label: "Riparazione", available: !!pratica?.riparazione, action: () => exportRiparazione(pratica, client) },
+    { icon: "", label: "Riepilogo", available: true, action: () => exportPratica(pratica, client) },
   ];
 
+  const cNome = client?.nome || "Cliente";
   const templates = [
-    { l: "📅 Conferma Appuntamento", s: `Appuntamento Sopralluogo - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLe confermiamo l'appuntamento per il giorno ${dateLabel(pratica?.data)} alle ore ${pratica?.ora}${pratica?.indirizzo?` presso ${pratica.indirizzo}`:""}.\n\nPer qualsiasi necessità non esiti a contattarci.\n${firma}` },
-    { l: "💰 Invio Preventivo", s: `Preventivo - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nIn allegato trova il preventivo relativo alla pratica ${pratica?.numero}.\n\nIl preventivo ha validità 30 giorni.\n\nRestiamo a disposizione per chiarimenti.\n${firma}` },
-    { l: "✍️ Conferma Ordine", s: `Conferma d'Ordine - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLe confermiamo che l'ordine (pratica ${pratica?.numero}) è stato inoltrato al produttore.\n\nIn allegato trova la conferma d'ordine firmata.\n\nTempi di consegna stimati: circa [X] settimane.\n${firma}` },
-    { l: "🧾 Invio Fattura", s: `Fattura${pratica?.fattura?.numero?" "+pratica.fattura.numero:""} - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nIn allegato trova la fattura relativa alla pratica ${pratica?.numero}.\n\nModalità di pagamento: [specificare].\n${firma}` },
-    { l: "🔧 Data Posa", s: `Posa in Opera - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLa posa in opera (pratica ${pratica?.numero}) è programmata per il giorno [DATA] alle ore [ORA].\n\nLa preghiamo di assicurarsi che l'accesso sia libero.\n${firma}` },
-    { l: "✅ Lavoro Completato", s: `Lavoro Completato - Pratica ${pratica?.numero}`, t: `Gentile ${client?.nome},\n\nLe comunichiamo che i lavori relativi alla pratica ${pratica?.numero} sono stati completati.\n\nPer qualsiasi segnalazione non esiti a contattarci.\n${firma}` },
+    { l: " Conferma Appuntamento", s: `Appuntamento Sopralluogo - Pratica ${pratica?.numero}`, t: `Gentile ${cNome},\n\nLe confermiamo l'appuntamento per il giorno ${dateLabel(pratica?.data)} alle ore ${pratica?.ora}${pratica?.indirizzo?` presso ${pratica.indirizzo}`:""}.\n\nPer qualsiasi necessità non esiti a contattarci.\n${firma}` },
+    { l: " Invio Preventivo", s: `Preventivo - Pratica ${pratica?.numero}`, t: `Gentile ${cNome},\n\nIn allegato trova il preventivo relativo alla pratica ${pratica?.numero}.\n\nIl preventivo ha validità 30 giorni.\n\nRestiamo a disposizione per chiarimenti.\n${firma}` },
+    { l: " Conferma Ordine", s: `Conferma d'Ordine - Pratica ${pratica?.numero}`, t: `Gentile ${cNome},\n\nLe confermiamo che l'ordine (pratica ${pratica?.numero}) è stato inoltrato al produttore.\n\nIn allegato trova la conferma d'ordine firmata.\n\nTempi di consegna stimati: circa [X] settimane.\n${firma}` },
+    { l: " Invio Fattura", s: `Fattura${pratica?.fattura?.numero?" "+pratica.fattura.numero:""} - Pratica ${pratica?.numero}`, t: `Gentile ${cNome},\n\nIn allegato trova la fattura relativa alla pratica ${pratica?.numero}.\n\nModalità di pagamento: [specificare].\n${firma}` },
+    { l: " Data Posa", s: `Posa in Opera - Pratica ${pratica?.numero}`, t: `Gentile ${cNome},\n\nLa posa in opera (pratica ${pratica?.numero}) è programmata per il giorno [DATA] alle ore [ORA].\n\nLa preghiamo di assicurarsi che l'accesso sia libero.\n${firma}` },
+    { l: " Lavoro Completato", s: `Lavoro Completato - Pratica ${pratica?.numero}`, t: `Gentile ${cNome},\n\nLe comunichiamo che i lavori relativi alla pratica ${pratica?.numero} sono stati completati.\n\nPer qualsiasi segnalazione non esiti a contattarci.\n${firma}` },
   ];
   return (
     <div style={S.container}>
-      <div style={{...S.secHdr,background:"linear-gradient(135deg,#6366f1,#a855f7)",boxShadow:"0 4px 14px rgba(99,102,241,0.3)"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}>✉️ Email</h2></div>
+      <div style={{...S.secHdr,background:"#3a7bd5"}}><button onClick={onBack} style={{...S.backBtn,color:"#fff"}}>← Indietro</button><h2 style={{...S.secTitle,color:"#fff"}}> Email</h2></div>
       <div style={{padding:20}}>
-        <div style={{...S.praticaRef,borderLeftColor:"#6366f1"}}>{pratica?.numero} · {client?.nome}</div>
+        <div style={{...S.praticaRef,borderLeftColor:"#3a7bd5"}}>{pratica?.numero} · {client?.nome||"Cliente"}</div>
         <div style={S.fGroup}><label style={S.fLabel}>Template Rapidi</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{templates.map((t,i)=><button key={i} onClick={()=>{setOggetto(t.s);setCorpo(t.t);}} style={S.templateBtn}>{t.l}</button>)}</div></div>
         <Field label="Destinatario" value={dest} onChange={setDest} placeholder="email@esempio.it" type="email" />
         <Field label="Oggetto" value={oggetto} onChange={setOggetto} placeholder="Oggetto email" />
         <div style={S.fGroup}><label style={S.fLabel}>Messaggio</label><textarea value={corpo} onChange={(e: any)=>setCorpo(e.target.value)} style={{...S.textarea,minHeight:200}} /></div>
-        <div style={{marginBottom:16,padding:14,background:"#f8fafc",borderRadius:14,border:"1.5px solid #e2e8f0"}}>
-          <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",display:"block",marginBottom:8}}>📎 Genera PDF da allegare</label>
+        <div style={{marginBottom:16,padding:14,background:"#f8fafc",borderRadius:2,border:"1.5px solid #e2e8f0"}}>
+          <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",display:"block",marginBottom:8}}> Genera PDF da allegare</label>
           <p style={{fontSize:11,color:"#94a3b8",margin:"0 0 8px"}}>Genera il PDF, poi allegalo manualmente nella tua app email</p>
           <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {allPdfs.map((a,i) => (
-              <button key={i} onClick={a.available ? a.action : undefined} disabled={!a.available} style={{padding:"8px 14px",borderRadius:12,border:a.available?"1.5px solid #6366f1":"1.5px solid #d1d5db",background:a.available?"#f5f3ff":"#f3f4f6",color:a.available?"#6366f1":"#94a3b8",fontSize:12,fontWeight:700,cursor:a.available?"pointer":"default",opacity:a.available?1:0.5}}>{a.icon} {a.label}{!a.available?" ⛔":""}</button>
+              <button key={i} onClick={a.available ? a.action : undefined} disabled={!a.available} style={{padding:"8px 14px",borderRadius:2,border:a.available?"1.5px solid #3a7bd5":"1.5px solid #d1d5db",background:a.available?"#f5f3ff":"#f3f4f6",color:a.available?"#3a7bd5":"#94a3b8",fontSize:12,fontWeight:700,cursor:a.available?"pointer":"default",opacity:a.available?1:0.5}}>{a.icon} {a.label}{!a.available?" ⛔":""}</button>
             ))}
           </div>
         </div>
@@ -3279,18 +3667,25 @@ function EmailView({ pratica, client, settings, onSend, onBack }: any) {
 }
 
 // ==================== NOTE EDITOR ====================
-function NoteEditor({ note, onSave, onBack }: any) {
+function NoteEditor({ note, pratiche, clients, onSave, onBack }: any) {
   const [testo, setTesto] = useState(note?.testo||"");
   const [colore, setColore] = useState(note?.colore||"#fffbeb");
   const [praticaId, setPraticaId] = useState(note?.praticaId||"");
   const colors = ["#fffbeb","#ecfdf5","#eff6ff","#fef2f2","#f5f3ff","#fff7ed"];
+  const getClientName = (cId: string) => (clients||[]).find((c: any)=>c.id===cId)?.nome||"";
   return (
     <div style={S.container}>
       <div style={S.secHdr}><button onClick={onBack} style={S.backBtn}>← Annulla</button><h2 style={S.secTitle}>{note?.id?"Modifica":"Nuova"} Nota</h2></div>
       <div style={{padding:20}}>
-        <div style={S.fGroup}><label style={S.fLabel}>Colore</label><div style={{display:"flex",gap:8}}>{colors.map(c=><button key={c} onClick={()=>setColore(c)} style={{width:36,height:36,borderRadius:10,background:c,border:colore===c?"3px solid #2563eb":"2px solid #d1d5db",cursor:"pointer"}} />)}</div></div>
+        <div style={S.fGroup}><label style={S.fLabel}>Colore</label><div style={{display:"flex",gap:8}}>{colors.map(c=><button key={c} onClick={()=>setColore(c)} style={{width:36,height:36,borderRadius:2,background:c,border:colore===c?"3px solid #2563eb":"2px solid #d1d5db",cursor:"pointer"}} />)}</div></div>
+        <div style={S.fGroup}><label style={S.fLabel}> Collega a Pratica (opzionale)</label>
+          <select value={praticaId} onChange={(e: any)=>setPraticaId(e.target.value)} style={S.input}>
+            <option value="">— Nessuna pratica —</option>
+            {(pratiche||[]).map((p: any)=><option key={p.id} value={p.id}>{p.numero} · {getClientName(p.clientId)}</option>)}
+          </select>
+        </div>
         <div style={S.fGroup}><label style={S.fLabel}>Nota</label><textarea value={testo} onChange={(e: any)=>setTesto(e.target.value)} placeholder="Scrivi la tua nota..." style={{...S.textarea,minHeight:200,background:colore}} autoFocus /></div>
-        <button onClick={()=>onSave({...note,testo,colore,praticaId})} style={S.saveBtn}>💾 Salva Nota</button>
+        <button onClick={()=>onSave({...note,testo,colore,praticaId})} style={S.saveBtn}> Salva Nota</button>
       </div>
     </div>
   );
@@ -3310,7 +3705,7 @@ function PhotoCapture({ url, label, icon, onCapture, onDelete }: any) {
     if (inputRef.current) inputRef.current.value = "";
   };
   if (url) return (
-    <div style={{position:"relative",width:76,height:76,borderRadius:14,overflow:"hidden",border:"2.5px solid #059669",flexShrink:0}}>
+    <div style={{position:"relative",width:76,height:76,borderRadius:2,overflow:"hidden",border:"2.5px solid #059669",flexShrink:0}}>
       <img src={url} alt={label} style={{width:"100%",height:"100%",objectFit:"cover"}} />
       <button onClick={(e)=>{e.stopPropagation();onDelete?.();}} style={{position:"absolute",top:2,right:2,width:22,height:22,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
       <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,0.55)",padding:"2px 0",textAlign:"center"}}><span style={{fontSize:8,fontWeight:700,color:"#fff",textTransform:"uppercase"}}>{label}</span></div>
@@ -3319,7 +3714,7 @@ function PhotoCapture({ url, label, icon, onCapture, onDelete }: any) {
   return (
     <div>
       <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{display:"none"}} />
-      <button onClick={()=>inputRef.current?.click()} disabled={uploading} style={{width:76,height:76,borderRadius:14,border:"2.5px dashed #cbd5e1",background:uploading?"#f1f5f9":"#f8fafc",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:uploading?"wait":"pointer",opacity:uploading?0.6:1}}>
+      <button onClick={()=>inputRef.current?.click()} disabled={uploading} style={{width:76,height:76,borderRadius:2,border:"2.5px dashed #cbd5e1",background:uploading?"#f1f5f9":"#f8fafc",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:uploading?"wait":"pointer",opacity:uploading?0.6:1}}>
         {uploading ? <span style={{fontSize:18}}>⏳</span> : <span style={{fontSize:16}}>{icon||"📷"}</span>}
         <span style={{fontSize:8,fontWeight:700,color:"#94a3b8",textTransform:"uppercase"}}>{uploading?"Carico...":label}</span>
       </button>
@@ -3356,14 +3751,14 @@ function PhotoGallery({ photos, label, userId, folder, onUpdate }: any) {
       <label style={{fontSize:12,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"0.5px",display:"block",marginBottom:8}}>{label}</label>
       <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
         {photoList.map((url: string, i: number) => (
-          <div key={i} style={{position:"relative",width:76,height:76,borderRadius:14,overflow:"hidden",border:"2.5px solid #059669"}}>
+          <div key={i} style={{position:"relative",width:76,height:76,borderRadius:2,overflow:"hidden",border:"2.5px solid #059669"}}>
             <img src={url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} />
             <button onClick={()=>removePhoto(i)} style={{position:"absolute",top:2,right:2,width:22,height:22,borderRadius:"50%",background:"rgba(0,0,0,0.6)",border:"none",color:"#fff",fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
           </div>
         ))}
         <div>
           <input ref={inputRef} type="file" accept="image/*" capture="environment" multiple onChange={handleFiles} style={{display:"none"}} />
-          <button onClick={()=>inputRef.current?.click()} disabled={uploading} style={{width:76,height:76,borderRadius:14,border:"2.5px dashed #cbd5e1",background:uploading?"#f1f5f9":"#f8fafc",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:uploading?"wait":"pointer"}}>
+          <button onClick={()=>inputRef.current?.click()} disabled={uploading} style={{width:76,height:76,borderRadius:2,border:"2.5px dashed #cbd5e1",background:uploading?"#f1f5f9":"#f8fafc",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:uploading?"wait":"pointer"}}>
             {uploading ? <span style={{fontSize:18}}>⏳</span> : <span style={{fontSize:22}}>📷</span>}
             <span style={{fontSize:9,fontWeight:700,color:"#94a3b8"}}>{uploading?"Carico...":"+ Foto"}</span>
           </button>
@@ -3379,126 +3774,145 @@ function Field({ label, value, onChange, placeholder, type, style, autoFocus, te
     : <input type={type||"text"} value={value} onChange={(e: any)=>onChange(e.target.value)} placeholder={placeholder} style={S.input} autoFocus={autoFocus} />}</div>);
 }
 function InfoRow({ icon, val }: any) { return <div style={{display:"flex",alignItems:"flex-start",gap:10}}><span style={{fontSize:16,width:24,textAlign:"center",flexShrink:0}}>{icon}</span><span style={{fontSize:15,color:"#374151",lineHeight:1.4}}>{val}</span></div>; }
-function TaskRow({ task, onToggle, small }: any) {
-  return (<div style={{display:"flex",alignItems:"center",gap:10,padding:small?"7px 10px":"10px 12px",borderRadius:10,marginBottom:4,border:"1px solid #e2e8f0",background:task.done?"#f0fdf4":"#fff"}}>
+function TaskRow({ task, onToggle, onDelete, small }: any) {
+  return (<div style={{display:"flex",alignItems:"center",gap:10,padding:small?"7px 10px":"10px 12px",borderRadius:2,marginBottom:4,border:"1px solid #e2e8f0",background:task.done?"#f0fdf4":"#fff"}}>
     <button onClick={onToggle} style={{width:small?22:26,height:small?22:26,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,fontWeight:700,flexShrink:0,background:task.done?"#059669":"#fff",border:task.done?"2px solid #059669":"2px solid #d1d5db",color:task.done?"#fff":"transparent"}}>✓</button>
-    <span style={{flex:1,fontSize:small?13:14,textDecoration:task.done?"line-through":"none",color:task.done?"#9ca3af":"#1f2937"}}>{task.text}</span></div>);
+    <span style={{flex:1,fontSize:small?13:14,textDecoration:task.done?"line-through":"none",color:task.done?"#9ca3af":"#1f2937"}}>{task.text}</span>
+    {onDelete && <button onClick={onDelete} style={{background:"none",border:"none",color:"#ef4444",fontSize:16,cursor:"pointer",padding:"2px 4px",opacity:0.6}}>×</button>}
+  </div>);
 }
 function ProgressBar({ progress, done, total, small }: any) {
-  return (<div style={{marginBottom:small?6:12,background:"#f8fafc",borderRadius:10,padding:small?"6px 10px":"10px 14px"}}>
+  return (<div style={{marginBottom:small?6:12,background:"#f8fafc",borderRadius:2,padding:small?"6px 10px":"10px 14px"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontSize:small?12:14,fontWeight:600,color:"#374151"}}>Progresso</span><span style={{fontSize:small?13:16,fontWeight:800,color:progress===100?"#059669":"#2563eb"}}>{progress}%</span></div>
-    <div style={{height:small?5:8,background:"#e2e8f0",borderRadius:10,overflow:"hidden"}}><div style={{height:"100%",borderRadius:10,width:`${progress}%`,background:progress===100?"#059669":"#2563eb",transition:"width 0.4s"}} /></div>
+    <div style={{height:small?5:8,background:"#e2e8f0",borderRadius:2,overflow:"hidden"}}><div style={{height:"100%",borderRadius:2,width:`${progress}%`,background:progress===100?"#059669":"#2563eb",transition:"width 0.4s"}} /></div>
     <span style={{fontSize:11,color:"#64748b"}}>{done}/{total}</span></div>);
 }
 
 // ==================== STYLES ====================
-const S: Record<string, React.CSSProperties> = {
-  container:{maxWidth:540,margin:"0 auto",minHeight:"100vh",background:"linear-gradient(170deg,#fdf6ee 0%,#eef6fb 35%,#f3eefb 65%,#fef0f0 100%)",fontFamily:"'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif",paddingBottom:88},
-  loadWrap:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(135deg,#ff6b35,#ff3d71,#7c3aed)"},
-  header:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"22px 20px 16px",background:"linear-gradient(135deg,#1e293b 0%,#334155 50%,#1e293b 100%)",color:"#fff",boxShadow:"0 8px 30px rgba(0,0,0,0.25)",borderRadius:"0 0 24px 24px"},
-  logo:{fontSize:24,fontWeight:900,margin:0,letterSpacing:"-0.5px",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
-  subtitle:{fontSize:10,color:"rgba(255,255,255,0.5)",margin:"2px 0 0",letterSpacing:"2px",textTransform:"uppercase",fontWeight:600},
-  addBtn:{background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#1e293b",border:"none",borderRadius:14,padding:"11px 20px",fontSize:14,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 16px rgba(251,191,36,0.4)",letterSpacing:"-0.3px"},
-
-  // Dashboard
-  greetCard:{background:"#fff",borderRadius:20,padding:"20px 18px",marginBottom:14,border:"none",boxShadow:"0 4px 20px rgba(0,0,0,0.06)",position:"relative",overflow:"hidden"},
-  dashStats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16},
-  dashStat:{display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:"#fff",borderRadius:16,padding:"16px 4px",border:"none",cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",transition:"transform 0.2s,box-shadow 0.2s"},
-  alertCard:{display:"flex",alignItems:"center",gap:12,background:"linear-gradient(135deg,#fff1f2,#ffe4e6)",borderRadius:16,padding:"14px 16px",marginBottom:14,border:"none",boxShadow:"0 4px 16px rgba(239,68,68,0.12)"},
-  dashSection:{marginBottom:20},
-  dashSectionTitle:{fontSize:16,fontWeight:800,color:"#1e293b",margin:"0 0 12px",letterSpacing:"-0.3px"},
-  dashEmpty:{fontSize:13,color:"#94a3b8",margin:"4px 0"},
-  appointCard:{display:"flex",alignItems:"center",gap:14,width:"100%",textAlign:"left",padding:"14px 16px",background:"#fff",borderRadius:16,border:"none",marginBottom:10,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",transition:"transform 0.2s"},
-  appointTime:{padding:"10px 14px",borderRadius:12,fontSize:14,fontWeight:800,flexShrink:0,letterSpacing:"-0.3px"},
-  taskDashRow:{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",background:"#fff",borderRadius:14,border:"none",marginBottom:8,boxShadow:"0 3px 12px rgba(0,0,0,0.05)"},
-  taskCheck:{width:26,height:26,borderRadius:8,border:"2.5px solid #d1d5db",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,color:"#d1d5db",flexShrink:0,transition:"all 0.2s"},
-  emailDashCard:{background:"#fff",borderRadius:14,padding:"12px 16px",border:"none",marginBottom:8,boxShadow:"0 3px 12px rgba(0,0,0,0.05)"},
-  noteCard:{display:"block",width:"100%",textAlign:"left",borderRadius:14,padding:"14px 16px",border:"none",marginBottom:10,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"},
-  addNoteBtn:{width:36,height:36,borderRadius:12,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",color:"#fff",border:"none",fontSize:20,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 14px rgba(255,107,53,0.35)"},
-
-  // Bottom Nav
-  bottomNav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:540,display:"flex",background:"#fff",borderTop:"none",padding:"10px 0 8px",boxShadow:"0 -6px 30px rgba(0,0,0,0.1)",zIndex:100,borderRadius:"22px 22px 0 0"},
-  navItem:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,background:"none",border:"none",cursor:"pointer",padding:"6px 0",transition:"all 0.2s"},
-
-  // Shared
-  stats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,padding:"14px 16px 10px"},
-  statCard:{display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:"#fff",borderRadius:16,padding:"12px 4px",border:"none",cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"},
-  statNum:{fontSize:24,fontWeight:900,color:"#1e293b",letterSpacing:"-0.5px"},
-  statLbl:{fontSize:10,color:"#64748b",textTransform:"uppercase",fontWeight:700,letterSpacing:"0.5px"},
-  searchInp:{width:"100%",padding:"14px 18px",borderRadius:16,border:"2.5px solid #e2e8f0",fontSize:15,color:"#1e293b",outline:"none",boxSizing:"border-box",background:"#fff",boxShadow:"0 4px 16px rgba(0,0,0,0.04)",transition:"border-color 0.2s,box-shadow 0.2s"},
-  praticaCard:{display:"block",width:"100%",textAlign:"left",background:"#fff",borderRadius:18,padding:"18px 20px",marginBottom:12,border:"none",cursor:"pointer",boxShadow:"0 4px 20px rgba(0,0,0,0.07)",transition:"transform 0.2s,box-shadow 0.2s"},
-  praticaTop:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6},
-  praticaNum:{fontSize:13,fontWeight:800,color:"#7c3aed",background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",padding:"4px 14px",borderRadius:10,letterSpacing:"-0.2px"},
-  praticaStatus:{fontSize:11,fontWeight:800,padding:"5px 14px",borderRadius:20,letterSpacing:"-0.2px"},
-  praticaCliente:{fontSize:18,fontWeight:800,color:"#0f172a",margin:"6px 0 2px",letterSpacing:"-0.3px"},
-  praticaAddr:{fontSize:13,color:"#64748b",margin:"2px 0 0",fontWeight:500},
-  praticaMeta:{display:"flex",alignItems:"center",gap:10,marginTop:10},
-  praticaActions:{fontSize:11,fontWeight:700,color:"#7c3aed",background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",padding:"4px 12px",borderRadius:10},
-  progRow:{display:"flex",alignItems:"center",gap:8,marginTop:10},
-  progBar:{flex:1,height:7,background:"#e2e8f0",borderRadius:10,overflow:"hidden"},
-  progFill:{height:"100%",borderRadius:10,transition:"width 0.4s ease"},
-  empty:{textAlign:"center",padding:"50px 20px"},
-  emptyTitle:{fontSize:19,fontWeight:800,color:"#374151",margin:"12px 0 6px",letterSpacing:"-0.3px"},
-  emptySub:{fontSize:14,color:"#9ca3af",fontWeight:500},
-  emptyMini:{textAlign:"center",padding:"30px 20px",fontSize:14,color:"#9ca3af",fontWeight:500},
-  clientRow:{display:"flex",alignItems:"center",gap:14,width:"100%",padding:"16px 18px",background:"#fff",borderRadius:16,border:"none",marginBottom:10,cursor:"pointer",textAlign:"left",boxShadow:"0 4px 16px rgba(0,0,0,0.06)",transition:"transform 0.2s"},
-  clientCard:{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",background:"#fff",borderRadius:16,border:"none",marginBottom:10,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"},
-  clientAvatar:{width:46,height:46,borderRadius:14,background:"linear-gradient(135deg,#ff6b35,#ff3d71)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:800,flexShrink:0,boxShadow:"0 4px 14px rgba(255,107,53,0.3)"},
-  clientCount:{fontSize:22,fontWeight:900,color:"#ff6b35",letterSpacing:"-0.5px"},
-  clientBox:{display:"flex",alignItems:"center",gap:14,background:"#fff",borderRadius:16,padding:"16px 18px",marginBottom:16,border:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"},
-  newClientBtn:{width:"100%",padding:"15px",borderRadius:16,border:"2.5px dashed #ff6b35",background:"linear-gradient(135deg,#fff7ed,#fff1e3)",color:"#ff6b35",fontSize:15,fontWeight:800,cursor:"pointer",marginBottom:14,letterSpacing:"-0.2px"},
-  secHdr:{display:"flex",alignItems:"center",gap:12,padding:"22px 20px 16px",background:"#fff",borderBottom:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.05)",borderRadius:"0 0 20px 20px"},
-  secTitle:{fontSize:19,fontWeight:900,color:"#0f172a",margin:0,letterSpacing:"-0.3px"},
-  backBtn:{background:"none",border:"none",fontSize:15,color:"#ff6b35",cursor:"pointer",fontWeight:800,padding:"6px 0"},
-  fGroup:{marginBottom:16},
-  fLabel:{display:"block",fontSize:11,fontWeight:800,color:"#64748b",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.8px"},
-  input:{width:"100%",padding:"13px 16px",borderRadius:14,border:"2.5px solid #e2e8f0",fontSize:15,color:"#1e293b",outline:"none",boxSizing:"border-box",background:"#fff",transition:"border-color 0.2s,box-shadow 0.2s"},
-  textarea:{width:"100%",padding:"13px 16px",borderRadius:14,border:"2.5px solid #e2e8f0",fontSize:15,color:"#1e293b",outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:"inherit",background:"#fff",transition:"border-color 0.2s"},
-  saveBtn:{width:"100%",padding:"16px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#ff6b35,#ff3d71)",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",boxShadow:"0 6px 20px rgba(255,107,53,0.35)",marginTop:10,letterSpacing:"-0.2px",transition:"transform 0.2s,box-shadow 0.2s"},
-  infoNote:{background:"linear-gradient(135deg,#fff7ed,#fff1e3)",borderRadius:14,padding:"14px 16px",fontSize:13,color:"#c2410c",marginBottom:16,border:"1px solid #fed7aa",fontWeight:600},
-  pill:{padding:"8px 18px",borderRadius:20,border:"none",fontSize:13,fontWeight:800,cursor:"pointer",transition:"all 0.2s",letterSpacing:"-0.2px"},
-  pickerHdr:{textAlign:"center",padding:"32px 20px 24px",background:"linear-gradient(135deg,#059669,#0d9488,#0891b2)"},
-  pickerCheck:{width:60,height:60,borderRadius:"50%",background:"rgba(255,255,255,0.2)",color:"#fff",fontSize:28,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center",marginBottom:14,backdropFilter:"blur(10px)"},
-  pickerTitle:{fontSize:24,fontWeight:900,color:"#fff",margin:"0 0 10px",letterSpacing:"-0.5px"},
-  pickerNum:{display:"inline-block",background:"rgba(255,255,255,0.2)",color:"#fff",padding:"5px 18px",borderRadius:12,fontSize:16,fontWeight:800,marginBottom:10,backdropFilter:"blur(10px)"},
-  pickerClient:{fontSize:17,color:"rgba(255,255,255,0.9)",fontWeight:700,margin:0},
-  pickerAddr:{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"4px 0 0",fontWeight:500},
-  pickerQ:{fontSize:19,fontWeight:900,color:"#0f172a",padding:"22px 20px 14px",letterSpacing:"-0.3px"},
-  actGrid:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,padding:"0 16px"},
-  actCard:{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"22px 12px",background:"#fff",borderRadius:18,border:"none",cursor:"pointer",boxShadow:"0 4px 20px rgba(0,0,0,0.07)",transition:"transform 0.2s,box-shadow 0.2s"},
-  skipBtn:{display:"block",width:"calc(100% - 32px)",margin:"16px auto",padding:"13px",background:"transparent",border:"2.5px solid #d1d5db",borderRadius:16,fontSize:14,fontWeight:800,color:"#6b7280",cursor:"pointer",textAlign:"center"},
-  detailHdr:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"18px 20px",background:"#fff",borderBottom:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.05)",borderRadius:"0 0 20px 20px"},
-  emailBtn:{background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",border:"none",borderRadius:12,padding:"9px 16px",fontSize:14,cursor:"pointer",color:"#7c3aed",fontWeight:800},
-  delBtn:{background:"linear-gradient(135deg,#fff1f2,#ffe4e6)",border:"none",borderRadius:12,padding:"9px 14px",fontSize:14,cursor:"pointer"},
-  praticaHdrCard:{background:"#fff",borderRadius:20,padding:20,border:"none",marginBottom:18,boxShadow:"0 4px 20px rgba(0,0,0,0.07)"},
-  praticaNumBig:{fontSize:18,fontWeight:900,color:"#7c3aed",background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",padding:"6px 18px",borderRadius:12,letterSpacing:"-0.3px"},
-  statusBdg:{padding:"6px 18px",borderRadius:20,fontSize:13,fontWeight:800},
-  detailName:{fontSize:26,fontWeight:900,color:"#0f172a",margin:"12px 0 16px",letterSpacing:"-0.5px"},
-  detailInfo:{display:"flex",flexDirection:"column",gap:10},
-  todayChip:{background:"linear-gradient(135deg,#ff6b35,#ff3d71)",color:"#fff",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:10,marginLeft:8,boxShadow:"0 2px 8px rgba(255,107,53,0.3)"},
-  statusChanger:{display:"flex",alignItems:"center",gap:12,marginBottom:18,padding:"16px 0",borderTop:"1.5px solid #f1f5f9",borderBottom:"1.5px solid #f1f5f9"},
-  statusLbl:{fontSize:13,fontWeight:800,color:"#6b7280",textTransform:"uppercase",minWidth:48,letterSpacing:"0.3px"},
-  statusTgl:{flex:1,padding:"9px 4px",borderRadius:12,fontSize:12,fontWeight:800,cursor:"pointer",transition:"all 0.2s"},
-  sectionTitle:{fontSize:17,fontWeight:900,color:"#0f172a",margin:"0 0 14px",letterSpacing:"-0.3px"},
-  actionBlock:{background:"#fff",borderRadius:16,padding:16,marginBottom:12,border:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"},
-  openFormBtn:{width:"100%",padding:"12px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#fff7ed,#fff1e3)",color:"#ff6b35",fontSize:14,fontWeight:800,cursor:"pointer",marginBottom:10,textAlign:"center",boxShadow:"0 2px 8px rgba(255,107,53,0.1)"},
-  addActionBtn:{width:"100%",padding:"15px",borderRadius:16,border:"2.5px dashed #cbd5e1",background:"transparent",fontSize:15,fontWeight:800,color:"#94a3b8",cursor:"pointer",marginTop:18},
-  sendEmailBtn:{width:"100%",padding:"15px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#7c3aed,#a855f7)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",marginTop:12,boxShadow:"0 6px 20px rgba(124,58,237,0.3)",letterSpacing:"-0.2px"},
-  dataSummary:{background:"#fff",borderRadius:16,padding:16,marginTop:14,borderLeft:"5px solid #ff6b35",boxShadow:"0 4px 16px rgba(0,0,0,0.05)"},
-  dataSumTitle:{fontSize:16,fontWeight:800,color:"#ff6b35",margin:"0 0 6px",letterSpacing:"-0.2px"},
-  dataSumLine:{fontSize:13,color:"#64748b",margin:"0 0 2px",fontWeight:500},
-  praticaRef:{background:"linear-gradient(135deg,#f3e8ff,#ede9fe)",borderRadius:14,padding:"14px 18px",borderLeft:"5px solid #7c3aed",marginBottom:18,fontSize:16,fontWeight:800,color:"#7c3aed",letterSpacing:"-0.2px"},
-  vanoCard:{background:"#fff",borderRadius:16,padding:16,marginBottom:12,border:"none",borderLeft:"5px solid #f59e0b",boxShadow:"0 4px 16px rgba(0,0,0,0.06)"},
-  vanoHdr:{display:"flex",alignItems:"center",gap:10,marginBottom:14},
-  vanoNum:{width:32,height:32,borderRadius:10,background:"linear-gradient(135deg,#fbbf24,#f59e0b)",color:"#fff",fontSize:15,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px rgba(251,191,36,0.35)"},
-  vanoRm:{background:"linear-gradient(135deg,#fff1f2,#ffe4e6)",border:"none",borderRadius:10,width:32,height:32,fontSize:18,color:"#ef4444",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"},
-  addVanoBtn:{width:"100%",padding:"13px",borderRadius:14,border:"2.5px dashed #f59e0b",background:"transparent",color:"#d97706",fontSize:14,fontWeight:800,cursor:"pointer",marginBottom:16},
-  photoPH:{width:72,height:72,borderRadius:14,border:"2.5px dashed",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2},
-  urgBtn:{flex:1,padding:"11px 4px",borderRadius:14,border:"none",fontSize:12,fontWeight:800,cursor:"pointer",textAlign:"center",transition:"all 0.2s"},
-  emailCard:{background:"#fff",borderRadius:14,padding:"12px 16px",border:"none",marginBottom:8,boxShadow:"0 3px 12px rgba(0,0,0,0.05)"},
-  templateBtn:{padding:"9px 16px",borderRadius:14,border:"2.5px solid #7c3aed",background:"#fff",color:"#7c3aed",fontSize:13,fontWeight:800,cursor:"pointer"},
-  exportBtn:{padding:"12px 18px",borderRadius:14,border:"2.5px solid #ff6b35",background:"linear-gradient(135deg,#fff7ed,#fff1e3)",color:"#ff6b35",fontSize:13,fontWeight:800,cursor:"pointer",flex:1,textAlign:"center",boxShadow:"0 2px 8px rgba(255,107,53,0.1)"} as React.CSSProperties,
-  noteCardFull:{display:"flex",alignItems:"flex-start",gap:10,borderRadius:16,padding:"16px 18px",border:"none",marginBottom:10,boxShadow:"0 4px 16px rgba(0,0,0,0.06)"},
-  noteCardBtn:{flex:1,background:"none",border:"none",textAlign:"left",cursor:"pointer",padding:0},
-  noteDelBtn:{background:"none",border:"none",fontSize:16,cursor:"pointer",padding:4,flexShrink:0},
+// ==================== THEMES ====================
+const THEMES: Record<string, {name:string;emoji:string;bg:string;headerBg:string;primary:string;primaryLight:string;primaryGrad:string;secondary:string;secondaryLight:string;secondaryGrad:string;accent:string;accentGrad:string;cardShadow:string;loadBg:string}> = {
+  classic: { name:"Acciaio",emoji:"",bg:"#f0f1f3",headerBg:"#1a1a2e",primary:"#e07a2f",primaryLight:"#fdf3eb",primaryGrad:"#e07a2f",secondary:"#3a7bd5",secondaryLight:"#eaf1fb",secondaryGrad:"#3a7bd5",accent:"#e07a2f",accentGrad:"#e07a2f",cardShadow:"0 1px 3px rgba(0,0,0,0.08)",loadBg:"#1a1a2e" },
+  ocean: { name:"Cantiere",emoji:"",bg:"#eef1f5",headerBg:"#0d1b2a",primary:"#1b9aaa",primaryLight:"#e8f6f8",primaryGrad:"#1b9aaa",secondary:"#d4820e",secondaryLight:"#fef6e8",secondaryGrad:"#d4820e",accent:"#1b9aaa",accentGrad:"#1b9aaa",cardShadow:"0 1px 3px rgba(0,0,0,0.08)",loadBg:"#0d1b2a" },
+  forest: { name:"Officina",emoji:"",bg:"#f2f3f0",headerBg:"#1b2a1b",primary:"#2d8a4e",primaryLight:"#edf5f0",primaryGrad:"#2d8a4e",secondary:"#8a6d2d",secondaryLight:"#f8f3ea",secondaryGrad:"#8a6d2d",accent:"#2d8a4e",accentGrad:"#2d8a4e",cardShadow:"0 1px 3px rgba(0,0,0,0.08)",loadBg:"#1b2a1b" },
+  midnight: { name:"Notte",emoji:"",bg:"#111318",headerBg:"#0a0c10",primary:"#6c8aec",primaryLight:"#1a1d28",primaryGrad:"#6c8aec",secondary:"#e07a5f",secondaryLight:"#1f1a18",secondaryGrad:"#e07a5f",accent:"#6c8aec",accentGrad:"#6c8aec",cardShadow:"0 1px 4px rgba(0,0,0,0.4)",loadBg:"#0a0c10" },
+  rose: { name:"Rame",emoji:"",bg:"#f3f0ef",headerBg:"#2a1a1b",primary:"#c45a3c",primaryLight:"#f8efec",primaryGrad:"#c45a3c",secondary:"#6b4c8a",secondaryLight:"#f1ecf5",secondaryGrad:"#6b4c8a",accent:"#c45a3c",accentGrad:"#c45a3c",cardShadow:"0 1px 3px rgba(0,0,0,0.08)",loadBg:"#2a1a1b" },
+  gold: { name:"Ottone",emoji:"",bg:"#f5f2ec",headerBg:"#2a2214",primary:"#b8860b",primaryLight:"#f9f5ec",primaryGrad:"#b8860b",secondary:"#5a4a2a",secondaryLight:"#f2efe8",secondaryGrad:"#5a4a2a",accent:"#b8860b",accentGrad:"#b8860b",cardShadow:"0 1px 3px rgba(0,0,0,0.08)",loadBg:"#2a2214" },
 };
+
+function getThemeStyles(themeKey: string): Record<string, React.CSSProperties> {
+  const t = THEMES[themeKey] || THEMES.classic;
+  const isDark = themeKey === "midnight";
+  const cardBg = isDark ? "#1c1f26" : "#fff";
+  const textPrimary = isDark ? "#d4d8e0" : "#1a1a2e";
+  const textSecondary = isDark ? "#7a8194" : "#5c6370";
+  const borderColor = isDark ? "#2a2e38" : "#d5d8de";
+  const inputBg = isDark ? "#14161c" : "#fafbfc";
+  const inputBorder = isDark ? "#3a3f4c" : "#cdd1d8";
+  const mono = "'JetBrains Mono','SF Mono','Cascadia Code','Fira Code',monospace";
+  const sans = "'DM Sans','Segoe UI',system-ui,-apple-system,sans-serif";
+  return {
+  container:{maxWidth:540,margin:"0 auto",minHeight:"100vh",background:t.bg,fontFamily:sans,paddingBottom:72,color:textPrimary},
+  loadWrap:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:t.loadBg},
+  header:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",background:t.headerBg,color:"#fff",borderBottom:`3px solid ${t.primary}`},
+  logo:{fontSize:20,fontWeight:800,margin:0,letterSpacing:"1px",textTransform:"uppercase",fontFamily:mono,color:t.accent},
+  subtitle:{fontSize:9,color:"rgba(255,255,255,0.4)",margin:"2px 0 0",letterSpacing:"3px",textTransform:"uppercase",fontWeight:600,fontFamily:mono},
+  addBtn:{background:t.primary,color:"#fff",border:"none",borderRadius:2,padding:"10px 18px",fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:mono},
+  greetCard:{background:cardBg,borderRadius:2,padding:"18px",marginBottom:12,border:`1px solid ${borderColor}`,boxShadow:t.cardShadow},
+  dashStats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14},
+  dashStat:{display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:cardBg,borderRadius:2,padding:"14px 4px",border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow,transition:"border-color 0.15s"},
+  alertCard:{display:"flex",alignItems:"center",gap:12,background:isDark?"#2a1a1a":"#fef2f2",borderRadius:2,padding:"12px 16px",marginBottom:12,borderLeft:`4px solid #dc2626`,boxShadow:t.cardShadow},
+  dashSection:{marginBottom:18},
+  dashSectionTitle:{fontSize:11,fontWeight:700,color:textSecondary,margin:"0 0 10px",letterSpacing:"2px",textTransform:"uppercase",fontFamily:mono},
+  dashEmpty:{fontSize:13,color:textSecondary,margin:"4px 0"},
+  appointCard:{display:"flex",alignItems:"center",gap:12,width:"100%",textAlign:"left",padding:"12px 16px",background:cardBg,borderRadius:2,border:`1px solid ${borderColor}`,marginBottom:8,cursor:"pointer",boxShadow:t.cardShadow,transition:"border-color 0.15s"},
+  appointTime:{padding:"8px 12px",borderRadius:2,fontSize:13,fontWeight:700,flexShrink:0,fontFamily:mono},
+  taskDashRow:{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",background:cardBg,borderRadius:2,border:`1px solid ${borderColor}`,marginBottom:6,boxShadow:t.cardShadow},
+  taskCheck:{width:24,height:24,borderRadius:2,border:`2px solid ${borderColor}`,background:inputBg,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,color:borderColor,flexShrink:0,transition:"all 0.15s"},
+  emailDashCard:{background:cardBg,borderRadius:2,padding:"10px 16px",border:`1px solid ${borderColor}`,marginBottom:6,boxShadow:t.cardShadow},
+  noteCard:{display:"block",width:"100%",textAlign:"left",borderRadius:2,padding:"12px 16px",border:`1px solid ${borderColor}`,marginBottom:8,cursor:"pointer",boxShadow:t.cardShadow},
+  addNoteBtn:{width:34,height:34,borderRadius:2,background:t.primary,color:"#fff",border:"none",fontSize:18,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"},
+  bottomNav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:540,display:"flex",background:isDark?"#1c1f26":"#fff",borderTop:`2px solid ${t.primary}`,padding:"8px 0 6px",zIndex:100},
+  navItem:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"none",border:"none",cursor:"pointer",padding:"4px 0",transition:"all 0.15s"},
+  stats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,padding:"14px 16px 10px"},
+  statCard:{display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:cardBg,borderRadius:2,padding:"12px 4px",border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow},
+  statNum:{fontSize:22,fontWeight:800,color:textPrimary,fontFamily:mono},
+  statLbl:{fontSize:9,color:textSecondary,textTransform:"uppercase",fontWeight:700,letterSpacing:"1px",fontFamily:mono},
+  searchInp:{width:"100%",padding:"12px 16px",borderRadius:2,border:`2px solid ${inputBorder}`,fontSize:14,color:textPrimary,outline:"none",boxSizing:"border-box",background:inputBg,transition:"border-color 0.15s",fontFamily:sans},
+  praticaCard:{display:"block",width:"100%",textAlign:"left",background:cardBg,borderRadius:2,padding:"16px 18px",marginBottom:10,border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow,transition:"border-color 0.15s"},
+  praticaTop:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6},
+  praticaNum:{fontSize:12,fontWeight:700,color:t.secondary,background:t.secondaryLight,padding:"3px 10px",borderRadius:2,fontFamily:mono},
+  praticaStatus:{fontSize:10,fontWeight:700,padding:"4px 12px",borderRadius:2,letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:mono},
+  praticaCliente:{fontSize:16,fontWeight:800,color:textPrimary,margin:"6px 0 2px"},
+  praticaAddr:{fontSize:12,color:textSecondary,margin:"2px 0 0",fontWeight:500},
+  praticaMeta:{display:"flex",alignItems:"center",gap:8,marginTop:8},
+  praticaActions:{fontSize:10,fontWeight:700,color:t.secondary,background:t.secondaryLight,padding:"3px 10px",borderRadius:2,fontFamily:mono},
+  progRow:{display:"flex",alignItems:"center",gap:8,marginTop:8},
+  progBar:{flex:1,height:5,background:borderColor,borderRadius:0,overflow:"hidden"},
+  progFill:{height:"100%",borderRadius:0,transition:"width 0.3s ease"},
+  empty:{textAlign:"center",padding:"50px 20px"},
+  emptyTitle:{fontSize:17,fontWeight:800,color:textPrimary,margin:"12px 0 6px"},
+  emptySub:{fontSize:13,color:textSecondary,fontWeight:500},
+  emptyMini:{textAlign:"center",padding:"30px 20px",fontSize:13,color:textSecondary,fontWeight:500},
+  clientRow:{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"14px 16px",background:cardBg,borderRadius:2,border:`1px solid ${borderColor}`,marginBottom:8,cursor:"pointer",textAlign:"left",boxShadow:t.cardShadow,transition:"border-color 0.15s"},
+  clientCard:{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:cardBg,borderRadius:2,border:`1px solid ${borderColor}`,marginBottom:8,boxShadow:t.cardShadow},
+  clientAvatar:{width:42,height:42,borderRadius:2,background:t.primary,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0,fontFamily:mono},
+  clientCount:{fontSize:20,fontWeight:800,color:t.primary,fontFamily:mono},
+  clientBox:{display:"flex",alignItems:"center",gap:12,background:cardBg,borderRadius:2,padding:"14px 16px",marginBottom:14,border:`1px solid ${borderColor}`,boxShadow:t.cardShadow},
+  newClientBtn:{width:"100%",padding:"14px",borderRadius:2,border:`2px dashed ${t.primary}`,background:t.primaryLight,color:t.primary,fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:12,textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:mono},
+  secHdr:{display:"flex",alignItems:"center",gap:12,padding:"16px 20px",background:cardBg,borderBottom:`2px solid ${t.primary}`,boxShadow:t.cardShadow},
+  secTitle:{fontSize:16,fontWeight:800,color:textPrimary,margin:0,letterSpacing:"0.3px"},
+  backBtn:{background:"none",border:"none",fontSize:14,color:t.primary,cursor:"pointer",fontWeight:700,padding:"6px 0",fontFamily:mono},
+  fGroup:{marginBottom:14},
+  fLabel:{display:"block",fontSize:10,fontWeight:700,color:textSecondary,marginBottom:5,textTransform:"uppercase",letterSpacing:"1px",fontFamily:mono},
+  input:{width:"100%",padding:"11px 14px",borderRadius:2,border:`1.5px solid ${inputBorder}`,fontSize:14,color:textPrimary,outline:"none",boxSizing:"border-box",background:inputBg,transition:"border-color 0.15s",fontFamily:sans},
+  textarea:{width:"100%",padding:"11px 14px",borderRadius:2,border:`1.5px solid ${inputBorder}`,fontSize:14,color:textPrimary,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:sans,background:inputBg,transition:"border-color 0.15s"},
+  saveBtn:{width:"100%",padding:"14px",borderRadius:2,border:"none",background:t.primary,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",marginTop:10,textTransform:"uppercase",letterSpacing:"1px",fontFamily:mono,transition:"opacity 0.15s"},
+  infoNote:{background:t.primaryLight,borderRadius:2,padding:"12px 16px",fontSize:13,color:t.primary,marginBottom:14,borderLeft:`4px solid ${t.primary}`,fontWeight:600},
+  pill:{padding:"7px 16px",borderRadius:2,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",transition:"all 0.15s",fontFamily:mono},
+  pickerHdr:{textAlign:"center",padding:"28px 20px 22px",background:t.headerBg,borderBottom:`3px solid ${t.primary}`},
+  pickerCheck:{width:52,height:52,borderRadius:2,background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:24,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center",marginBottom:12,border:"1px solid rgba(255,255,255,0.15)"},
+  pickerTitle:{fontSize:20,fontWeight:800,color:"#fff",margin:"0 0 8px",letterSpacing:"0.5px"},
+  pickerNum:{display:"inline-block",background:"rgba(255,255,255,0.1)",color:"#fff",padding:"4px 14px",borderRadius:2,fontSize:14,fontWeight:700,marginBottom:8,fontFamily:mono,border:"1px solid rgba(255,255,255,0.15)"},
+  pickerClient:{fontSize:15,color:"rgba(255,255,255,0.85)",fontWeight:700,margin:0},
+  pickerAddr:{fontSize:12,color:"rgba(255,255,255,0.5)",margin:"4px 0 0",fontWeight:500},
+  pickerQ:{fontSize:16,fontWeight:800,color:textPrimary,padding:"18px 20px 12px"},
+  actGrid:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,padding:"0 16px"},
+  actCard:{display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"18px 12px",background:cardBg,borderRadius:2,border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow,transition:"border-color 0.15s"},
+  skipBtn:{display:"block",width:"calc(100% - 32px)",margin:"14px auto",padding:"12px",background:"transparent",border:`2px solid ${borderColor}`,borderRadius:2,fontSize:13,fontWeight:700,color:textSecondary,cursor:"pointer",textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:mono},
+  detailHdr:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:cardBg,borderBottom:`2px solid ${t.primary}`,boxShadow:t.cardShadow},
+  emailBtn:{background:t.secondaryLight,border:`1px solid ${t.secondary}`,borderRadius:2,padding:"8px 14px",fontSize:13,cursor:"pointer",color:t.secondary,fontWeight:700},
+  delBtn:{background:isDark?"#2a1a1a":"#fef2f2",border:`1px solid ${isDark?"#4a2a2a":"#fecaca"}`,borderRadius:2,padding:"8px 12px",fontSize:13,cursor:"pointer",color:"#dc2626"},
+  praticaHdrCard:{background:cardBg,borderRadius:2,padding:18,border:`1px solid ${borderColor}`,marginBottom:16,boxShadow:t.cardShadow},
+  praticaNumBig:{fontSize:15,fontWeight:800,color:t.secondary,background:t.secondaryLight,padding:"5px 14px",borderRadius:2,fontFamily:mono},
+  statusBdg:{padding:"5px 14px",borderRadius:2,fontSize:12,fontWeight:700,fontFamily:mono,textTransform:"uppercase"},
+  detailName:{fontSize:22,fontWeight:800,color:textPrimary,margin:"10px 0 14px"},
+  detailInfo:{display:"flex",flexDirection:"column",gap:8},
+  todayChip:{background:t.primary,color:"#fff",fontSize:9,fontWeight:700,padding:"2px 10px",borderRadius:2,marginLeft:8,fontFamily:mono,textTransform:"uppercase"},
+  statusChanger:{display:"flex",alignItems:"center",gap:10,marginBottom:16,padding:"14px 0",borderTop:`1px solid ${borderColor}`,borderBottom:`1px solid ${borderColor}`},
+  statusLbl:{fontSize:11,fontWeight:700,color:textSecondary,textTransform:"uppercase",minWidth:48,fontFamily:mono},
+  statusTgl:{flex:1,padding:"8px 4px",borderRadius:2,fontSize:11,fontWeight:700,cursor:"pointer",transition:"all 0.15s",fontFamily:mono,textTransform:"uppercase"},
+  sectionTitle:{fontSize:14,fontWeight:800,color:textPrimary,margin:"0 0 12px"},
+  actionBlock:{background:cardBg,borderRadius:2,padding:14,marginBottom:10,border:`1px solid ${borderColor}`,boxShadow:t.cardShadow},
+  openFormBtn:{width:"100%",padding:"11px",borderRadius:2,border:`1px solid ${t.primary}`,background:t.primaryLight,color:t.primary,fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:8,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:mono},
+  addActionBtn:{width:"100%",padding:"13px",borderRadius:2,border:`2px dashed ${borderColor}`,background:"transparent",fontSize:13,fontWeight:700,color:textSecondary,cursor:"pointer",marginTop:16,textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:mono},
+  sendEmailBtn:{width:"100%",padding:"13px",borderRadius:2,border:"none",background:t.secondary,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",marginTop:10,textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:mono},
+  dataSummary:{background:cardBg,borderRadius:2,padding:14,marginTop:12,borderLeft:`4px solid ${t.primary}`,border:`1px solid ${borderColor}`,boxShadow:t.cardShadow},
+  dataSumTitle:{fontSize:14,fontWeight:800,color:t.primary,margin:"0 0 6px"},
+  dataSumLine:{fontSize:12,color:textSecondary,margin:"0 0 2px",fontWeight:500,fontFamily:mono},
+  praticaRef:{background:t.secondaryLight,borderRadius:2,padding:"12px 16px",borderLeft:`4px solid ${t.secondary}`,marginBottom:16,fontSize:14,fontWeight:700,color:t.secondary,fontFamily:mono},
+  vanoCard:{background:cardBg,borderRadius:2,padding:14,marginBottom:10,border:`1px solid ${borderColor}`,borderLeft:`4px solid #d4820e`,boxShadow:t.cardShadow},
+  vanoHdr:{display:"flex",alignItems:"center",gap:10,marginBottom:12},
+  vanoNum:{width:30,height:30,borderRadius:2,background:"#d4820e",color:"#fff",fontSize:14,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:mono},
+  vanoRm:{background:isDark?"#2a1a1a":"#fef2f2",border:`1px solid ${isDark?"#4a2a2a":"#fecaca"}`,borderRadius:2,width:30,height:30,fontSize:16,color:"#dc2626",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"},
+  addVanoBtn:{width:"100%",padding:"12px",borderRadius:2,border:"2px dashed #d4820e",background:"transparent",color:"#d4820e",fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:14,textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:mono},
+  photoPH:{width:68,height:68,borderRadius:2,border:"2px dashed",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2},
+  urgBtn:{flex:1,padding:"10px 4px",borderRadius:2,border:"none",fontSize:11,fontWeight:700,cursor:"pointer",textAlign:"center",transition:"all 0.15s",fontFamily:mono,textTransform:"uppercase"},
+  emailCard:{background:cardBg,borderRadius:2,padding:"10px 16px",border:`1px solid ${borderColor}`,marginBottom:6,boxShadow:t.cardShadow},
+  templateBtn:{padding:"8px 14px",borderRadius:2,border:`1.5px solid ${t.secondary}`,background:cardBg,color:t.secondary,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:mono},
+  exportBtn:{padding:"10px 16px",borderRadius:2,border:`1.5px solid ${t.primary}`,background:t.primaryLight,color:t.primary,fontSize:12,fontWeight:700,cursor:"pointer",flex:1,textAlign:"center",textTransform:"uppercase",letterSpacing:"0.3px",fontFamily:mono} as React.CSSProperties,
+  noteCardFull:{display:"flex",alignItems:"flex-start",gap:10,borderRadius:2,padding:"14px 16px",border:`1px solid ${borderColor}`,marginBottom:8,boxShadow:t.cardShadow},
+  noteCardBtn:{flex:1,background:"none",border:"none",textAlign:"left",cursor:"pointer",padding:0},
+  noteDelBtn:{background:"none",border:"none",fontSize:14,cursor:"pointer",padding:4,flexShrink:0,color:"#dc2626"},
+  };
+}
+let S = getThemeStyles("classic");
