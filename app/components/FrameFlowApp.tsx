@@ -3506,6 +3506,7 @@ function FieldNavigator() {
   }, []);
 
   const getFields = (): HTMLElement[] => {
+    if (typeof document === "undefined") return [];
     return Array.from(document.querySelectorAll("input:not([type=hidden]):not([type=file]):not([type=checkbox]), textarea, select")).filter(el => {
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && !(el as HTMLInputElement).disabled;
@@ -3513,6 +3514,7 @@ function FieldNavigator() {
   };
 
   const goNext = () => {
+    if (typeof document === "undefined") return;
     const fields = getFields();
     const cur = document.activeElement as HTMLElement;
     const idx = fields.indexOf(cur);
@@ -3525,6 +3527,7 @@ function FieldNavigator() {
   };
 
   const goPrev = () => {
+    if (typeof document === "undefined") return;
     const fields = getFields();
     const cur = document.activeElement as HTMLElement;
     const idx = fields.indexOf(cur);
@@ -3536,9 +3539,10 @@ function FieldNavigator() {
 
   if (!isMobile || !showNext) return null;
 
-  // Show field position
-  const fields = getFields();
-  const curIdx = fields.indexOf(document.activeElement as HTMLElement);
+  // Show field position - guard for SSR
+  const doc = typeof document !== "undefined" ? document : null;
+  const fields = doc ? getFields() : [];
+  const curIdx = doc ? fields.indexOf(doc.activeElement as HTMLElement) : -1;
   const total = fields.length;
   const isLast = curIdx >= total - 1;
   const isFirst = curIdx <= 0;
