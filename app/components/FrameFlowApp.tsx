@@ -728,6 +728,33 @@ export default function FrameFlowApp() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // ===== GLOBAL MOBILE CSS =====
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      html, body { overflow-x: hidden !important; width: 100% !important; max-width: 100vw !important; -webkit-text-size-adjust: 100%; }
+      * { box-sizing: border-box !important; }
+      input, select, textarea { max-width: 100% !important; font-size: 16px !important; }
+      img { max-width: 100% !important; height: auto !important; }
+      table { max-width: 100% !important; }
+      button { max-width: 100%; }
+      @media (max-width: 400px) {
+        body { font-size: 14px; }
+        [style*="padding: 20px"], [style*="padding:20"] { padding: 12px !important; }
+      }
+    `;
+    // Ensure viewport meta is correct
+    let viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) {
+      viewport = document.createElement("meta");
+      viewport.setAttribute("name", "viewport");
+      document.head.appendChild(viewport);
+    }
+    viewport.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover");
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, []);
+
   // ===== LOAD DATA FROM SUPABASE =====
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -3472,16 +3499,16 @@ function NewPraticaView({ client, pratiche, clients, onCreate, onBack }: any) {
         <div style={S.clientBox}><div style={S.clientAvatar}>{client?.nome?.charAt(0)?.toUpperCase()}</div><div><div style={{fontSize:16,fontWeight:700,color:"#0f172a"}}>{client?.nome}</div>{client?.telefono && <div style={{fontSize:13,color:"#64748b"}}>{client.telefono}</div>}</div></div>
         <div style={{marginBottom:16}}>
           <label style={S.fLabel}>Tipo Pratica</label>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>{setTipo("nuovo_infisso");setPraticaCollegata("");}} style={{flex:1,padding:"16px 12px",borderRadius:2,border:tipo==="nuovo_infisso"?"3px solid #e07a2f":"2px solid #e2e8f0",background:tipo==="nuovo_infisso"?"#fff7ed":"#fff",cursor:"pointer",textAlign:"center"}}>
-              <div style={{fontSize:28}}></div>
-              <div style={{fontSize:14,fontWeight:800,color:tipo==="nuovo_infisso"?"#e07a2f":"#374151",marginTop:4}}>Nuovo Infisso</div>
-              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Sopralluogo → Misure → Preventivo → Conferma → Fattura → Posa</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            <button onClick={()=>{setTipo("nuovo_infisso");setPraticaCollegata("");}} style={{flex:"1 1 140px",padding:"14px 10px",borderRadius:2,border:tipo==="nuovo_infisso"?"3px solid #e07a2f":"2px solid #e2e8f0",background:tipo==="nuovo_infisso"?"#fff7ed":"#fff",cursor:"pointer",textAlign:"center",minWidth:0}}>
+              <div style={{fontSize:24}}></div>
+              <div style={{fontSize:13,fontWeight:800,color:tipo==="nuovo_infisso"?"#e07a2f":"#374151",marginTop:4}}>Nuovo Infisso</div>
+              <div style={{fontSize:10,color:"#64748b",marginTop:2}}>Sopralluogo → Posa</div>
             </button>
-            <button onClick={()=>setTipo("riparazione")} style={{flex:1,padding:"16px 12px",borderRadius:2,border:tipo==="riparazione"?"3px solid #dc2626":"2px solid #e2e8f0",background:tipo==="riparazione"?"#fef2f2":"#fff",cursor:"pointer",textAlign:"center"}}>
-              <div style={{fontSize:28}}></div>
-              <div style={{fontSize:14,fontWeight:800,color:tipo==="riparazione"?"#dc2626":"#374151",marginTop:4}}>Riparazione</div>
-              <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Sopralluogo → Riparazione → Fattura</div>
+            <button onClick={()=>setTipo("riparazione")} style={{flex:"1 1 140px",padding:"14px 10px",borderRadius:2,border:tipo==="riparazione"?"3px solid #dc2626":"2px solid #e2e8f0",background:tipo==="riparazione"?"#fef2f2":"#fff",cursor:"pointer",textAlign:"center",minWidth:0}}>
+              <div style={{fontSize:24}}></div>
+              <div style={{fontSize:13,fontWeight:800,color:tipo==="riparazione"?"#dc2626":"#374151",marginTop:4}}>Riparazione</div>
+              <div style={{fontSize:10,color:"#64748b",marginTop:2}}>Sopralluogo → Riparazione</div>
             </button>
           </div>
         </div>
@@ -3612,7 +3639,7 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
 
   return (
     <div style={S.container}>
-      <div style={S.detailHdr}><button onClick={onBack} style={S.backBtn}>← Indietro</button><div style={{display:"flex",gap:6}}>{canDo("email") && <button onClick={onOpenEmail} style={S.emailBtn}>EMAIL</button>}{isAdmin && <button onClick={onDuplica} style={{...S.emailBtn,background:"#3a7bd5"}}>DUPLICA</button>}{<button onClick={onStampaCantiere} style={{...S.emailBtn,background:"#1a1a2e"}}>CANTIERE</button>}{isAdmin && <button onClick={onDelete} style={S.delBtn}>ELIM</button>}</div></div>
+      <div style={S.detailHdr}><button onClick={onBack} style={S.backBtn}>←</button><div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end"}}>{canDo("email") && <button onClick={onOpenEmail} style={S.emailBtn}>EMAIL</button>}{isAdmin && <button onClick={onDuplica} style={{...S.emailBtn,background:"#3a7bd5",color:"#fff"}}>DUPLICA</button>}{<button onClick={onStampaCantiere} style={{...S.emailBtn,background:"#1a1a2e",color:"#fff"}}>CANTIERE</button>}{isAdmin && <button onClick={onDelete} style={S.delBtn}>ELIM</button>}</div></div>
       <div style={{padding:20}}>
         <div style={S.praticaHdrCard}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={S.praticaNumBig}>{p.numero}</span><span style={{...S.statusBdg,background:sc.bg,color:sc.color,border:`1.5px solid ${sc.color}`}}>{sc.label}</span></div>
@@ -4823,15 +4850,15 @@ function getThemeStyles(themeKey: string): Record<string, React.CSSProperties> {
   const mono = "'JetBrains Mono','SF Mono','Cascadia Code','Fira Code',monospace";
   const sans = "'DM Sans','Segoe UI',system-ui,-apple-system,sans-serif";
   return {
-  container:{maxWidth:540,margin:"0 auto",minHeight:"100vh",background:t.bg,fontFamily:sans,paddingBottom:72,color:textPrimary},
+  container:{maxWidth:540,width:"100%",margin:"0 auto",minHeight:"100vh",background:t.bg,fontFamily:sans,paddingBottom:72,color:textPrimary,overflowX:"hidden" as any},
   loadWrap:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:t.loadBg},
-  header:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",background:t.headerBg,color:"#fff",borderBottom:`3px solid ${t.primary}`},
+  header:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 12px",background:t.headerBg,color:"#fff",borderBottom:`3px solid ${t.primary}`,flexWrap:"wrap" as any,gap:8},
   logo:{fontSize:20,fontWeight:800,margin:0,letterSpacing:"1px",textTransform:"uppercase",fontFamily:mono,color:t.accent},
   subtitle:{fontSize:9,color:"rgba(255,255,255,0.4)",margin:"2px 0 0",letterSpacing:"3px",textTransform:"uppercase",fontWeight:600,fontFamily:mono},
   addBtn:{background:t.primary,color:"#fff",border:"none",borderRadius:2,padding:"10px 18px",fontSize:13,fontWeight:700,cursor:"pointer",letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:mono},
   greetCard:{background:cardBg,borderRadius:2,padding:"18px",marginBottom:12,border:`1px solid ${borderColor}`,boxShadow:t.cardShadow},
-  dashStats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14},
-  dashStat:{display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:cardBg,borderRadius:2,padding:"14px 4px",border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow,transition:"border-color 0.15s"},
+  dashStats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:14},
+  dashStat:{display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:cardBg,borderRadius:2,padding:"10px 2px",border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow,transition:"border-color 0.15s",minWidth:0,overflow:"hidden" as any},
   alertCard:{display:"flex",alignItems:"center",gap:12,background:isDark?"#2a1a1a":"#fef2f2",borderRadius:2,padding:"12px 16px",marginBottom:12,borderLeft:`4px solid #dc2626`,boxShadow:t.cardShadow},
   dashSection:{marginBottom:18},
   dashSectionTitle:{fontSize:11,fontWeight:700,color:textSecondary,margin:"0 0 10px",letterSpacing:"2px",textTransform:"uppercase",fontFamily:mono},
@@ -4843,7 +4870,7 @@ function getThemeStyles(themeKey: string): Record<string, React.CSSProperties> {
   emailDashCard:{background:cardBg,borderRadius:2,padding:"10px 16px",border:`1px solid ${borderColor}`,marginBottom:6,boxShadow:t.cardShadow},
   noteCard:{display:"block",width:"100%",textAlign:"left",borderRadius:2,padding:"12px 16px",border:`1px solid ${borderColor}`,marginBottom:8,cursor:"pointer",boxShadow:t.cardShadow},
   addNoteBtn:{width:34,height:34,borderRadius:2,background:t.primary,color:"#fff",border:"none",fontSize:18,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"},
-  bottomNav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:540,display:"flex",background:isDark?"#1c1f26":"#fff",borderTop:`2px solid ${t.primary}`,padding:"8px 0 6px",zIndex:100},
+  bottomNav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:540,display:"flex",background:isDark?"#1c1f26":"#fff",borderTop:`2px solid ${t.primary}`,padding:"8px 0 calc(6px + env(safe-area-inset-bottom, 0px))",zIndex:100},
   navItem:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"none",border:"none",cursor:"pointer",padding:"4px 0",transition:"all 0.15s"},
   stats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,padding:"14px 16px 10px"},
   statCard:{display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:cardBg,borderRadius:2,padding:"12px 4px",border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow},
@@ -4871,7 +4898,7 @@ function getThemeStyles(themeKey: string): Record<string, React.CSSProperties> {
   clientCount:{fontSize:20,fontWeight:800,color:t.primary,fontFamily:mono},
   clientBox:{display:"flex",alignItems:"center",gap:12,background:cardBg,borderRadius:2,padding:"14px 16px",marginBottom:14,border:`1px solid ${borderColor}`,boxShadow:t.cardShadow},
   newClientBtn:{width:"100%",padding:"14px",borderRadius:2,border:`2px dashed ${t.primary}`,background:t.primaryLight,color:t.primary,fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:12,textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:mono},
-  secHdr:{display:"flex",alignItems:"center",gap:12,padding:"16px 20px",background:cardBg,borderBottom:`2px solid ${t.primary}`,boxShadow:t.cardShadow},
+  secHdr:{display:"flex",alignItems:"center",gap:8,padding:"12px 12px",background:cardBg,borderBottom:`2px solid ${t.primary}`,boxShadow:t.cardShadow},
   secTitle:{fontSize:16,fontWeight:800,color:textPrimary,margin:0,letterSpacing:"0.3px"},
   backBtn:{background:"none",border:"none",fontSize:14,color:t.primary,cursor:"pointer",fontWeight:700,padding:"6px 0",fontFamily:mono},
   fGroup:{marginBottom:14},
@@ -4891,10 +4918,10 @@ function getThemeStyles(themeKey: string): Record<string, React.CSSProperties> {
   actGrid:{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,padding:"0 16px"},
   actCard:{display:"flex",flexDirection:"column",alignItems:"center",gap:6,padding:"18px 12px",background:cardBg,borderRadius:2,border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow,transition:"border-color 0.15s"},
   skipBtn:{display:"block",width:"calc(100% - 32px)",margin:"14px auto",padding:"12px",background:"transparent",border:`2px solid ${borderColor}`,borderRadius:2,fontSize:13,fontWeight:700,color:textSecondary,cursor:"pointer",textAlign:"center",textTransform:"uppercase",letterSpacing:"0.5px",fontFamily:mono},
-  detailHdr:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:cardBg,borderBottom:`2px solid ${t.primary}`,boxShadow:t.cardShadow},
-  emailBtn:{background:t.secondaryLight,border:`1px solid ${t.secondary}`,borderRadius:2,padding:"8px 14px",fontSize:13,cursor:"pointer",color:t.secondary,fontWeight:700},
-  delBtn:{background:isDark?"#2a1a1a":"#fef2f2",border:`1px solid ${isDark?"#4a2a2a":"#fecaca"}`,borderRadius:2,padding:"8px 12px",fontSize:13,cursor:"pointer",color:"#dc2626"},
-  praticaHdrCard:{background:cardBg,borderRadius:2,padding:18,border:`1px solid ${borderColor}`,marginBottom:16,boxShadow:t.cardShadow},
+  detailHdr:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:cardBg,borderBottom:`2px solid ${t.primary}`,boxShadow:t.cardShadow,flexWrap:"wrap" as any,gap:6},
+  emailBtn:{background:t.secondaryLight,border:`1px solid ${t.secondary}`,borderRadius:2,padding:"6px 10px",fontSize:12,cursor:"pointer",color:t.secondary,fontWeight:700,whiteSpace:"nowrap" as any},
+  delBtn:{background:isDark?"#2a1a1a":"#fef2f2",border:`1px solid ${isDark?"#4a2a2a":"#fecaca"}`,borderRadius:2,padding:"6px 10px",fontSize:12,cursor:"pointer",color:"#dc2626",whiteSpace:"nowrap" as any},
+  praticaHdrCard:{background:cardBg,borderRadius:2,padding:"14px 12px",border:`1px solid ${borderColor}`,marginBottom:16,boxShadow:t.cardShadow,wordBreak:"break-word" as any},
   praticaNumBig:{fontSize:15,fontWeight:800,color:t.secondary,background:t.secondaryLight,padding:"5px 14px",borderRadius:2,fontFamily:mono},
   statusBdg:{padding:"5px 14px",borderRadius:2,fontSize:12,fontWeight:700,fontFamily:mono,textTransform:"uppercase"},
   detailName:{fontSize:22,fontWeight:800,color:textPrimary,margin:"10px 0 14px"},
