@@ -113,10 +113,10 @@ const TASKS = DEFAULT_TASKS;
 const APERTURE = ["DX","SX","DX+SX","Fisso","Vasistas","Anta/Ribalta","Bilico"];
 
 const ROLES: Record<string,{label:string;icon:string;color:string;bg:string;permessi:string[];desc:string;canSee:string[]}> = {
-  admin: { label:"Admin", icon:"ADM", color:"#92400e", bg:"#fef3c7", permessi:["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione","clienti","impostazioni","team","note","email"], desc:"Accesso completo a tutto", canSee:["dashboard","calendario","pratiche","clienti","team"] },
-  geometra: { label:"Geometra", icon:"GEO", color:"#1d4ed8", bg:"#dbeafe", permessi:["sopralluogo","misure"], desc:"Sopralluogo e misure", canSee:["dashboard","calendario","pratiche"] },
-  posatore: { label:"Posatore", icon:"POS", color:"#065f46", bg:"#d1fae5", permessi:["posa"], desc:"Fase posa e foto", canSee:["dashboard","pratiche"] },
-  segretaria: { label:"Segretaria", icon:"SEG", color:"#7c2d12", bg:"#ffedd5", permessi:["preventivo","conferma","fattura","clienti","email","note"], desc:"Preventivi, fatture, clienti, email", canSee:["dashboard","calendario","pratiche","clienti"] },
+  admin: { label:"Admin", icon:"ADM", color:"#92400e", bg:"#fef3c7", permessi:["sopralluogo","misure","preventivo","conferma","fattura","posa","riparazione","clienti","impostazioni","team","note","email"], desc:"Accesso completo a tutto", canSee:["dashboard","appuntamenti","calendario","pratiche","clienti","team"] },
+  geometra: { label:"Geometra", icon:"GEO", color:"#1d4ed8", bg:"#dbeafe", permessi:["sopralluogo","misure"], desc:"Sopralluogo e misure", canSee:["dashboard","appuntamenti","calendario","pratiche"] },
+  posatore: { label:"Posatore", icon:"POS", color:"#065f46", bg:"#d1fae5", permessi:["posa"], desc:"Fase posa e foto", canSee:["dashboard","appuntamenti","pratiche"] },
+  segretaria: { label:"Segretaria", icon:"SEG", color:"#7c2d12", bg:"#ffedd5", permessi:["preventivo","conferma","fattura","clienti","email","note"], desc:"Preventivi, fatture, clienti, email", canSee:["dashboard","appuntamenti","calendario","pratiche","clienti"] },
 };
 const SISTEMI = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino","Vetrata composta","Vetrata fissa","Lamiera","Cassonetto"];
 const PHOTO_TYPES = [{k:"panoramica",l:"Panoram.",i:"[P]"},{k:"soglia",l:"Soglia",i:"[S]"},{k:"nodo",l:"Nodo",i:"[N]"},{k:"cassonetto",l:"Cassone.",i:"[C]"},{k:"imbotto",l:"Imbotto",i:"[I]"},{k:"contesto",l:"Contesto",i:"[X]"}];
@@ -145,8 +145,6 @@ function getProgress(tasks: any[]) {
 }
 // ==================== PRINT / PDF EXPORT ====================
 function printHTML(title: string, content: string) {
-  const w = window.open("", "_blank");
-  if (!w) { alert("Abilita i popup per stampare/esportare PDF"); return; }
   // Try to load azienda info from settings
   let az: any = {};
   try { const raw = localStorage.getItem("ff-settings"); if (raw) { const s = JSON.parse(raw); az = s.azienda || {}; } } catch(e) {}
@@ -156,7 +154,7 @@ function printHTML(title: string, content: string) {
     ${az.piva?`<div>P.IVA: ${az.piva}</div>`:""}
     ${az.telefono?`<div>Tel: ${az.telefono}</div>`:""}${az.email?` <span>Email: ${az.email}</span>`:""}
   </div>` : "";
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;padding:24px;color:#1a1a2e;font-size:13px;line-height:1.5}
@@ -183,16 +181,34 @@ function printHTML(title: string, content: string) {
   .totals-row{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px}
   .totals-final{display:flex;justify-content:space-between;font-size:18px;font-weight:800;border-top:2px solid #1a1a2e;padding-top:8px;margin-top:8px}
   h3{font-size:13px;font-weight:700;margin:16px 0 10px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono','SF Mono',monospace;color:#1a1a2e}
-  .no-print{position:fixed;top:12px;right:12px;display:flex;gap:8px}
-  .no-print button{padding:10px 20px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono','SF Mono',monospace;text-transform:uppercase;letter-spacing:0.5px}
-  .btn-print{background:#e07a2f;color:#fff}.btn-close{background:#f0f1f3;color:#5c6370}
-  @media print{.no-print{display:none!important}body{padding:12px}.az-header{display:block!important}}
+  .print-bar{position:fixed;top:0;left:0;right:0;background:#1a1a2e;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;z-index:9999}
+  .print-bar button{padding:8px 20px;border:none;border-radius:4px;font-weight:700;font-size:13px;cursor:pointer;font-family:'JetBrains Mono',monospace}
+  @media print{.print-bar{display:none!important}body{padding:12px}}
 </style></head><body>
-<div class="no-print"><button class="btn-print" onclick="window.print()">STAMPA / PDF</button><button class="btn-close" onclick="window.close()">CHIUDI</button></div>
+<div class="print-bar">
+  <button onclick="window.print()" style="background:#e07a2f;color:#fff">STAMPA / PDF</button>
+  <button onclick="window.close()" style="background:#555;color:#fff">CHIUDI</button>
+</div>
+<div style="margin-top:50px">
 ${azHeader}
 ${content}
-</body></html>`);
-  w.document.close();
+</div>
+</body></html>`;
+  // Use blob URL in new tab - most reliable cross-browser method
+  try {
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank");
+    if (!w) {
+      alert("Abilita i popup per stampare. Vai in Impostazioni browser → Popup → Consenti per questo sito.");
+      URL.revokeObjectURL(url);
+      return;
+    }
+    // Clean up blob URL after page loads
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  } catch(e) {
+    alert("Errore generazione documento: " + (e as any)?.message);
+  }
 }
 
 function exportMisure(pratica: any, client: any) {
@@ -280,11 +296,12 @@ function exportRiparazione(pratica: any, client: any) {
 }
 
 function exportPratica(pratica: any, client: any) {
-  const sc = STATUS[pratica.status];
-  const actionsHTML = pratica.actions.map((a: any) => {
+  const sc = STATUS[pratica?.status] || {bg:"#f0f0f0",color:"#333",label:"—"};
+  const actions = pratica?.actions || [];
+  const actionsHTML = actions.map((a: any) => {
     const cfg = ACTIONS_CFG.find(ac=>ac.key===a.type)||{icon:"",label:a.type};
-    const asc = STATUS[a.status];
-    const tasksHTML = a.tasks.map((t: any) => `<tr><td style="width:24px">${t.done?"":"⬜"}</td><td style="${t.done?"text-decoration:line-through;color:#9ca3af":""}">${t.text}</td></tr>`).join("");
+    const asc = STATUS[a.status] || {bg:"#f0f0f0",color:"#333",label:"—"};
+    const tasksHTML = (a.tasks||[]).map((t: any) => `<tr><td style="width:24px">${t.done?"":"⬜"}</td><td style="${t.done?"text-decoration:line-through;color:#9ca3af":""}">${t.text}</td></tr>`).join("");
     return `<div style="margin-bottom:12px;border-left:4px solid ${(cfg as any).color||"#6b7280"};padding-left:12px">
       <div style="display:flex;justify-content:space-between;align-items:center"><strong>${cfg.icon} ${cfg.label}</strong><span class="status-badge" style="background:${asc.bg};color:${asc.color}">${asc.label}</span></div>
       ${tasksHTML?`<table style="margin-top:6px">${tasksHTML}</table>`:""}
@@ -294,29 +311,29 @@ function exportPratica(pratica: any, client: any) {
   const content = `
     <div class="header">
       <div><div class="logo">FRAMEFLOW</div><div class="doc-title">RIEPILOGO PRATICA</div></div>
-      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#3a7bd5">${pratica.numero}</div><span class="status-badge" style="background:${sc.bg};color:${sc.color};font-size:13px">${sc.label}</span></div>
+      <div style="text-align:right"><div style="font-size:18px;font-weight:800;color:#3a7bd5">${pratica?.numero||""}</div><span class="status-badge" style="background:${sc.bg};color:${sc.color};font-size:13px">${sc.label}</span></div>
     </div>
     <div class="info-grid">
       <div class="info-row"><span class="info-label">Cliente</span><span class="info-val">${client?.nome||"—"}</span></div>
       <div class="info-row"><span class="info-label">Telefono</span><span class="info-val">${client?.telefono||"—"}</span></div>
-      <div class="info-row"><span class="info-label">Indirizzo</span><span class="info-val">${pratica.indirizzo||"—"}</span></div>
+      <div class="info-row"><span class="info-label">Indirizzo</span><span class="info-val">${pratica?.indirizzo||"—"}</span></div>
       <div class="info-row"><span class="info-label">Email</span><span class="info-val">${client?.email||"—"}</span></div>
-      <div class="info-row"><span class="info-label">Data</span><span class="info-val">${fmtDate(pratica.data)} ore ${pratica.ora}</span></div>
-      <div class="info-row"><span class="info-label">N° Azioni</span><span class="info-val">${pratica.actions.length}</span></div>
+      <div class="info-row"><span class="info-label">Data</span><span class="info-val">${fmtDate(pratica?.data||"")} ore ${pratica?.ora||""}</span></div>
+      <div class="info-row"><span class="info-label">N° Azioni</span><span class="info-val">${actions.length}</span></div>
     </div>
-    ${pratica.note?`<div class="note-box"><strong> Note:</strong> ${pratica.note}</div>`:""}
-    ${pratica.actions.length>0?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px">AZIONI</h3>${actionsHTML}`:""}
-    ${pratica.misure?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px"> MISURE</h3><div class="info-grid"><div class="info-row"><span class="info-label">Sistema</span><span class="info-val">${pratica.misure.sistema||"—"}</span></div><div class="info-row"><span class="info-label">N° Vani</span><span class="info-val">${(pratica.misure.vani||[]).length}</span></div><div class="info-row"><span class="info-label">Colore</span><span class="info-val">${pratica.misure.coloreInt||"—"} / ${pratica.misure.coloreEst||"—"}</span></div></div>`:""}
-    ${pratica.riparazione?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px"> RIPARAZIONE</h3><div class="info-grid"><div class="info-row"><span class="info-label">Problema</span><span class="info-val">${pratica.riparazione.problema||"—"}</span></div><div class="info-row"><span class="info-label">Urgenza</span><span class="info-val">${pratica.riparazione.urgenza||"—"}</span></div><div class="info-row"><span class="info-label">Costo</span><span class="info-val">${pratica.riparazione.costoStimato?"€ "+pratica.riparazione.costoStimato:"—"}</span></div></div>`:""}
-    <div class="footer"><span>FrameFlow — Generato il ${new Date().toLocaleString("it-IT")}</span><span>${pratica.numero}</span></div>
+    ${pratica?.note?`<div class="note-box"><strong> Note:</strong> ${pratica.note}</div>`:""}
+    ${actions.length>0?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px">AZIONI</h3>${actionsHTML}`:""}
+    ${pratica?.misure?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px"> MISURE</h3><div class="info-grid"><div class="info-row"><span class="info-label">Sistema</span><span class="info-val">${pratica.misure.sistema||"—"}</span></div><div class="info-row"><span class="info-label">N° Vani</span><span class="info-val">${(pratica.misure.vani||[]).length}</span></div><div class="info-row"><span class="info-label">Colore</span><span class="info-val">${pratica.misure.coloreInt||"—"} / ${pratica.misure.coloreEst||"—"}</span></div></div>`:""}
+    ${pratica?.riparazione?`<h3 style="font-size:15px;font-weight:700;margin:16px 0 10px"> RIPARAZIONE</h3><div class="info-grid"><div class="info-row"><span class="info-label">Problema</span><span class="info-val">${pratica.riparazione.problema||"—"}</span></div><div class="info-row"><span class="info-label">Urgenza</span><span class="info-val">${pratica.riparazione.urgenza||"—"}</span></div><div class="info-row"><span class="info-label">Costo</span><span class="info-val">${pratica.riparazione.costoStimato?"€ "+pratica.riparazione.costoStimato:"—"}</span></div></div>`:""}
+    <div class="footer"><span>FrameFlow — Generato il ${new Date().toLocaleString("it-IT")}</span><span>${pratica?.numero||""}</span></div>
   `;
-  printHTML(`Pratica ${pratica.numero} - ${client?.nome}`, content);
+  printHTML(`Pratica ${pratica?.numero||""} - ${client?.nome||""}`, content);
 }
 
 function exportPreventivo(pratica: any, client: any, showDetails: boolean) {
   const prev = pratica?.preventivo;
   if (!prev) { alert("Nessun preventivo salvato"); return; }
-  const subtotale = (prev.prodotti||[]).reduce((s: number, p: any) => s + (p.totale||0), 0);
+  const subtotale = (prev.prodotti||[]).reduce((s: number, p: any) => s + (parseFloat(p.totale)||0), 0);
   const scontoVal = subtotale * (prev.sconto||0) / 100;
   const imponibile = subtotale - scontoVal;
   const ivaVal = imponibile * (prev.iva||22) / 100;
@@ -376,7 +393,7 @@ function exportConfermaOrdine(pratica: any, client: any) {
   const prev = pratica?.preventivo;
   const conf = pratica?.confermaOrdine;
   if (!prev || !conf) { alert("Nessuna conferma d'ordine"); return; }
-  const subtotale = (prev.prodotti||[]).reduce((s: number, p: any) => s + (p.totale||0), 0);
+  const subtotale = (prev.prodotti||[]).reduce((s: number, p: any) => s + (parseFloat(p.totale)||0), 0);
   const scontoVal = subtotale * (prev.sconto||0) / 100;
   const imponibile = subtotale - scontoVal;
   const ivaVal = imponibile * (prev.iva||22) / 100;
@@ -418,7 +435,7 @@ function exportFattura(pratica: any, client: any) {
   const fatt = pratica?.fattura;
   const prev = pratica?.preventivo;
   if (!fatt || !prev) { alert("Nessuna fattura"); return; }
-  const subtotale = (prev.prodotti||[]).reduce((s: number, p: any) => s + (p.totale||0), 0);
+  const subtotale = (prev.prodotti||[]).reduce((s: number, p: any) => s + (parseFloat(p.totale)||0), 0);
   const scontoVal = subtotale * (prev.sconto||0) / 100;
   const imponibile = subtotale - scontoVal;
   const ivaVal = imponibile * (prev.iva||22) / 100;
@@ -428,7 +445,7 @@ function exportFattura(pratica: any, client: any) {
     <tr><td>${i+1}</td><td><strong>${p.descrizione||"—"}</strong>${p.ambiente?`<br/><span style="font-size:11px;color:#64748b">${p.ambiente}</span>`:""}</td><td style="text-align:center">${p.quantita||1}</td><td style="text-align:right">€ ${(parseFloat(p.prezzoUnitario)||0).toFixed(2)}</td><td style="text-align:right;font-weight:700">€ ${(parseFloat(p.totale)||0).toFixed(2)}</td></tr>
   `).join("");
 
-  const pagatoLabel = fatt.statoPagamento === "pagato" ? " PAGATA" : fatt.statoPagamento === "acconto" ? `⏳ ACCONTO € ${(fatt.acconto||0).toFixed(2)}` : " DA PAGARE";
+  const pagatoLabel = fatt.statoPagamento === "pagato" ? " PAGATA" : fatt.statoPagamento === "acconto" ? `⏳ ACCONTO € ${(parseFloat(fatt.acconto)||0).toFixed(2)}` : " DA PAGARE";
   const pagatoColor = fatt.statoPagamento === "pagato" ? "#059669" : fatt.statoPagamento === "acconto" ? "#d97706" : "#ef4444";
   const pagatoBg = fatt.statoPagamento === "pagato" ? "#ecfdf5" : fatt.statoPagamento === "acconto" ? "#fffbeb" : "#fef2f2";
 
@@ -452,7 +469,7 @@ function exportFattura(pratica: any, client: any) {
       <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Imponibile:</span><span>€ ${imponibile.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>IVA ${prev.iva||22}%:</span><span>€ ${ivaVal.toFixed(2)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;border-top:2px solid #1e293b;padding-top:8px;margin-top:8px"><span>TOTALE:</span><span style="color:#059669">€ ${totale.toFixed(2)}</span></div>
-      ${fatt.statoPagamento==="acconto"?`<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px dashed #94a3b8"><span>Acconto versato:</span><span style="color:#d97706;font-weight:700">€ ${(fatt.acconto||0).toFixed(2)}</span></div><div style="display:flex;justify-content:space-between;font-weight:700"><span>Rimanente:</span><span style="color:#ef4444">€ ${(totale-(fatt.acconto||0)).toFixed(2)}</span></div>`:""}
+      ${fatt.statoPagamento==="acconto"?`<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px dashed #94a3b8"><span>Acconto versato:</span><span style="color:#d97706;font-weight:700">€ ${(parseFloat(fatt.acconto)||0).toFixed(2)}</span></div><div style="display:flex;justify-content:space-between;font-weight:700"><span>Rimanente:</span><span style="color:#ef4444">€ ${(totale-(parseFloat(fatt.acconto)||0)).toFixed(2)}</span></div>`:""}
     </div>
     ${fatt.metodoPagamento?`<div style="margin-top:12px;font-size:12px"><strong>Metodo di pagamento:</strong> ${fatt.metodoPagamento}</div>`:""}
     ${fatt.note?`<div style="margin-top:8px;font-size:12px;padding:12px;background:#f8fafc;"><strong>Note:</strong> ${fatt.note}</div>`:""}
@@ -556,10 +573,10 @@ function clientToDb(c: any, userId: string): any {
 }
 function dbToPratica(row: any): any {
   const photos = row.photos || {};
-  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], fotoPosaVani: photos.posaVani||{}, messaggi: row.actions?.__messaggi||photos.messaggi||[], assegnatoA: row.assegnato_a||null, orgId: row.org_id||null, firmaPosa: row.misure?.firmaPosa||photos.firmaPosa||null, createdAt: row.created_at, log: photos._log||row.log||[], completedAt: photos._completedAt||row.completed_at||null };
+  return { id: row.id, clientId: row.client_id, numero: row.numero, data: row.data, ora: row.ora, indirizzo: row.indirizzo, tipo: row.tipo, fase: row.fase||"sopralluogo", status: row.status, note: row.note, actions: row.actions||[], misure: row.misure, riparazione: row.riparazione, preventivo: row.preventivo, confermaOrdine: row.conferma_ordine, fattura: row.fattura, emails: row.emails||[], fotoSopralluogo: photos.sopralluogo||[], fotoPosaInizio: photos.posaInizio||[], fotoPosaFine: photos.posaFine||[], fotoPosaVani: photos.posaVani||{}, messaggi: row.actions?.__messaggi||photos.messaggi||[], assegnatoA: row.assegnato_a||null, orgId: row.org_id||null, firmaPosa: row.misure?.firmaPosa||photos.firmaPosa||null, createdAt: row.created_at, log: photos._log||row.log||[], completedAt: photos._completedAt||row.completed_at||null, praticaCollegata: photos._praticaCollegata||null };
 }
 function praticaToDb(p: any, userId: string): any {
-  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data??"", ora: p.ora??"", indirizzo: p.indirizzo??"", tipo: p.tipo??"nuovo_infisso", fase: p.fase??"sopralluogo", status: p.status??"da_fare", note: p.note??"", actions: p.actions??[], misure: p.misure??null, riparazione: p.riparazione??null, preventivo: p.preventivo??null, conferma_ordine: p.confermaOrdine??null, fattura: p.fattura??null, emails: p.emails??[], photos: { sopralluogo: p.fotoSopralluogo??[], posaInizio: p.fotoPosaInizio??[], posaFine: p.fotoPosaFine??[], posaVani: p.fotoPosaVani??{}, firmaPosa: p.firmaPosa??null, messaggi: p.messaggi??[], _log: p.log??[], _completedAt: p.completedAt??null }, assegnato_a: p.assegnatoA??null, org_id: p.orgId??null };
+  return { id: p.id, user_id: userId, client_id: p.clientId, numero: p.numero, data: p.data??"", ora: p.ora??"", indirizzo: p.indirizzo??"", tipo: p.tipo??"nuovo_infisso", fase: p.fase??"sopralluogo", status: p.status??"da_fare", note: p.note??"", actions: p.actions??[], misure: p.misure??null, riparazione: p.riparazione??null, preventivo: p.preventivo??null, conferma_ordine: p.confermaOrdine??null, fattura: p.fattura??null, emails: p.emails??[], photos: { sopralluogo: p.fotoSopralluogo??[], posaInizio: p.fotoPosaInizio??[], posaFine: p.fotoPosaFine??[], posaVani: p.fotoPosaVani??{}, firmaPosa: p.firmaPosa??null, messaggi: p.messaggi??[], _log: p.log??[], _completedAt: p.completedAt??null, _praticaCollegata: p.praticaCollegata??null }, assegnato_a: p.assegnatoA??null, org_id: p.orgId??null };
 }
 function dbToNote(row: any): any {
   return { id: row.id, testo: row.testo, colore: row.colore, praticaId: row.pratica_id, updatedAt: row.updated_at, createdAt: row.created_at };
@@ -693,6 +710,11 @@ export default function FrameFlowApp() {
   const [org, setOrg] = useState<any>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [myMember, setMyMember] = useState<any>(null);
+  // NOTIFICATIONS & APPUNTAMENTI
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [appuntamenti, setAppuntamenti] = useState<any[]>([]);
+  const [appForm, setAppForm] = useState<any>(null);
 
   // ===== AUTH =====
   useEffect(() => {
@@ -724,7 +746,13 @@ export default function FrameFlowApp() {
     });
     // Load team data
     loadTeamData(user);
+    // Load notifications
+    loadNotifications(user);
+    // Load appuntamenti
+    loadAppuntamenti(user);
     requestNotificationPermission();
+    // Cleanup old localStorage keys
+    try { localStorage.removeItem("ff-view"); localStorage.removeItem("ff-sel-pratica"); } catch(e) {}
   }, [user]);
 
   async function loadTeamData(u: any) {
@@ -754,6 +782,84 @@ export default function FrameFlowApp() {
         }
       }
     } catch (err) { console.warn("Load team skipped:", err); }
+  }
+
+  async function loadNotifications(u: any) {
+    if (!u) return;
+    try {
+      const { data } = await supabase.from("notifications").select("*").eq("user_id", u.id).order("created_at", { ascending: false }).limit(50);
+      if (data) setNotifications(data);
+    } catch(e) { console.warn("Notifications not available:", e); }
+  }
+
+  async function addNotification(userId: string, tipo: string, titolo: string, messaggio: string, praticaId?: string) {
+    try {
+      const row = { user_id: userId, org_id: org?.id || null, tipo, titolo, messaggio, pratica_id: praticaId || null, letto: false };
+      const { data } = await supabase.from("notifications").insert(row).select().single();
+      // If it's for the current user, update local state
+      if (userId === user?.id && data) setNotifications(prev => [data, ...prev]);
+    } catch(e) { console.warn("Add notification failed:", e); }
+  }
+
+  async function markNotifRead(id: string) {
+    setNotifications(prev => prev.map(n => n.id === id ? {...n, letto: true} : n));
+    await supabase.from("notifications").update({ letto: true }).eq("id", id);
+  }
+  async function markAllNotifsRead() {
+    setNotifications(prev => prev.map(n => ({...n, letto: true})));
+    await supabase.from("notifications").update({ letto: true }).eq("user_id", user?.id).eq("letto", false);
+  }
+
+  async function loadAppuntamenti(u: any) {
+    if (!u) return;
+    try {
+      const { data } = await supabase.from("appuntamenti").select("*").order("data", { ascending: true });
+      if (data) setAppuntamenti(data);
+    } catch(e) { console.warn("Appuntamenti not available:", e); }
+  }
+
+  async function saveAppuntamento(app: any) {
+    if (!user) return;
+    const row = { ...app, user_id: user.id, org_id: org?.id || null };
+    if (app.id) {
+      await supabase.from("appuntamenti").update(row).eq("id", app.id);
+      setAppuntamenti(prev => prev.map(a => a.id === app.id ? {...a, ...row} : a));
+    } else {
+      const { data } = await supabase.from("appuntamenti").insert(row).select().single();
+      if (data) setAppuntamenti(prev => [...prev, data]);
+    }
+  }
+
+  async function deleteAppuntamento(id: string) {
+    setAppuntamenti(prev => prev.filter(a => a.id !== id));
+    await supabase.from("appuntamenti").delete().eq("id", id);
+  }
+
+  async function convertAppToPratica(app: any) {
+    const c = db.clients.find((cl: any) => cl.id === app.client_id);
+    const seq = db.nextSeq || 1;
+    const numero = genPraticaNum(new Date().getFullYear(), seq);
+    const newPratica: any = {
+      id: gid(), clientId: app.client_id, numero, data: app.data, ora: app.ora,
+      indirizzo: app.indirizzo || c?.indirizzo || "", tipo: app.tipo === "riparazione" ? "riparazione" : "nuovo_infisso",
+      fase: app.tipo || "sopralluogo", status: "da_fare", note: app.note || "",
+      actions: [], misure: null, riparazione: null, preventivo: null, confermaOrdine: null,
+      fattura: null, emails: [], fotoSopralluogo: [], fotoPosaInizio: [], fotoPosaFine: [],
+      fotoPosaVani: {}, messaggi: [], assegnatoA: app.assegnato_a || null, log: [],
+    };
+    // Save pratica to Supabase
+    const dbRow = praticaToDb(newPratica, user?.id||"");
+    const { data: saved, error } = await supabase.from("pratiche").insert(dbRow).select().single();
+    if (error) { alert("Errore creazione pratica: " + error.message); return; }
+    const fullPratica = saved ? dbToPratica(saved) : newPratica;
+    setDb((prev: any) => ({...prev, pratiche: [...prev.pratiche, fullPratica], nextSeq: seq + 1}));
+    // Mark appointment as converted
+    await supabase.from("appuntamenti").update({ stato: "convertito", pratica_id: fullPratica.id }).eq("id", app.id);
+    setAppuntamenti(prev => prev.map(a => a.id === app.id ? {...a, stato: "convertito", pratica_id: fullPratica.id} : a));
+    // Navigate to the new pratica
+    setSelPratica(fullPratica.id);
+    setView("pratica");
+    alert(`✅ Pratica ${numero} creata da appuntamento!`);
   }
 
   // Check for upcoming appointments every minute
@@ -834,7 +940,7 @@ export default function FrameFlowApp() {
     return c;
   }
 
-  function createPratica(clientId: string, indirizzo: string, tipo: string, data: string, ora: string, note: string) {
+  function createPratica(clientId: string, indirizzo: string, tipo: string, data: string, ora: string, note: string, praticaCollegata?: string) {
     const year = new Date().getFullYear();
     const numero = genPraticaNum(year, db.nextSeq);
     const sopralluogoAction = {
@@ -849,7 +955,8 @@ export default function FrameFlowApp() {
       status: "da_fare", actions: [sopralluogoAction], misure: null, riparazione: null, preventivo: null,
       confermaOrdine: null, fattura: null,
       emails: [], orgId: org?.id||null, createdAt: new Date().toISOString(),
-      log: [{ ts: new Date().toISOString(), msg: `Pratica creata (${tipo})`, by: user?.email || "system" }],
+      praticaCollegata: praticaCollegata||null,
+      log: [{ ts: new Date().toISOString(), msg: `Pratica creata (${tipo})${praticaCollegata ? " — collegata a pratica esistente" : ""}`, by: user?.email || "system" }],
     };
     setDb((prev: any) => {
       const next = {...prev, pratiche: [...prev.pratiche, p], nextSeq: prev.nextSeq+1};
@@ -999,9 +1106,8 @@ export default function FrameFlowApp() {
     if (!p || !canAdvance(p)) return;
     const wf = getWorkflow(p.tipo);
     const curIdx = getPhaseIndex(p.tipo, p.fase || "sopralluogo");
-    if (curIdx >= wf.length - 1) return; // already at last phase
+    if (curIdx >= wf.length - 1) return;
     const nextPhase = wf[curIdx + 1];
-    // Auto-create action for next phase if it has tasks
     const hasAction = p.actions.find((a: any) => a.type === nextPhase.key);
     let newActions = [...p.actions];
     if (!hasAction && getTasksForPhase(nextPhase.key).length > 0) {
@@ -1011,8 +1117,8 @@ export default function FrameFlowApp() {
         tasks: getTasksForPhase(nextPhase.key).map((t: string)=>({id:gid(),text:t,done:false})),
       });
     }
-    updatePratica(praticaId, { fase: nextPhase.key, actions: newActions, status: "in_corso" });
-    // Auto-open the relevant form
+    const logEntry = { ts: new Date().toISOString(), msg: `Fase → ${nextPhase.label}`, by: user?.email || "system" };
+    updatePratica(praticaId, { fase: nextPhase.key, actions: newActions, status: "in_corso", log: [...(p.log || []), logEntry] });
     if (nextPhase.key === "misure") { setMisureEdit(praticaId); setView("misure"); }
     else if (nextPhase.key === "riparazione") { setRipEdit(praticaId); setView("riparazione"); }
     else if (nextPhase.key === "preventivo") { setPrevEdit(praticaId); setView("preventivo"); }
@@ -1210,6 +1316,30 @@ export default function FrameFlowApp() {
   async function assignPratica(praticaId: string, memberId: string | null) {
     updatePratica(praticaId, { assegnatoA: memberId });
     await supabase.from("pratiche").update({ assegnato_a: memberId }).eq("id", praticaId);
+    // Create notification for assigned member
+    if (memberId) {
+      const member = teamMembers.find(m => m.id === memberId);
+      const pratica = db.pratiche.find((p: any) => p.id === praticaId);
+      const client = db.clients.find((c: any) => c.id === pratica?.clientId);
+      const myName = myMember?.nome || user?.email?.split("@")[0] || "Admin";
+      if (member?.user_id) {
+        await addNotification(
+          member.user_id,
+          "assegnazione",
+          `Pratica assegnata a te`,
+          `${myName} ti ha assegnato la pratica ${pratica?.numero || ""} — ${client?.nome || "Cliente"} (${pratica?.indirizzo || ""})`,
+          praticaId
+        );
+        // Browser notification
+        sendNotification("Pratica assegnata", `${pratica?.numero} - ${client?.nome||""}`);
+        // Email notification (opens mailto)
+        if (member.email) {
+          const subject = `FrameFlow: Pratica ${pratica?.numero || ""} assegnata a te`;
+          const body = `Ciao ${member.nome},\n\n${myName} ti ha assegnato la pratica ${pratica?.numero || ""}.\n\nCliente: ${client?.nome || "—"}\nIndirizzo: ${pratica?.indirizzo || "—"}\nData: ${fmtDate(pratica?.data||"")} ore ${pratica?.ora||""}\n\nApri FrameFlow per i dettagli.\n\nFrameFlow`;
+          window.open(`mailto:${member.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+        }
+      }
+    }
   }
 
   // Dynamic lists from settings
@@ -1294,6 +1424,7 @@ export default function FrameFlowApp() {
     return { fattMese, fattPrec, fattTot, convRate, conPrev: conPrev.length, conConferma: conConferma.length, overdue, avgDays, pagato, daPagare };
   }, [myPratiche]);
 
+  const [taskSort, setTaskSort] = useState<string>("fase");
   const pendingTasks = useMemo(() => {
     const tasks: any[] = [];
     myPratiche.forEach((p: any) => {
@@ -1302,13 +1433,19 @@ export default function FrameFlowApp() {
         a.tasks.forEach((t: any) => {
           if (!t.done) {
             const cfg = ACTIONS_CFG.find(ac=>ac.key===a.type);
-            tasks.push({ ...t, praticaId: p.id, praticaNum: p.numero, actionId: a.id, actionIcon: cfg?.icon||"", actionLabel: cfg?.label||a.type, clientId: p.clientId });
+            tasks.push({ ...t, praticaId: p.id, praticaNum: p.numero, praticaData: p.data, praticaFase: p.fase, praticaStatus: p.status, actionId: a.id, actionIcon: cfg?.icon||"", actionLabel: cfg?.label||a.type, clientId: p.clientId });
           }
         });
       });
     });
-    return tasks.slice(0, 10);
-  }, [db.pratiche]);
+    // Sort
+    if (taskSort === "data") tasks.sort((a,b) => (a.praticaData||"").localeCompare(b.praticaData||""));
+    else if (taskSort === "urgenza") tasks.sort((a,b) => { const ord: Record<string,number> = {urgente:0,alta:1,media:2,bassa:3}; return (ord[a.praticaStatus]??2) - (ord[b.praticaStatus]??2); });
+    else if (taskSort === "cliente") tasks.sort((a,b) => { const ca = getClient(a.clientId)?.nome||""; const cb = getClient(b.clientId)?.nome||""; return ca.localeCompare(cb); });
+    // fase sort (default)
+    else tasks.sort((a,b) => { const faseOrd = ["sopralluogo","preventivo","misure","ordine","produzione","posa","chiusura"]; return faseOrd.indexOf(a.praticaFase) - faseOrd.indexOf(b.praticaFase); });
+    return tasks.slice(0, 20);
+  }, [db.pratiche, taskSort]);
 
   const filteredPratiche = useMemo(() => {
     let list = db.pratiche;
@@ -1479,8 +1616,8 @@ export default function FrameFlowApp() {
   // NEW PRATICA
   if (view==="new_pratica" && selClient) {
     const c = getClient(selClient);
-    return <NewPraticaView client={c} onCreate={(ind: string,tipo: string,data: string,ora: string,note: string)=>{
-      const p = createPratica(selClient,ind,tipo,data,ora,note);
+    return <NewPraticaView client={c} pratiche={db.pratiche} clients={db.clients} onCreate={(ind: string,tipo: string,data: string,ora: string,note: string,praticaCollegata?: string)=>{
+      const p = createPratica(selClient,ind,tipo,data,ora,note,praticaCollegata);
       setSelClient(null); setSelPratica(p.id); setView("pratica");
     }} onBack={()=>{setSelClient(null);setView("client_pick");}} />;
   }
@@ -1488,7 +1625,11 @@ export default function FrameFlowApp() {
   // PRATICA DETAIL
   if (view==="pratica" && selPratica) {
     const p = getPratica(selPratica);
-    if (!p) return <div style={S.container}><div style={{padding:20}}><button onClick={()=>{setSelPratica(null);setView("pratiche");}} style={S.backBtn}>← Torna alle pratiche</button><p style={{marginTop:20,color:"#5c6370"}}>Pratica non trovata.</p></div></div>;
+    if (!p) {
+      // Auto-recover: pratica not found, go back
+      setTimeout(() => { setSelPratica(null); setView("pratiche"); }, 0);
+      return <div style={S.container}><div style={{padding:40,textAlign:"center"}}><p style={{color:"#5c6370",fontSize:14}}>Caricamento...</p></div></div>;
+    }
     const c = getClient(p.clientId);
     return <PraticaDetail pratica={p} client={c} userId={user?.id} teamMembers={teamMembers} isAdmin={isAdmin} permissions={myPermissions}
       onBack={()=>{setSelPratica(null);setView("pratiche");}}
@@ -1512,29 +1653,21 @@ export default function FrameFlowApp() {
       onConfirmOrder={(firma: string,note: string)=>confirmOrder(p.id,firma,note)}
       onGenerateFattura={()=>generateFattura(p.id)}
       onUpdateFattura={(data: any)=>updateFattura(p.id,data)}
-      onAdvancePhase={()=>{
-        const wf2=getWorkflow(p.tipo);const ci=getPhaseIndex(p.tipo,p.fase||"sopralluogo");
-        if(ci<wf2.length-1){
-          const logEntry={ts:new Date().toISOString(),msg:`Fase → ${wf2[ci+1].label}`,by:user?.email||"system"};
-          // We'll call advancePhase then add log after
-          advancePhase(p.id);
-          // Add log separately (advancePhase already calls updatePratica)
-          setTimeout(()=>{
-            const p3=getPratica(p.id);
-            if(p3) updatePratica(p.id,{log:[...(p3.log||[]),logEntry]});
-          },100);
-        } else { advancePhase(p.id); }
-      }}
+      onAdvancePhase={()=>advancePhase(p.id)}
       onUpdatePratica={(data: any)=>updatePratica(p.id,data)}
       onAssign={(memberId: string|null)=>assignPratica(p.id,memberId)}
       onDuplica={()=>duplicaPratica(p.id)}
       onStampaCantiere={()=>exportStampaCantiere(p,c)}
+      allPratiche={db.pratiche}
+      allClients={db.clients}
+      onOpenPratica={(id: string)=>{setSelPratica(id);setView("pratica");}}
     />;
   }
 
   // ==================== BOTTOM NAV ====================
   const allNavItems = [
     { key: "dashboard", icon: "H", label: "Home" },
+    { key: "appuntamenti", icon: "📅", label: "Appunt." },
     { key: "calendario", icon: "A", label: "Agenda" },
     { key: "pratiche", icon: "P", label: "Pratiche" },
     { key: "clienti", icon: "C", label: "Clienti" },
@@ -1650,11 +1783,29 @@ export default function FrameFlowApp() {
             {isAdmin && <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}} title="Impostazioni">SET</button>}
             {(isAdmin || myPermissions.includes("note")) && <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}} title="Note">NOTE</button>}
             <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>CERCA</button>
+            {/* Notification Bell */}
+            <button onClick={()=>setShowNotifPanel(!showNotifPanel)} style={{background:showNotifPanel?"#e07a2f":"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:14,cursor:"pointer",position:"relative"}}>
+              🔔{notifications.filter(n=>!n.letto).length>0 && <span style={{position:"absolute",top:2,right:2,width:8,height:8,borderRadius:"50%",background:"#ef4444"}}/>}
+            </button>
             {isAdmin && <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ NUOVA</button>}
           </div>
         </div>
 
         <div style={{padding:"16px 16px 0"}}>
+          {/* Notification Panel */}
+          {showNotifPanel && <div style={{background:"#fff",borderRadius:2,border:"2px solid #e07a2f",marginBottom:16,maxHeight:350,overflowY:"auto",boxShadow:"0 8px 24px rgba(0,0,0,0.15)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 14px",borderBottom:"1px solid #e2e8f0"}}>
+              <span style={{fontSize:14,fontWeight:800,color:"#1a1a2e"}}>🔔 Notifiche</span>
+              {notifications.filter(n=>!n.letto).length>0 && <button onClick={markAllNotifsRead} style={{background:"none",border:"none",color:"#e07a2f",fontSize:11,fontWeight:700,cursor:"pointer"}}>Segna tutte lette</button>}
+            </div>
+            {notifications.length===0 ? <div style={{padding:20,textAlign:"center",color:"#94a3b8",fontSize:13}}>Nessuna notifica</div> :
+              notifications.slice(0,20).map((n: any)=><div key={n.id} onClick={()=>{markNotifRead(n.id);if(n.pratica_id){setSelPratica(n.pratica_id);setView("pratica");setShowNotifPanel(false);}}} style={{padding:"10px 14px",borderBottom:"1px solid #f1f5f9",background:n.letto?"#fff":"#fffbeb",cursor:n.pratica_id?"pointer":"default"}}>
+                <div style={{fontSize:13,fontWeight:n.letto?400:700,color:"#0f172a"}}>{n.titolo}</div>
+                <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{n.messaggio}</div>
+                <div style={{fontSize:10,color:"#94a3b8",marginTop:4}}>{new Date(n.created_at).toLocaleString("it-IT",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
+              </div>)
+            }
+          </div>}
           {/* Greeting */}
           <div style={S.greetCard}>
             <h2 style={{fontSize:18,fontWeight:700,color:"#1a1a2e",margin:"0 0 4px",fontFamily:"'DM Sans',system-ui"}}>
@@ -1726,6 +1877,32 @@ export default function FrameFlowApp() {
             </div>
           )}
 
+          {/* Upcoming Appuntamenti (not yet converted) */}
+          {(()=>{
+            const upcoming = appuntamenti.filter(a => a.stato !== "convertito" && a.stato !== "annullato" && a.data >= today()).sort((a:any,b:any)=>a.data.localeCompare(b.data));
+            if(upcoming.length === 0) return null;
+            return <div style={{marginBottom:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <h3 style={S.dashSectionTitle}>📅 Prossimi Appuntamenti</h3>
+                <button onClick={()=>setView("appuntamenti")} style={{background:"none",border:"none",color:"#7c3aed",fontSize:11,fontWeight:700,cursor:"pointer"}}>Vedi tutti →</button>
+              </div>
+              {upcoming.slice(0,3).map((a: any) => {
+                const client = db.clients.find((c: any) => c.id === a.client_id);
+                return <div key={a.id} onClick={()=>setView("appuntamenti")} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"#faf5ff",borderRadius:2,border:"1px solid #e9d5ff",marginBottom:4,cursor:"pointer"}}>
+                  <div style={{padding:"6px 10px",borderRadius:2,background:"#7c3aed",color:"#fff",fontSize:11,fontWeight:800,textAlign:"center",minWidth:50}}>
+                    <div>{fmtDate(a.data).split(" ").slice(1).join(" ")}</div>
+                    <div>{a.ora}</div>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{client?.nome||"—"}</div>
+                    <div style={{fontSize:11,color:"#7c3aed",fontWeight:600,textTransform:"capitalize"}}>{a.tipo}</div>
+                  </div>
+                  <span style={{fontSize:11,color:"#059669",fontWeight:700}}>➡️</span>
+                </div>;
+              })}
+            </div>;
+          })()}
+
           {/* Today's Appointments */}
           <div style={S.dashSection}>
             <h3 style={S.dashSectionTitle}> Appuntamenti di Oggi</h3>
@@ -1769,15 +1946,22 @@ export default function FrameFlowApp() {
           {/* Pending Tasks */}
           {pendingTasks.length>0 && (
             <div style={S.dashSection}>
-              <h3 style={S.dashSectionTitle}> Cose da Fare ({pendingTasks.length})</h3>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <h3 style={S.dashSectionTitle}> Cose da Fare ({pendingTasks.length})</h3>
+              </div>
+              <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
+                {([["fase","Per fase"],["data","Per data"],["cliente","Per cliente"],["urgenza","Per urgenza"]] as [string,string][]).map(([k,l])=>
+                  <button key={k} onClick={()=>setTaskSort(k)} style={{padding:"5px 10px",borderRadius:2,border:"none",background:taskSort===k?"#1a1a2e":"#e2e8f0",color:taskSort===k?"#fff":"#64748b",fontSize:10,fontWeight:700,cursor:"pointer"}}>{l}</button>
+                )}
+              </div>
               {pendingTasks.map((t: any) => {
                 const c = getClient(t.clientId);
                 return (
                   <div key={t.id} style={S.taskDashRow}>
                     <button onClick={()=>toggleActionTask(t.praticaId,t.actionId,t.id)} style={S.taskCheck}>○</button>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:13,color:"#1f2937"}}>{t.text}</div>
-                      <div style={{fontSize:11,color:"#94a3b8"}}>{t.actionIcon} {t.praticaNum} · {c?.nome||""}</div>
+                    <div style={{flex:1}} onClick={()=>{setSelPratica(t.praticaId);setView("pratica");}}>
+                      <div style={{fontSize:13,color:"#1f2937",cursor:"pointer"}}>{t.text}</div>
+                      <div style={{fontSize:11,color:"#94a3b8"}}>{t.actionIcon} {t.praticaNum} · {c?.nome||""} {t.praticaData ? `· ${fmtDate(t.praticaData)}` : ""}</div>
                     </div>
                   </div>
                 );
@@ -2150,6 +2334,105 @@ export default function FrameFlowApp() {
           )}
         </div>
         {saveError&&<div style={{position:"fixed",top:20,left:"50%",transform:"translateX(-50%)",background:"#dc2626",color:"#fff",padding:"10px 20px",borderRadius:2,fontSize:13,fontWeight:700,zIndex:9999,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:340,textAlign:"center"}}>{saveError}</div>}
+        <BottomNav items={navItems} active={view} onNav={setView} />
+      </div>
+    );
+  }
+
+  // ==================== APPUNTAMENTI ====================
+  if (view === "appuntamenti") {
+    const TIPI_APP = ["sopralluogo","misure","posa","riparazione","consulenza","altro"];
+    const activeApps = appuntamenti.filter(a => a.stato !== "convertito" && a.stato !== "annullato");
+    const pastApps = appuntamenti.filter(a => a.stato === "convertito");
+    const sortedApps = activeApps.sort((a: any, b: any) => a.data.localeCompare(b.data) || (a.ora||"").localeCompare(b.ora||""));
+    return (
+      <div style={S.container}>
+        <div style={{...S.secHdr,background:"#7c3aed"}}>
+          <button onClick={()=>setView("dashboard")} style={{...S.backBtn,color:"#fff"}}>← Home</button>
+          <h2 style={{...S.secTitle,color:"#fff"}}>📅 Appuntamenti</h2>
+          <button onClick={()=>setAppForm({data:today(),ora:"09:00",tipo:"sopralluogo",client_id:"",indirizzo:"",note:"",assegnato_a:""})} style={{background:"rgba(255,255,255,0.2)",border:"none",color:"#fff",borderRadius:2,padding:"8px 14px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ NUOVO</button>
+        </div>
+        <div style={{padding:16}}>
+          {/* New/Edit Appuntamento Form */}
+          {appForm && <div style={{background:"#faf5ff",borderRadius:2,border:"2px solid #7c3aed",padding:16,marginBottom:16}}>
+            <h4 style={{fontSize:14,fontWeight:800,color:"#7c3aed",margin:"0 0 12px"}}>{appForm.id ? "Modifica" : "Nuovo"} Appuntamento</h4>
+            <div style={{display:"flex",gap:8,marginBottom:8}}>
+              <div style={{flex:1}}><label style={S.fLabel}>Data</label><input type="date" value={appForm.data} onChange={e=>setAppForm({...appForm,data:e.target.value})} style={S.input} /></div>
+              <div style={{flex:1}}><label style={S.fLabel}>Ora</label><input type="time" value={appForm.ora} onChange={e=>setAppForm({...appForm,ora:e.target.value})} style={S.input} /></div>
+            </div>
+            <div style={{marginBottom:8}}>
+              <label style={S.fLabel}>Tipo</label>
+              <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                {TIPI_APP.map(t=><button key={t} onClick={()=>setAppForm({...appForm,tipo:t})} style={{padding:"8px 12px",borderRadius:2,border:"none",background:appForm.tipo===t?"#7c3aed":"#e2e8f0",color:appForm.tipo===t?"#fff":"#374151",fontSize:12,fontWeight:700,cursor:"pointer",textTransform:"capitalize"}}>{t}</button>)}
+              </div>
+            </div>
+            <div style={{marginBottom:8}}>
+              <label style={S.fLabel}>Cliente</label>
+              <select value={appForm.client_id} onChange={e=>setAppForm({...appForm,client_id:e.target.value,indirizzo:db.clients.find((c:any)=>c.id===e.target.value)?.indirizzo||appForm.indirizzo})} style={S.input}>
+                <option value="">— Seleziona cliente —</option>
+                {db.clients.map((c: any)=><option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </div>
+            <div style={{marginBottom:8}}><label style={S.fLabel}>Indirizzo</label><input value={appForm.indirizzo} onChange={e=>setAppForm({...appForm,indirizzo:e.target.value})} style={S.input} placeholder="Via..." /></div>
+            {teamMembers.length > 1 && <div style={{marginBottom:8}}>
+              <label style={S.fLabel}>Assegnato a</label>
+              <select value={appForm.assegnato_a||""} onChange={e=>setAppForm({...appForm,assegnato_a:e.target.value||null})} style={S.input}>
+                <option value="">— Non assegnato —</option>
+                {teamMembers.map((m: any)=><option key={m.id} value={m.id}>{m.nome} ({(ROLES[m.ruolo]||ROLES.admin).label})</option>)}
+              </select>
+            </div>}
+            <div style={{marginBottom:10}}><label style={S.fLabel}>Note</label><textarea value={appForm.note} onChange={e=>setAppForm({...appForm,note:e.target.value})} style={{...S.input,height:60,resize:"vertical"}} placeholder="Note opzionali..." /></div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setAppForm(null)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>Annulla</button>
+              <button onClick={()=>{if(!appForm.client_id){alert("Seleziona un cliente");return;}saveAppuntamento(appForm);setAppForm(null);}} style={{...S.saveBtn,flex:2,background:"#7c3aed"}}>💾 Salva</button>
+            </div>
+          </div>}
+
+          {/* Active Appointments */}
+          {sortedApps.length === 0 && !appForm && <div style={{textAlign:"center",padding:40,color:"#94a3b8"}}>
+            <div style={{fontSize:32,marginBottom:8}}>📅</div>
+            <p style={{fontSize:14}}>Nessun appuntamento programmato</p>
+            <button onClick={()=>setAppForm({data:today(),ora:"09:00",tipo:"sopralluogo",client_id:"",indirizzo:"",note:"",assegnato_a:""})} style={{...S.saveBtn,background:"#7c3aed",marginTop:12}}>+ Nuovo Appuntamento</button>
+          </div>}
+
+          {sortedApps.map((a: any) => {
+            const client = db.clients.find((c: any) => c.id === a.client_id);
+            const assignedTo = teamMembers.find(m => m.id === a.assegnato_a);
+            const isPast = a.data < today();
+            return <div key={a.id} style={{padding:14,background:isPast?"#fef2f2":"#fff",borderRadius:2,border:`1.5px solid ${isPast?"#fecaca":"#e2e8f0"}`,marginBottom:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                <div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#0f172a"}}>{client?.nome || "—"}</div>
+                  <div style={{fontSize:12,color:"#64748b",marginTop:2}}>
+                    {fmtDate(a.data)} ore {a.ora} · <span style={{color:"#7c3aed",fontWeight:700,textTransform:"capitalize"}}>{a.tipo}</span>
+                  </div>
+                  {a.indirizzo && <div style={{fontSize:11,color:"#94a3b8",marginTop:2}}>📍 {a.indirizzo}</div>}
+                  {assignedTo && <div style={{fontSize:11,color:"#4338ca",marginTop:2,fontWeight:600}}>👤 {assignedTo.nome}</div>}
+                  {a.note && <div style={{fontSize:11,color:"#64748b",marginTop:4,fontStyle:"italic"}}>{a.note}</div>}
+                </div>
+                <div style={{display:"flex",gap:4,flexShrink:0}}>
+                  <button onClick={()=>setAppForm({...a})} style={{background:"none",border:"1px solid #e2e8f0",borderRadius:2,padding:"6px 8px",fontSize:11,cursor:"pointer",color:"#64748b"}}>✏️</button>
+                  <button onClick={()=>{if(confirm("Eliminare appuntamento?"))deleteAppuntamento(a.id);}} style={{background:"none",border:"1px solid #fecaca",borderRadius:2,padding:"6px 8px",fontSize:11,cursor:"pointer",color:"#ef4444"}}>🗑</button>
+                </div>
+              </div>
+              {/* Convert to Pratica button */}
+              {a.client_id && <button onClick={()=>{if(confirm(`Convertire appuntamento in pratica per ${client?.nome}?`))convertAppToPratica(a);}} style={{marginTop:10,width:"100%",padding:"10px",borderRadius:2,border:"2px solid #059669",background:"#ecfdf5",color:"#059669",fontSize:13,fontWeight:800,cursor:"pointer"}}>
+                ➡️ CONVERTI IN PRATICA
+              </button>}
+            </div>;
+          })}
+
+          {/* Converted (past) */}
+          {pastApps.length > 0 && <>
+            <div style={{fontSize:12,fontWeight:800,color:"#94a3b8",marginTop:20,marginBottom:8,textTransform:"uppercase"}}>Convertiti in pratica ({pastApps.length})</div>
+            {pastApps.slice(0,5).map((a: any) => {
+              const client = db.clients.find((c: any) => c.id === a.client_id);
+              return <div key={a.id} style={{padding:10,background:"#f8fafc",borderRadius:2,border:"1px solid #e2e8f0",marginBottom:4,opacity:0.6}}>
+                <span style={{fontSize:12,color:"#64748b"}}>{fmtDate(a.data)} · {client?.nome||"—"} · <span style={{color:"#059669",fontWeight:700}}>✅ Convertito</span></span>
+              </div>;
+            })}
+          </>}
+        </div>
         <BottomNav items={navItems} active={view} onNav={setView} />
       </div>
     );
@@ -2738,6 +3021,9 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
   const [customInput, setCustomInput] = useState("");
   const [selMat, setSelMat] = useState(sistemi[0]?.id || "");
   const [listinoForm, setListinoForm] = useState<any>(null);
+  const [editingGridId, setEditingGridId] = useState<string|null>(null);
+  const [gridView, setGridView] = useState<"auto"|"manual"|"csv">("auto");
+  const [csvText, setCsvText] = useState("");
 
   function removeSistema(id: string) { setSistemi(sistemi.filter((s: any) => s.id !== id)); }
   function addSistema() { if(!customInput.trim()) return; const id=customInput.trim().toLowerCase().replace(/\s+/g,"_"); if(!sistemi.find((s: any)=>s.id===id)) setSistemi([...sistemi,{id,nome:customInput.trim(),icon:"🔹"}]); setCustomInput(""); }
@@ -2749,8 +3035,90 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
   function removeTipologia(t: string) { setTipologie(tipologie.filter(x=>x!==t)); }
   function addVetro() { if(!customInput.trim()||vetri.includes(customInput.trim())) return; setVetri([...vetri,customInput.trim()]); setCustomInput(""); }
   function removeVetro(v: string) { setVetri(vetri.filter(x=>x!==v)); }
-  function addListinoItem() { if(!listinoForm?.descrizione?.trim()) return; setListino([...listino,{...listinoForm,id:gid()}]); setListinoForm(null); }
-  function removeListinoItem(id: string) { setListino(listino.filter((l: any)=>l.id!==id)); }
+  function addListinoItem() {
+    if(!listinoForm?.descrizione?.trim()) return;
+    const item = {...listinoForm, id: gid()};
+    if(item.tipo === "griglia" && item.griglia) {
+      // Ensure griglia has prezzi object
+      if(!item.griglia.prezzi) item.griglia.prezzi = {};
+    }
+    setListino([...listino, item]);
+    setListinoForm(null);
+  }
+  function removeListinoItem(id: string) { setListino(listino.filter((l: any)=>l.id!==id)); setEditingGridId(null); }
+  function updateListinoItem(id: string, updates: any) {
+    setListino(listino.map((l: any) => l.id === id ? {...l, ...updates} : l));
+  }
+  function autoGenerateGrid(item: any) {
+    const g = item.griglia;
+    if(!g || !g.minL || !g.maxL || !g.minH || !g.maxH || !g.stepL || !g.stepH) return item;
+    const prezzi: Record<string, number> = {};
+    for(let l = g.minL; l <= g.maxL; l += g.stepL) {
+      for(let h = g.minH; h <= g.maxH; h += g.stepH) {
+        const stepsL = Math.round((l - g.minL) / g.stepL);
+        const stepsH = Math.round((h - g.minH) / g.stepH);
+        prezzi[`${l}x${h}`] = Math.round(((g.prezzoBase||0) + stepsL * (g.incL||0) + stepsH * (g.incH||0)) * 100) / 100;
+      }
+    }
+    return {...item, griglia: {...g, prezzi}};
+  }
+  function importGridCSV(itemId: string, text: string) {
+    const lines = text.trim().split("\n").map(l => l.split(/[,;\t]/));
+    if(lines.length < 2) return;
+    const item = listino.find((l: any) => l.id === itemId);
+    if(!item?.griglia) return;
+    const heights = lines[0].slice(1).map(h => parseInt(h.trim())).filter(h => !isNaN(h));
+    const widths: number[] = [];
+    const prezzi: Record<string, number> = {};
+    for(let r = 1; r < lines.length; r++) {
+      const w = parseInt(lines[r][0]?.trim());
+      if(isNaN(w)) continue;
+      widths.push(w);
+      for(let c = 1; c < lines[r].length; c++) {
+        const h = heights[c-1];
+        const p = parseFloat(lines[r][c]?.trim().replace(",","."));
+        if(!isNaN(h) && !isNaN(p)) prezzi[`${w}x${h}`] = p;
+      }
+    }
+    // Auto-detect grid dimensions from imported data
+    const sortedW = [...widths].sort((a,b)=>a-b);
+    const sortedH = [...heights].sort((a,b)=>a-b);
+    const autoStepL = sortedW.length >= 2 ? sortedW[1] - sortedW[0] : 100;
+    const autoStepH = sortedH.length >= 2 ? sortedH[1] - sortedH[0] : 100;
+    const newGriglia = {
+      ...item.griglia,
+      prezzi,
+      minL: sortedW[0] || item.griglia.minL,
+      maxL: sortedW[sortedW.length-1] || item.griglia.maxL,
+      stepL: autoStepL || item.griglia.stepL,
+      minH: sortedH[0] || item.griglia.minH,
+      maxH: sortedH[sortedH.length-1] || item.griglia.maxH,
+      stepH: autoStepH || item.griglia.stepH,
+    };
+    updateListinoItem(itemId, {griglia: newGriglia});
+    return {w: widths.length, h: heights.length, total: Object.keys(prezzi).length};
+  }
+  function handleFileUpload(itemId: string, file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if(!text) return;
+      const result = importGridCSV(itemId, text);
+      if(result) alert(`✅ Importati ${result.total} prezzi (${result.w} larghezze × ${result.h} altezze)`);
+      else alert("❌ Formato non riconosciuto. Assicurati che la prima riga contenga le altezze e la prima colonna le larghezze.");
+    };
+    reader.readAsText(file);
+  }
+  function getGridPrice(item: any, l: number, h: number): number|null {
+    if(!item?.griglia?.prezzi) return null;
+    const g = item.griglia;
+    // Find nearest step
+    const snapL = Math.round(l / g.stepL) * g.stepL;
+    const snapH = Math.round(h / g.stepH) * g.stepH;
+    const clampL = Math.max(g.minL, Math.min(g.maxL, snapL));
+    const clampH = Math.max(g.minH, Math.min(g.maxH, snapH));
+    return g.prezzi[`${clampL}x${clampH}`] ?? null;
+  }
 
   const tabs = [
     {key:"tema",label:"Tema",icon:""},
@@ -2825,23 +3193,151 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
           <div style={{display:"flex",gap:8,marginTop:12}}><input value={customInput} onChange={e=>setCustomInput(e.target.value)} placeholder="Nuova categoria..." style={{...S.input,flex:1}} onKeyDown={e=>e.key==="Enter"&&addCategoria()} /><button onClick={addCategoria} style={{...S.pill,background:"#8b5cf6",color:"#fff",padding:"10px 18px",fontWeight:700}}>+</button></div>
         </>)}
         {tab==="listino" && (<>
-          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Il tuo listino prezzi (usato nei preventivi):</p>
+          <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Il tuo listino prezzi (usato nei preventivi). Supporta prezzi a pezzo, al mq/ml, o <strong>griglia L×H</strong>.</p>
+          
+          {/* Product List */}
           {listino.length===0 && <div style={{textAlign:"center",padding:30,color:"#94a3b8"}}><p style={{fontSize:14}}>Nessun articolo nel listino</p></div>}
-          {listino.map((l: any)=><div key={l.id} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#f8fafc",borderRadius:2,marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:700}}>{l.descrizione}</div><div style={{fontSize:12,color:"#64748b"}}>{l.categoria||"—"} · {l.tipo==="mq"?"€/mq":"€/pz"}</div></div><div style={{fontWeight:800,color:"#059669",fontSize:15}}>€{(l.prezzo||0).toFixed(2)}</div><button onClick={()=>removeListinoItem(l.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button></div>)}
+          {listino.map((l: any)=><div key={l.id} style={{padding:"12px 14px",background:editingGridId===l.id?"#fffbeb":"#f8fafc",borderRadius:2,marginBottom:8,border:editingGridId===l.id?"2px solid #f59e0b":"1px solid #e2e8f0"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:700}}>{l.descrizione}</div>
+                <div style={{fontSize:12,color:"#64748b",marginTop:2}}>
+                  {l.categoria||"—"} · 
+                  {l.tipo==="griglia" ? <span style={{color:"#8b5cf6",fontWeight:700}}> 📊 Griglia L×H</span> : 
+                   l.tipo==="mq" ? "€/mq" : l.tipo==="ml" ? "€/ml" : "€/pz"}
+                  {l.minimoFatt ? ` · Min. €${l.minimoFatt}` : ""}
+                </div>
+              </div>
+              {l.tipo!=="griglia" && <div style={{fontWeight:800,color:"#059669",fontSize:15}}>€{(parseFloat(l.prezzo)||0).toFixed(2)}</div>}
+              {l.tipo==="griglia" && <button onClick={()=>setEditingGridId(editingGridId===l.id?null:l.id)} style={{padding:"6px 12px",borderRadius:2,border:"1.5px solid #8b5cf6",background:editingGridId===l.id?"#8b5cf6":"transparent",color:editingGridId===l.id?"#fff":"#8b5cf6",fontSize:11,fontWeight:700,cursor:"pointer"}}>{editingGridId===l.id?"CHIUDI":"GRIGLIA"}</button>}
+              <button onClick={()=>removeListinoItem(l.id)} style={{background:"none",border:"none",color:"#ef4444",fontSize:18,cursor:"pointer"}}>×</button>
+            </div>
+            
+            {/* Grid Editor (expanded) */}
+            {editingGridId===l.id && l.tipo==="griglia" && l.griglia && (()=>{
+              const g = l.griglia;
+              const widths: number[] = [];
+              const heights: number[] = [];
+              if(g.minL && g.maxL && g.stepL) for(let w=g.minL; w<=g.maxL; w+=g.stepL) widths.push(w);
+              if(g.minH && g.maxH && g.stepH) for(let h=g.minH; h<=g.maxH; h+=g.stepH) heights.push(h);
+              const cellCount = Object.keys(g.prezzi||{}).length;
+              return <div style={{marginTop:12,borderTop:"1px solid #e2e8f0",paddingTop:12}}>
+                {/* Minimo Fatturazione */}
+                <div style={{display:"flex",gap:8,marginBottom:10}}>
+                  <div style={{flex:1}}><label style={{fontSize:10,fontWeight:700,color:"#64748b"}}>MINIMO FATTURAZIONE €</label><input type="number" value={l.minimoFatt||""} onChange={e=>updateListinoItem(l.id,{minimoFatt:parseFloat(e.target.value)||0})} style={S.input} placeholder="0" /></div>
+                </div>
+                {/* Grid Config */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+                  <div><label style={{fontSize:10,fontWeight:700,color:"#64748b"}}>LARG. MIN</label><input type="number" value={g.minL||""} onChange={e=>{const v=parseInt(e.target.value)||0;updateListinoItem(l.id,{griglia:{...g,minL:v}});}} style={S.input} /></div>
+                  <div><label style={{fontSize:10,fontWeight:700,color:"#64748b"}}>LARG. MAX</label><input type="number" value={g.maxL||""} onChange={e=>{const v=parseInt(e.target.value)||0;updateListinoItem(l.id,{griglia:{...g,maxL:v}});}} style={S.input} /></div>
+                  <div><label style={{fontSize:10,fontWeight:700,color:"#64748b"}}>STEP L (mm)</label><input type="number" value={g.stepL||""} onChange={e=>{const v=parseInt(e.target.value)||0;updateListinoItem(l.id,{griglia:{...g,stepL:v}});}} style={S.input} /></div>
+                  <div><label style={{fontSize:10,fontWeight:700,color:"#64748b"}}>ALT. MIN</label><input type="number" value={g.minH||""} onChange={e=>{const v=parseInt(e.target.value)||0;updateListinoItem(l.id,{griglia:{...g,minH:v}});}} style={S.input} /></div>
+                  <div><label style={{fontSize:10,fontWeight:700,color:"#64748b"}}>ALT. MAX</label><input type="number" value={g.maxH||""} onChange={e=>{const v=parseInt(e.target.value)||0;updateListinoItem(l.id,{griglia:{...g,maxH:v}});}} style={S.input} /></div>
+                  <div><label style={{fontSize:10,fontWeight:700,color:"#64748b"}}>STEP H (mm)</label><input type="number" value={g.stepH||""} onChange={e=>{const v=parseInt(e.target.value)||0;updateListinoItem(l.id,{griglia:{...g,stepH:v}});}} style={S.input} /></div>
+                </div>
+                
+                {/* Mode tabs */}
+                <div style={{display:"flex",gap:4,marginBottom:10}}>
+                  {([["auto","⚡ Auto-genera"],["manual","✏️ Manuale"],["csv","📋 Importa CSV"]] as [string,string][]).map(([k,lab])=>
+                    <button key={k} onClick={()=>setGridView(k as any)} style={{flex:1,padding:"8px 6px",borderRadius:2,border:"none",background:gridView===k?"#1a1a2e":"#e2e8f0",color:gridView===k?"#fff":"#374151",fontSize:11,fontWeight:700,cursor:"pointer"}}>{lab}</button>
+                  )}
+                </div>
+                
+                {/* Auto-generate */}
+                {gridView==="auto" && <div style={{padding:12,background:"#f0fdf4",borderRadius:2,border:"1px solid #bbf7d0"}}>
+                  <p style={{fontSize:12,color:"#166534",marginBottom:8,fontWeight:600}}>Imposta prezzo base e incremento per ogni scaglione:</p>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                    <div><label style={{fontSize:10,fontWeight:700,color:"#166534"}}>PREZZO BASE €</label><input type="number" value={g.prezzoBase||""} onChange={e=>updateListinoItem(l.id,{griglia:{...g,prezzoBase:parseFloat(e.target.value)||0}})} style={S.input} placeholder="180" /></div>
+                    <div><label style={{fontSize:10,fontWeight:700,color:"#166534"}}>+€ PER STEP L</label><input type="number" value={g.incL||""} onChange={e=>updateListinoItem(l.id,{griglia:{...g,incL:parseFloat(e.target.value)||0}})} style={S.input} placeholder="5" /></div>
+                    <div><label style={{fontSize:10,fontWeight:700,color:"#166534"}}>+€ PER STEP H</label><input type="number" value={g.incH||""} onChange={e=>updateListinoItem(l.id,{griglia:{...g,incH:parseFloat(e.target.value)||0}})} style={S.input} placeholder="5" /></div>
+                  </div>
+                  <button onClick={()=>{const updated=autoGenerateGrid(l);updateListinoItem(l.id,{griglia:updated.griglia});}} style={{...S.saveBtn,background:"#059669",marginTop:10,width:"100%"}}>⚡ GENERA GRIGLIA ({widths.length}×{heights.length} = {widths.length*heights.length} prezzi)</button>
+                </div>}
+                
+                {/* Manual grid edit */}
+                {gridView==="manual" && <div style={{overflowX:"auto",maxHeight:400}}>
+                  {widths.length>0 && heights.length>0 ? (
+                    <table style={{borderCollapse:"collapse",fontSize:11,width:"100%"}}>
+                      <thead><tr>
+                        <th style={{padding:"6px 4px",background:"#1a1a2e",color:"#e07a2f",fontSize:10,fontWeight:700,position:"sticky",top:0,left:0,zIndex:2,fontFamily:"monospace"}}>L↓ H→</th>
+                        {heights.map(h=><th key={h} style={{padding:"6px 4px",background:"#1a1a2e",color:"#fff",fontSize:10,fontWeight:700,position:"sticky",top:0,zIndex:1,fontFamily:"monospace",textAlign:"center"}}>{h}</th>)}
+                      </tr></thead>
+                      <tbody>{widths.map(w=><tr key={w}>
+                        <td style={{padding:"4px 6px",background:"#f1f5f9",fontWeight:800,fontSize:11,position:"sticky",left:0,fontFamily:"monospace",borderRight:"2px solid #1a1a2e"}}>{w}</td>
+                        {heights.map(h=>{
+                          const key=`${w}x${h}`;
+                          const val = g.prezzi?.[key];
+                          return <td key={h} style={{padding:0,border:"1px solid #d1d5db"}}>
+                            <input type="number" value={val??""} onChange={e=>{const p=parseFloat(e.target.value);const newP={...(g.prezzi||{})}; if(!isNaN(p))newP[key]=p; else delete newP[key]; updateListinoItem(l.id,{griglia:{...g,prezzi:newP}});}} style={{width:60,padding:"4px 3px",border:"none",background:val!==undefined?"#ecfdf5":"#fff",textAlign:"center",fontSize:11,fontWeight:600,outline:"none"}} placeholder="—" />
+                          </td>;
+                        })}
+                      </tr>)}</tbody>
+                    </table>
+                  ) : <p style={{fontSize:12,color:"#94a3b8",textAlign:"center",padding:20}}>Configura prima min/max e step sopra</p>}
+                </div>}
+                
+                {/* CSV Import */}
+                {gridView==="csv" && <div style={{padding:12,background:"#eff6ff",borderRadius:2,border:"1px solid #bfdbfe"}}>
+                  <p style={{fontSize:12,color:"#1e40af",marginBottom:4,fontWeight:600}}>Importa da file CSV o incolla da Excel:</p>
+                  <p style={{fontSize:11,color:"#64748b",marginBottom:8}}>Prima riga = altezze, prima colonna = larghezze. Le dimensioni della griglia si configurano automaticamente.<br/>
+                  <code style={{fontSize:10,background:"#dbeafe",padding:"2px 4px"}}>_;1000;1100;1200↵800;180;185;190↵900;185;190;195</code></p>
+                  
+                  {/* File Upload */}
+                  <div style={{display:"flex",gap:8,marginBottom:8}}>
+                    <label style={{flex:1,padding:"10px",borderRadius:2,border:"2px dashed #93c5fd",background:"#f0f9ff",textAlign:"center",cursor:"pointer",fontSize:12,fontWeight:700,color:"#2563eb"}}>
+                      📁 CARICA FILE CSV
+                      <input type="file" accept=".csv,.txt,.tsv" style={{display:"none"}} onChange={e=>{const f=e.target.files?.[0];if(f)handleFileUpload(l.id,f);e.target.value="";}} />
+                    </label>
+                  </div>
+                  
+                  <textarea value={csvText} onChange={e=>setCsvText(e.target.value)} style={{width:"100%",height:120,padding:8,border:"1.5px solid #93c5fd",borderRadius:2,fontFamily:"monospace",fontSize:11,resize:"vertical",boxSizing:"border-box"}} placeholder={"_\t1000\t1100\t1200\n800\t180\t185\t190\n900\t185\t190\t195"} />
+                  <button onClick={()=>{const result=importGridCSV(l.id,csvText);setCsvText("");if(result)alert(`✅ Importati ${result.total} prezzi (${result.w}×${result.h})`);}} disabled={!csvText.trim()} style={{...S.saveBtn,background:"#2563eb",marginTop:8,width:"100%",opacity:csvText.trim()?1:0.5}}>📋 IMPORTA DA TESTO</button>
+                </div>}
+                
+                {/* Grid stats */}
+                <div style={{marginTop:8,fontSize:11,color:"#64748b",display:"flex",gap:12}}>
+                  <span>📊 {cellCount} prezzi inseriti</span>
+                  {widths.length>0 && <span>↔ L: {g.minL}–{g.maxL}mm</span>}
+                  {heights.length>0 && <span>↕ H: {g.minH}–{g.maxH}mm</span>}
+                </div>
+              </div>;
+            })()}
+          </div>)}
+          
+          {/* Add new product form */}
           {listinoForm ? (
             <div style={{padding:16,background:"#fffbeb",borderRadius:2,border:"2px solid #f59e0b",marginTop:12}}>
               <Field label="Descrizione" value={listinoForm.descrizione||""} onChange={(v: string)=>setListinoForm({...listinoForm,descrizione:v})} placeholder="Es. Finestra 2 ante PVC" />
-              <div style={{display:"flex",gap:8}}>
-                <div style={{flex:1}}><label style={S.fLabel}>Prezzo (€)</label><input type="number" value={listinoForm.prezzo||""} onChange={e=>setListinoForm({...listinoForm,prezzo:parseFloat(e.target.value)||0})} style={S.input} placeholder="0.00" /></div>
-                <div style={{flex:1}}><label style={S.fLabel}>Tipo</label><select value={listinoForm.tipo||"pezzo"} onChange={e=>setListinoForm({...listinoForm,tipo:e.target.value})} style={S.input}><option value="pezzo">€/pezzo</option><option value="mq">€/mq</option><option value="ml">€/ml</option></select></div>
+              <div style={{marginBottom:8}}>
+                <label style={S.fLabel}>Tipo Prezzo</label>
+                <div style={{display:"flex",gap:4}}>
+                  {([["pezzo","€/pezzo"],["mq","€/mq"],["ml","€/ml"],["griglia","📊 Griglia L×H"]] as [string,string][]).map(([k,lab])=>
+                    <button key={k} onClick={()=>{
+                      const upd: any = {tipo:k};
+                      if(k==="griglia") upd.griglia = {minL:600,maxL:1800,stepL:100,minH:600,maxH:1600,stepH:100,prezzoBase:0,incL:0,incH:0,prezzi:{}};
+                      else upd.griglia = undefined;
+                      setListinoForm({...listinoForm,...upd});
+                    }} style={{flex:1,padding:"10px 6px",borderRadius:2,border:"none",background:listinoForm.tipo===k?"#1a1a2e":"#e2e8f0",color:listinoForm.tipo===k?"#fff":"#374151",fontSize:11,fontWeight:700,cursor:"pointer"}}>{lab}</button>
+                  )}
+                </div>
               </div>
+              {listinoForm.tipo!=="griglia" && <div style={{display:"flex",gap:8}}>
+                <div style={{flex:1}}><label style={S.fLabel}>Prezzo (€)</label><input type="number" value={listinoForm.prezzo||""} onChange={e=>setListinoForm({...listinoForm,prezzo:parseFloat(e.target.value)||0})} style={S.input} placeholder="0.00" /></div>
+                <div style={{flex:1}}><label style={S.fLabel}>Minimo Fatt. (€)</label><input type="number" value={listinoForm.minimoFatt||""} onChange={e=>setListinoForm({...listinoForm,minimoFatt:parseFloat(e.target.value)||0})} style={S.input} placeholder="Opzionale" /></div>
+              </div>}
+              {listinoForm.tipo==="griglia" && <div style={{display:"flex",gap:8}}>
+                <div style={{flex:1}}><label style={S.fLabel}>Minimo Fatt. (€)</label><input type="number" value={listinoForm.minimoFatt||""} onChange={e=>setListinoForm({...listinoForm,minimoFatt:parseFloat(e.target.value)||0})} style={S.input} placeholder="Opzionale" /></div>
+              </div>}
               <div style={{flex:1}}><label style={S.fLabel}>Categoria</label><select value={listinoForm.categoria||""} onChange={e=>setListinoForm({...listinoForm,categoria:e.target.value})} style={S.input}><option value="">—</option>{categorie.map((c: any)=><option key={c.id} value={c.nome}>{c.nome}</option>)}</select></div>
+              {listinoForm.tipo==="griglia" && <div style={{padding:10,background:"#f5f3ff",borderRadius:2,border:"1px solid #c4b5fd",marginTop:8}}>
+                <p style={{fontSize:11,color:"#6d28d9",fontWeight:700,marginBottom:6}}>Dopo aver aggiunto, clicca GRIGLIA per configurare dimensioni e prezzi.</p>
+              </div>}
               <div style={{display:"flex",gap:8,marginTop:10}}>
                 <button onClick={()=>setListinoForm(null)} style={{...S.saveBtn,flex:1,background:"#e2e8f0",color:"#374151",boxShadow:"none"}}>Annulla</button>
-                <button onClick={addListinoItem} disabled={!listinoForm.descrizione?.trim()} style={{...S.saveBtn,flex:2,background:"#d4820e",opacity:listinoForm.descrizione?.trim()?1:0.5}}> Aggiungi</button>
+                <button onClick={addListinoItem} disabled={!listinoForm.descrizione?.trim()} style={{...S.saveBtn,flex:2,background:"#d4820e",opacity:listinoForm.descrizione?.trim()?1:0.5}}>Aggiungi</button>
               </div>
             </div>
-          ) : <button onClick={()=>setListinoForm({descrizione:"",prezzo:0,tipo:"pezzo",categoria:""})} style={{...S.saveBtn,background:"#d4820e",marginTop:12}}>+ Aggiungi Articolo al Listino</button>}
+          ) : <button onClick={()=>setListinoForm({descrizione:"",prezzo:0,tipo:"pezzo",categoria:"",minimoFatt:0})} style={{...S.saveBtn,background:"#d4820e",marginTop:12}}>+ Aggiungi Articolo al Listino</button>}
         </>)}
         {tab==="checklists" && (<>
           <p style={{fontSize:13,color:"#64748b",marginBottom:12}}>Personalizza le checklist per ogni fase. Aggiungi, rimuovi o riordina i task.</p>
@@ -2906,12 +3402,15 @@ function BottomNav({ items, active, onNav }: any) {
 }
 
 // ==================== NEW PRATICA ====================
-function NewPraticaView({ client, onCreate, onBack }: any) {
+function NewPraticaView({ client, pratiche, clients, onCreate, onBack }: any) {
   const [ind, setInd] = useState(client?.indirizzo||"");
   const [tipo, setTipo] = useState("nuovo_infisso");
   const [data, setData] = useState(today());
   const [ora, setOra] = useState("09:00");
   const [note, setNote] = useState("");
+  const [praticaCollegata, setPraticaCollegata] = useState("");
+  // Pratiche dello stesso cliente (per collegamento riparazione)
+  const clientPratiche = (pratiche||[]).filter((p: any) => p.clientId === client?.id && p.tipo !== "riparazione");
   return (
     <div style={S.container}>
       <div style={S.secHdr}><button onClick={onBack} style={S.backBtn}>← Indietro</button><h2 style={S.secTitle}>Nuova Pratica</h2></div>
@@ -2920,7 +3419,7 @@ function NewPraticaView({ client, onCreate, onBack }: any) {
         <div style={{marginBottom:16}}>
           <label style={S.fLabel}>Tipo Pratica</label>
           <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>setTipo("nuovo_infisso")} style={{flex:1,padding:"16px 12px",borderRadius:2,border:tipo==="nuovo_infisso"?"3px solid #e07a2f":"2px solid #e2e8f0",background:tipo==="nuovo_infisso"?"#fff7ed":"#fff",cursor:"pointer",textAlign:"center"}}>
+            <button onClick={()=>{setTipo("nuovo_infisso");setPraticaCollegata("");}} style={{flex:1,padding:"16px 12px",borderRadius:2,border:tipo==="nuovo_infisso"?"3px solid #e07a2f":"2px solid #e2e8f0",background:tipo==="nuovo_infisso"?"#fff7ed":"#fff",cursor:"pointer",textAlign:"center"}}>
               <div style={{fontSize:28}}></div>
               <div style={{fontSize:14,fontWeight:800,color:tipo==="nuovo_infisso"?"#e07a2f":"#374151",marginTop:4}}>Nuovo Infisso</div>
               <div style={{fontSize:11,color:"#64748b",marginTop:2}}>Sopralluogo → Misure → Preventivo → Conferma → Fattura → Posa</div>
@@ -2932,11 +3431,27 @@ function NewPraticaView({ client, onCreate, onBack }: any) {
             </button>
           </div>
         </div>
+
+        {/* Collega a pratica esistente (solo per riparazioni) */}
+        {tipo === "riparazione" && clientPratiche.length > 0 && (
+          <div style={{marginBottom:16,padding:14,background:"#fef2f2",borderRadius:2,border:"1.5px solid #fecaca"}}>
+            <label style={{fontSize:11,fontWeight:800,color:"#dc2626",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6,display:"block"}}>🔗 Collega a pratica originale</label>
+            <p style={{fontSize:11,color:"#64748b",marginBottom:8}}>Se questa riparazione riguarda infissi già montati, seleziona la pratica originale.</p>
+            <select value={praticaCollegata} onChange={e=>setPraticaCollegata(e.target.value)} style={{...S.input,borderColor:"#fca5a5"}}>
+              <option value="">— Nessun collegamento —</option>
+              {clientPratiche.map((p: any) => {
+                const cl = (clients||[]).find((c: any) => c.id === p.clientId);
+                return <option key={p.id} value={p.id}>{p.numero} — {p.indirizzo||cl?.nome||"—"} ({p.fase})</option>;
+              })}
+            </select>
+          </div>
+        )}
+
         <Field label="Indirizzo Cantiere" value={ind} onChange={setInd} placeholder="Via, numero, città" />
         <div style={{display:"flex",gap:12}}><Field label="Data" value={data} onChange={setData} type="date" style={{flex:1}} /><Field label="Ora" value={ora} onChange={setOra} type="time" style={{flex:1}} /></div>
         <Field label="Note" value={note} onChange={setNote} placeholder="Note pratica..." textarea />
         <div style={S.infoNote}>ℹ️ La pratica inizierà dalla fase Sopralluogo.</div>
-        <button onClick={()=>onCreate(ind,tipo,data,ora,note)} style={{...S.saveBtn,background:tipo==="riparazione"?"#c44040":"#e07a2f"}}>Crea Pratica →</button>
+        <button onClick={()=>onCreate(ind,tipo,data,ora,note,praticaCollegata||undefined)} style={{...S.saveBtn,background:tipo==="riparazione"?"#c44040":"#e07a2f"}}>Crea Pratica →</button>
       </div>
     </div>
   );
@@ -3014,7 +3529,7 @@ function SignaturePad({ onSave, onCancel }: any) {
 }
 
 // ==================== PRATICA DETAIL ====================
-function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, permissions, onBack, onDelete, onDuplica, onAddAction, onToggleTask, onAddTask, onRemoveTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica, onAssign, onStampaCantiere }: any) {
+function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, permissions, allPratiche, allClients, onBack, onDelete, onDuplica, onAddAction, onToggleTask, onAddTask, onRemoveTask, onOpenMisure, onOpenRip, onOpenPrev, onOpenEmail, onStatusChange, onConfirmOrder, onGenerateFattura, onUpdateFattura, onAdvancePhase, onUpdatePratica, onAssign, onStampaCantiere, onOpenPratica }: any) {
   const [newTaskText, setNewTaskText] = useState("");
   const [msgText, setMsgText] = useState("");
   const [msgDest, setMsgDest] = useState("");
@@ -3028,9 +3543,9 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
     onUpdatePratica({ messaggi: [...(p.messaggi||[]), msg] });
     setMsgText("");
   }
-  const sc = STATUS[p.status];
-  const totalT = p.actions.reduce((s: number,a: any)=>s+a.tasks.length,0);
-  const doneT = p.actions.reduce((s: number,a: any)=>s+a.tasks.filter((t: any)=>t.done).length,0);
+  const sc = STATUS[p.status] || {bg:"#f0f0f0",color:"#333",label:"—"};
+  const totalT = (p.actions||[]).reduce((s: number,a: any)=>s+(a.tasks||[]).length,0);
+  const doneT = (p.actions||[]).reduce((s: number,a: any)=>s+(a.tasks||[]).filter((t: any)=>t.done).length,0);
   const prog = totalT?Math.round(doneT/totalT*100):0;
   const [showSignPad, setShowSignPad] = useState(false);
   const [orderNote, setOrderNote] = useState("");
@@ -3056,6 +3571,41 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
             {p.note && <InfoRow icon="" val={p.note} />}
           </div>
         </div>
+
+        {/* PRATICA COLLEGATA */}
+        {p.praticaCollegata && (()=>{
+          const linked = (allPratiche||[]).find((pr: any) => pr.id === p.praticaCollegata);
+          if (!linked) return null;
+          const linkedClient = (allClients||[]).find((cl: any) => cl.id === linked.clientId);
+          return <div onClick={()=>onOpenPratica?.(linked.id)} style={{padding:12,background:"#fef2f2",borderRadius:2,border:"2px solid #fecaca",marginBottom:14,cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:18}}>🔗</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:11,fontWeight:800,color:"#dc2626",textTransform:"uppercase"}}>Collegata a pratica originale</div>
+              <div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{linked.numero} — {linkedClient?.nome||"—"}</div>
+              <div style={{fontSize:11,color:"#64748b"}}>{linked.indirizzo||""} · Fase: {linked.fase}</div>
+            </div>
+            <span style={{color:"#dc2626",fontWeight:700}}>→</span>
+          </div>;
+        })()}
+
+        {/* Riparazioni collegate (per pratiche originali) */}
+        {(()=>{
+          const linked = (allPratiche||[]).filter((pr: any) => pr.praticaCollegata === p.id);
+          if (linked.length === 0) return null;
+          return <div style={{padding:12,background:"#fff7ed",borderRadius:2,border:"2px solid #fed7aa",marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:800,color:"#ea580c",textTransform:"uppercase",marginBottom:6}}>🔧 Riparazioni collegate ({linked.length})</div>
+            {linked.map((rp: any) => {
+              const rpClient = (allClients||[]).find((cl: any) => cl.id === rp.clientId);
+              return <div key={rp.id} onClick={()=>onOpenPratica?.(rp.id)} style={{padding:8,background:"#fff",borderRadius:2,border:"1px solid #fed7aa",marginBottom:4,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{rp.numero}</div>
+                  <div style={{fontSize:11,color:"#64748b"}}>{fmtDate(rp.data)} · {rp.fase} · {rp.status}</div>
+                </div>
+                <span style={{color:"#ea580c"}}>→</span>
+              </div>;
+            })}
+          </div>;
+        })()}
 
         {/* ===== WORKFLOW STEPPER ===== */}
         {(() => {
@@ -3656,7 +4206,7 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
     n[i] = { ...n[i], [field]: value };
     const p = n[i];
     if (field === "tipoPrezzo") {
-      const labels: Record<string, string> = { mq: "€/mq", pezzo: "€/pezzo", listino: "Listino", manuale: "Manuale" };
+      const labels: Record<string, string> = { mq: "€/mq", pezzo: "€/pezzo", listino: "Listino", manuale: "Manuale", griglia: "📊 Griglia", ml: "€/ml" };
       p.tipoPrezzoLabel = labels[value] || value;
     }
     // Always recalculate mq from dimensions
@@ -3687,11 +4237,29 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
 
   function applyFromListino(prodIndex: number, listinoItem: any) {
     const n = [...prodotti];
-    n[prodIndex] = { ...n[prodIndex], descrizione: listinoItem.descrizione, prezzoUnitario: listinoItem.prezzo, tipoPrezzo: listinoItem.tipo || "pezzo", tipoPrezzoLabel: listinoItem.tipo === "mq" ? "€/mq" : "€/pezzo" };
-    const p = n[prodIndex];
-    const prezzo = parseFloat(p.prezzoUnitario) || 0;
-    const qty = parseInt(p.quantita) || 1;
-    p.totale = p.tipoPrezzo === "mq" ? prezzo * (p.mq || 0) * qty : prezzo * qty;
+    if(listinoItem.tipo === "griglia") {
+      // For grid products, store the grid reference and let user enter dimensions
+      n[prodIndex] = { ...n[prodIndex], descrizione: listinoItem.descrizione, tipoPrezzo: "griglia", tipoPrezzoLabel: "📊 Griglia", listinoGridId: listinoItem.id, listinoGrid: listinoItem.griglia, minimoFatt: listinoItem.minimoFatt || 0 };
+      // If dimensions already exist, calculate price from grid
+      const p = n[prodIndex];
+      const l = parseFloat(p.larghezza) || 0;
+      const h = parseFloat(p.altezza) || 0;
+      if(l > 0 && h > 0 && listinoItem.griglia?.prezzi) {
+        const g = listinoItem.griglia;
+        const snapL = Math.round(l / g.stepL) * g.stepL;
+        const snapH = Math.round(h / g.stepH) * g.stepH;
+        const clampL = Math.max(g.minL, Math.min(g.maxL, snapL));
+        const clampH = Math.max(g.minH, Math.min(g.maxH, snapH));
+        const price = g.prezzi[`${clampL}x${clampH}`];
+        if(price !== undefined) { p.prezzoUnitario = price; p.totale = price * (parseInt(p.quantita)||1); }
+      }
+    } else {
+      n[prodIndex] = { ...n[prodIndex], descrizione: listinoItem.descrizione, prezzoUnitario: listinoItem.prezzo, tipoPrezzo: listinoItem.tipo || "pezzo", tipoPrezzoLabel: listinoItem.tipo === "mq" ? "€/mq" : listinoItem.tipo === "ml" ? "€/ml" : "€/pezzo", minimoFatt: listinoItem.minimoFatt || 0 };
+      const p = n[prodIndex];
+      const prezzo = parseFloat(p.prezzoUnitario) || 0;
+      const qty = parseInt(p.quantita) || 1;
+      p.totale = p.tipoPrezzo === "mq" ? prezzo * (p.mq || 0) * qty : prezzo * qty;
+    }
     setProdotti(n);
     setShowListino(false);
   }
@@ -3722,9 +4290,27 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
   function calcProdTotale(p: any): number {
     const pr = parseFloat(String(p.prezzoUnitario))||0;
     const qt = parseInt(String(p.quantita))||1;
-    if(p.tipoPrezzo==="mq"){const mq=(parseFloat(String(p.larghezza))||0)*(parseFloat(String(p.altezza))||0)/1000000; return parseFloat((pr*mq*qt).toFixed(2));}
-    if(p.tipoPrezzo==="manuale") return parseFloat(String(p.totale))||0;
-    return parseFloat((pr*qt).toFixed(2));
+    const minFatt = parseFloat(String(p.minimoFatt))||0;
+    if(p.tipoPrezzo==="griglia"){
+      // For grid: price is per piece from grid, recalculate if dimensions changed
+      const g = p.listinoGrid;
+      if(g?.prezzi) {
+        const l = parseFloat(String(p.larghezza))||0;
+        const h = parseFloat(String(p.altezza))||0;
+        if(l>0 && h>0) {
+          const snapL = Math.round(l/g.stepL)*g.stepL;
+          const snapH = Math.round(h/g.stepH)*g.stepH;
+          const clampL = Math.max(g.minL,Math.min(g.maxL,snapL));
+          const clampH = Math.max(g.minH,Math.min(g.maxH,snapH));
+          const gridPrice = g.prezzi[`${clampL}x${clampH}`];
+          if(gridPrice!==undefined) return Math.max(minFatt, parseFloat((gridPrice*qt).toFixed(2)));
+        }
+      }
+      return Math.max(minFatt, parseFloat((pr*qt).toFixed(2)));
+    }
+    if(p.tipoPrezzo==="mq"){const mq=(parseFloat(String(p.larghezza))||0)*(parseFloat(String(p.altezza))||0)/1000000; return Math.max(minFatt, parseFloat((pr*mq*qt).toFixed(2)));}
+    if(p.tipoPrezzo==="manuale") return Math.max(minFatt, parseFloat(String(p.totale))||0);
+    return Math.max(minFatt, parseFloat((pr*qt).toFixed(2)));
   }
   const subtotale = prodotti.reduce((s: number, p: any) => s + calcProdTotale(p), 0);
   const scontoVal = subtotale * (sconto || 0) / 100;
@@ -3829,9 +4415,23 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
               </div>
             )}
 
+            {/* Dimensioni per griglia L×H */}
+            {p.tipoPrezzo === "griglia" && p.listinoGrid && (
+              <div>
+                <div style={{display:"flex",gap:8}}>
+                  <Field label="L (mm)" value={p.larghezza} onChange={(v: string) => updateProdotto(i, "larghezza", v)} type="number" placeholder="Larg." style={{flex:1}} />
+                  <Field label="H (mm)" value={p.altezza} onChange={(v: string) => updateProdotto(i, "altezza", v)} type="number" placeholder="Alt." style={{flex:1}} />
+                  <div style={{flex:"0 0 100px"}}><label style={S.fLabel}>Prezzo</label><div style={{...S.input,background:"#f5f3ff",color:"#8b5cf6",fontWeight:800,fontSize:14}}>
+                    {(()=>{const g=p.listinoGrid;const l=parseFloat(String(p.larghezza))||0;const h=parseFloat(String(p.altezza))||0;if(l>0&&h>0&&g?.prezzi){const sL=Math.round(l/g.stepL)*g.stepL;const sH=Math.round(h/g.stepH)*g.stepH;const cL=Math.max(g.minL,Math.min(g.maxL,sL));const cH=Math.max(g.minH,Math.min(g.maxH,sH));const pr=g.prezzi[`${cL}x${cH}`];return pr!==undefined?`€${pr.toFixed(2)}`:"—";}return "—";})()}
+                  </div></div>
+                </div>
+                {p.minimoFatt > 0 && <div style={{fontSize:10,color:"#d97706",marginTop:2}}>Minimo fatturazione: €{p.minimoFatt}</div>}
+              </div>
+            )}
+
             <div style={{display:"flex",gap:8}}>
               <Field label="Quantità" value={p.quantita} onChange={(v: string) => updateProdotto(i, "quantita", v)} type="number" style={{flex:"0 0 80px"}} />
-              <Field label={p.tipoPrezzo === "mq" ? "Prezzo €/mq" : "Prezzo €/pz"} value={p.prezzoUnitario} onChange={(v: string) => updateProdotto(i, "prezzoUnitario", v)} type="number" placeholder="0.00" style={{flex:1}} />
+              <Field label={p.tipoPrezzo === "mq" ? "Prezzo €/mq" : p.tipoPrezzo === "griglia" ? "Prezzo (da griglia)" : "Prezzo €/pz"} value={p.prezzoUnitario} onChange={(v: string) => updateProdotto(i, "prezzoUnitario", v)} type="number" placeholder="0.00" style={{flex:1}} />
               <div style={{flex:"0 0 100px"}}><label style={S.fLabel}>Totale</label><div style={{...S.input,background:"#ecfdf5",color:"#059669",fontWeight:800,fontSize:16}}>€ {calcProdTotale(p).toFixed(2)}</div></div>
             </div>
           </div>
@@ -3853,7 +4453,7 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
                   else if (prodotti.length > 0) { applyFromListino(prodotti.length - 1, l); }
                 }} style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"8px 10px",background:"#fff",borderRadius:2,border:"1px solid #e2e8f0",marginBottom:4,cursor:"pointer",textAlign:"left"}}>
                   <span style={{fontSize:13,fontWeight:600,color:"#0f172a"}}>{l.descrizione}</span>
-                  <span style={{fontSize:14,fontWeight:700,color:"#059669"}}>€ {l.prezzo.toFixed(2)}/{l.tipo||"pz"}</span>
+                  <span style={{fontSize:14,fontWeight:700,color:l.tipo==="griglia"?"#8b5cf6":"#059669"}}>{l.tipo==="griglia"?"📊 Griglia":`€ ${(parseFloat(l.prezzo)||0).toFixed(2)}/${l.tipo||"pz"}`}</span>
                 </button>
               ))}
             </div>
