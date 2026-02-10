@@ -730,27 +730,16 @@ export default function FrameFlowApp() {
 
   // ===== GLOBAL MOBILE CSS =====
   useEffect(() => {
+    // Inject autoflow animations only
     const style = document.createElement("style");
-    style.textContent = `
-      html { overflow-x: hidden !important; }
-      body { overflow-x: hidden !important; overflow-y: auto !important; }
-      * { box-sizing: border-box !important; }
-      input, select, textarea { max-width: 100% !important; font-size: 16px !important; }
-      img { max-width: 100% !important; height: auto !important; }
-      table { max-width: 100% !important; }
-      ${AUTOFLOW_CSS}
-    `;
-    // Ensure viewport meta is correct (mobile only)
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      let viewport = document.querySelector('meta[name="viewport"]');
-      if (!viewport) {
-        viewport = document.createElement("meta");
-        viewport.setAttribute("name", "viewport");
-        document.head.appendChild(viewport);
-      }
-      viewport.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
-    }
+    style.textContent = AUTOFLOW_CSS;
     document.head.appendChild(style);
+    // Viewport meta for mobile only
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      let vp = document.querySelector('meta[name="viewport"]');
+      if (!vp) { vp = document.createElement("meta"); vp.setAttribute("name","viewport"); document.head.appendChild(vp); }
+      vp.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
+    }
     return () => { document.head.removeChild(style); };
   }, []);
 
@@ -4904,7 +4893,7 @@ function getThemeStyles(themeKey: string): Record<string, React.CSSProperties> {
   const mono = "'JetBrains Mono','SF Mono','Cascadia Code','Fira Code',monospace";
   const sans = "'DM Sans','Segoe UI',system-ui,-apple-system,sans-serif";
   return {
-  container:{maxWidth:540,width:"100%",margin:"0 auto",minHeight:"100vh",background:t.bg,fontFamily:sans,paddingBottom:72,color:textPrimary,overflowX:"hidden" as any},
+  container:{maxWidth:960,width:"100%",margin:"0 auto",minHeight:"100vh",background:t.bg,fontFamily:sans,paddingBottom:72,color:textPrimary},
   loadWrap:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:t.loadBg},
   header:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 12px",background:t.headerBg,color:"#fff",borderBottom:`3px solid ${t.primary}`,flexWrap:"wrap" as any,gap:8},
   logo:{fontSize:20,fontWeight:800,margin:0,letterSpacing:"1px",textTransform:"uppercase",fontFamily:mono,color:t.accent},
@@ -4924,7 +4913,7 @@ function getThemeStyles(themeKey: string): Record<string, React.CSSProperties> {
   emailDashCard:{background:cardBg,borderRadius:2,padding:"10px 16px",border:`1px solid ${borderColor}`,marginBottom:6,boxShadow:t.cardShadow},
   noteCard:{display:"block",width:"100%",textAlign:"left",borderRadius:2,padding:"12px 16px",border:`1px solid ${borderColor}`,marginBottom:8,cursor:"pointer",boxShadow:t.cardShadow},
   addNoteBtn:{width:34,height:34,borderRadius:2,background:t.primary,color:"#fff",border:"none",fontSize:18,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"},
-  bottomNav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:540,display:"flex",background:isDark?"#1c1f26":"#fff",borderTop:`2px solid ${t.primary}`,padding:"6px 0 calc(4px + env(safe-area-inset-bottom, 0px))",zIndex:100,overflow:"hidden" as any},
+  bottomNav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:960,display:"flex",background:isDark?"#1c1f26":"#fff",borderTop:`2px solid ${t.primary}`,padding:"6px 0 calc(4px + env(safe-area-inset-bottom, 0px))",zIndex:100},
   navItem:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:1,background:"none",border:"none",cursor:"pointer",padding:"2px 0",transition:"all 0.15s",minWidth:0,overflow:"hidden" as any},
   stats:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,padding:"14px 16px 10px"},
   statCard:{display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:cardBg,borderRadius:2,padding:"12px 4px",border:`1px solid ${borderColor}`,cursor:"pointer",boxShadow:t.cardShadow},
