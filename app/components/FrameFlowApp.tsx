@@ -728,19 +728,13 @@ export default function FrameFlowApp() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ===== GLOBAL MOBILE CSS =====
+  // ===== MOBILE VIEWPORT =====
   useEffect(() => {
-    // Inject autoflow animations only
-    const style = document.createElement("style");
-    style.textContent = AUTOFLOW_CSS;
-    document.head.appendChild(style);
-    // Viewport meta for mobile only
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
       let vp = document.querySelector('meta[name="viewport"]');
       if (!vp) { vp = document.createElement("meta"); vp.setAttribute("name","viewport"); document.head.appendChild(vp); }
       vp.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
     }
-    return () => { document.head.removeChild(style); };
   }, []);
 
   // ===== LOAD DATA FROM SUPABASE =====
@@ -3453,33 +3447,27 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
 }
 
 // ==================== AUTO-FLOW HELPERS ====================
-// Flash animation for next task/field highlight
-const AUTOFLOW_CSS = `
-@keyframes ff-flash { 0%{background:#fef3c7;transform:scale(1.02)} 50%{background:#fde68a;transform:scale(1.02)} 100%{background:#fff;transform:scale(1)} }
-.ff-flash { animation: ff-flash 0.8s ease-out !important; }
-@keyframes ff-pulse { 0%{box-shadow:0 0 0 0 rgba(224,122,47,0.5)} 70%{box-shadow:0 0 0 8px rgba(224,122,47,0)} 100%{box-shadow:0 0 0 0 rgba(224,122,47,0)} }
-.ff-pulse { animation: ff-pulse 0.6s ease-out !important; }
-`;
-
 function scrollToNextUndone(currentEl: HTMLElement) {
   if (typeof document === "undefined") return;
-  // Find all task rows in the same container
   const container = currentEl.closest("[data-tasks]");
   if (!container) return;
   const allRows = Array.from(container.querySelectorAll("[data-task-done='false']")) as HTMLElement[];
   if (allRows.length === 0) return;
-  // Get the first undone task that comes after current
   const currentIdx = Array.from(container.querySelectorAll("[data-task-id]")).indexOf(currentEl);
   const nextUndone = allRows.find(el => {
     const idx = Array.from(container.querySelectorAll("[data-task-id]")).indexOf(el);
     return idx > currentIdx;
-  }) || allRows[0]; // wrap to first undone if none after
+  }) || allRows[0];
   
   if (nextUndone) {
     setTimeout(() => {
       nextUndone.scrollIntoView({ behavior: "smooth", block: "center" });
-      nextUndone.classList.add("ff-flash");
-      setTimeout(() => nextUndone.classList.remove("ff-flash"), 900);
+      // Flash effect with inline style
+      const orig = nextUndone.style.background;
+      const origBorder = nextUndone.style.border;
+      nextUndone.style.background = "#fef3c7";
+      nextUndone.style.border = "2px solid #f59e0b";
+      setTimeout(() => { nextUndone.style.background = orig; nextUndone.style.border = origBorder; }, 800);
     }, 150);
   }
 }
@@ -3494,8 +3482,10 @@ function autoAdvanceField(currentEl: HTMLElement) {
     setTimeout(() => {
       fields[idx + 1].focus();
       fields[idx + 1].scrollIntoView({ behavior: "smooth", block: "center" });
-      fields[idx + 1].classList.add("ff-pulse");
-      setTimeout(() => fields[idx + 1].classList.remove("ff-pulse"), 700);
+      // Pulse effect with inline style
+      const orig = fields[idx + 1].style.borderColor;
+      fields[idx + 1].style.borderColor = "#e07a2f";
+      setTimeout(() => { fields[idx + 1].style.borderColor = orig; }, 700);
     }, 80);
   }
 }
