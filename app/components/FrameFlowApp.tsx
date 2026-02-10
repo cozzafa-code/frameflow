@@ -3464,107 +3464,105 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
   );
 }
 
-// ==================== FIELD NAVIGATOR (MAGIC JOYSTICK) ====================
+// ==================== FIELD NAVIGATOR (AUTO-ADVANCE + NEXT BUTTON) ====================
 function FieldNavigator() {
-  const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [pos, setPos] = useState<{x:number,y:number}>({x:0,y:0});
-  const dragRef = useRef<{startX:number,startY:number,startPosX:number,startPosY:number,moved:boolean}|null>(null);
+  const [showNext, setShowNext] = useState(false);
 
   useEffect(() => {
     const mobile = window.innerWidth <= 640 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     setIsMobile(mobile);
     if (!mobile) return;
-    const defaultPos = { x: window.innerWidth - 65, y: window.innerHeight * 0.45 };
-    try { const s = localStorage.getItem("ff-nav-pos"); if(s) { const p = JSON.parse(s); defaultPos.x=p.x; defaultPos.y=p.y; } } catch(e){}
-    setPos(defaultPos);
+
+    const onFocus = () => setShowNext(true);
+    const onBlur = () => setTimeout(() => setShowNext(false), 150);
+    
+    // Auto-advance: when select/date/time changes, move to next field
+    const onChange = (e: Event) => {
+      const el = e.target as HTMLElement;
+      const tag = el.tagName.toLowerCase();
+      const type = (el as HTMLInputElement).type;
+      // Auto-advance for selects, date, time
+      if (tag === "select" || type === "date" || type === "time") {
+        setTimeout(() => {
+          const fields = getFields();
+          const idx = fields.indexOf(el);
+          if (idx >= 0 && idx < fields.length - 1) {
+            fields[idx + 1].focus();
+            fields[idx + 1].scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+      }
+    };
+
+    document.addEventListener("focusin", onFocus);
+    document.addEventListener("focusout", onBlur);
+    document.addEventListener("change", onChange);
+    return () => {
+      document.removeEventListener("focusin", onFocus);
+      document.removeEventListener("focusout", onBlur);
+      document.removeEventListener("change", onChange);
+    };
   }, []);
 
-  const getAllFields = (): HTMLElement[] => {
+  const getFields = (): HTMLElement[] => {
     return Array.from(document.querySelectorAll("input:not([type=hidden]):not([type=file]):not([type=checkbox]), textarea, select")).filter(el => {
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && !(el as HTMLInputElement).disabled;
     }) as HTMLElement[];
   };
 
-  const nav = (dir: number) => {
-    const fields = getAllFields();
+  const goNext = () => {
+    const fields = getFields();
     const cur = document.activeElement as HTMLElement;
-    let idx = fields.indexOf(cur);
-    if (idx === -1) idx = dir > 0 ? 0 : fields.length - 1;
-    else idx += dir;
-    idx = Math.max(0, Math.min(fields.length - 1, idx));
-    fields[idx]?.focus();
-    fields[idx]?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
-  const dismiss = () => {
-    (document.activeElement as HTMLElement)?.blur();
-    setOpen(false);
-  };
-
-  const onDragStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    dragRef.current = { startX: t.clientX, startY: t.clientY, startPosX: pos.x, startPosY: pos.y, moved: false };
-  };
-  const onDragMove = (e: React.TouchEvent) => {
-    if (!dragRef.current) return;
-    const t = e.touches[0];
-    const dx = t.clientX - dragRef.current.startX;
-    const dy = t.clientY - dragRef.current.startY;
-    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) dragRef.current.moved = true;
-    if (!dragRef.current.moved) return;
-    e.preventDefault();
-    setPos({
-      x: Math.max(0, Math.min(window.innerWidth - 60, dragRef.current.startPosX + dx)),
-      y: Math.max(40, Math.min(window.innerHeight - 100, dragRef.current.startPosY + dy))
-    });
-  };
-  const onDragEnd = () => {
-    if (dragRef.current?.moved) {
-      try { localStorage.setItem("ff-nav-pos", JSON.stringify(pos)); } catch(e) {}
+    const idx = fields.indexOf(cur);
+    if (idx >= 0 && idx < fields.length - 1) {
+      fields[idx + 1].focus();
+      fields[idx + 1].scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      (document.activeElement as HTMLElement)?.blur();
     }
-    dragRef.current = null;
   };
 
-  if (!isMobile) return null;
-
-  const btnS: any = {
-    width:40,height:40,borderRadius:"50%",border:"none",
-    background:"rgba(26,26,46,0.85)",color:"#fff",fontSize:16,
-    display:"flex",alignItems:"center",justifyContent:"center",
-    cursor:"pointer",boxShadow:"0 2px 10px rgba(0,0,0,0.35)",
-    WebkitTapHighlightColor:"transparent"
+  const goPrev = () => {
+    const fields = getFields();
+    const cur = document.activeElement as HTMLElement;
+    const idx = fields.indexOf(cur);
+    if (idx > 0) {
+      fields[idx - 1].focus();
+      fields[idx - 1].scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   };
 
-  // Collapsed: just a small floating button
-  if (!open) {
-    return (
-      <div style={{position:"fixed",zIndex:9999,left:pos.x,top:pos.y,touchAction:"none"}}
-        onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd}>
-        <button onClick={()=>{ if(!dragRef.current?.moved) setOpen(true); }} style={{
-          width:48,height:48,borderRadius:"50%",border:"2px solid #e07a2f",
-          background:"rgba(26,26,46,0.9)",color:"#e07a2f",fontSize:20,
-          display:"flex",alignItems:"center",justifyContent:"center",
-          cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.4)"
-        }}>⇥</button>
-      </div>
-    );
-  }
+  if (!isMobile || !showNext) return null;
 
-  // Expanded: full D-pad
+  // Show field position
+  const fields = getFields();
+  const curIdx = fields.indexOf(document.activeElement as HTMLElement);
+  const total = fields.length;
+  const isLast = curIdx >= total - 1;
+  const isFirst = curIdx <= 0;
+
   return (
-    <div style={{position:"fixed",zIndex:9999,left:pos.x - 50,top:pos.y - 50,touchAction:"none"}}
-      onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd}>
-      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"rgba(0,0,0,0.15)",borderRadius:60,padding:6}}>
-        <button onClick={()=>nav(-1)} style={btnS}>▲</button>
-        <div style={{display:"flex",gap:2}}>
-          <button onClick={()=>nav(-1)} style={btnS}>◀</button>
-          <button onClick={dismiss} style={{...btnS,background:"#e07a2f",fontSize:12,fontWeight:900}}>✓</button>
-          <button onClick={()=>nav(1)} style={btnS}>▶</button>
-        </div>
-        <button onClick={()=>nav(1)} style={btnS}>▼</button>
+    <div style={{
+      position:"fixed", bottom:0, left:0, right:0, zIndex:9998,
+      display:"flex", gap:0, background:"#1a1a2e",
+      borderTop:"2px solid #e07a2f",
+      padding:"6px 8px calc(6px + env(safe-area-inset-bottom, 0px))"
+    }}>
+      <button onClick={goPrev} disabled={isFirst} style={{
+        flex:1, padding:"10px", border:"none", borderRadius:2,
+        background:isFirst?"#2a2a3e":"#3a3a5e", color:isFirst?"#555":"#fff",
+        fontSize:14, fontWeight:700, cursor:isFirst?"default":"pointer"
+      }}>← INDIETRO</button>
+      <div style={{padding:"10px 12px",color:"#94a3b8",fontSize:11,fontWeight:600,display:"flex",alignItems:"center",whiteSpace:"nowrap"}}>
+        {curIdx >= 0 ? `${curIdx+1}/${total}` : ""}
       </div>
+      <button onClick={goNext} style={{
+        flex:1, padding:"10px", border:"none", borderRadius:2,
+        background: isLast ? "#2d8a4e" : "#e07a2f", color:"#fff",
+        fontSize:14, fontWeight:800, cursor:"pointer"
+      }}>{isLast ? "✓ FATTO" : "AVANTI →"}</button>
     </div>
   );
 }
