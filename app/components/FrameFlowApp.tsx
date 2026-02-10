@@ -46,28 +46,28 @@ async function deletePhotoFromStorage(url: string) {
 const STORAGE_KEY = "frameflow-v4";
 
 const ACTIONS_CFG = [
-  { key: "sopralluogo", icon: "►", label: "Sopralluogo", desc: "Vai a vedere il cantiere", color: "#2563eb" },
-  { key: "misure", icon: "┼", label: "Misure", desc: "Prendi le misure", color: "#d97706" },
+  { key: "sopralluogo", icon: ">", label: "Sopralluogo", desc: "Vai a vedere il cantiere", color: "#2563eb" },
+  { key: "misure", icon: "+", label: "Misure", desc: "Prendi le misure", color: "#d97706" },
   { key: "preventivo", icon: "€", label: "Preventivo", desc: "Prepara preventivo", color: "#8b5cf6" },
-  { key: "conferma", icon: "✓", label: "Conferma Ordine", desc: "Firma conferma", color: "#059669" },
+  { key: "conferma", icon: "OK", label: "Conferma Ordine", desc: "Firma conferma", color: "#059669" },
   { key: "fattura", icon: "#", label: "Fattura", desc: "Genera fattura", color: "#f59e0b" },
-  { key: "posa", icon: "▣", label: "Posa in Opera", desc: "Installazione infissi", color: "#059669" },
-  { key: "riparazione", icon: "⚙", label: "Riparazione", desc: "Intervento riparazione", color: "#dc2626" },
-  { key: "followup", icon: "↺", label: "Richiama", desc: "Contatto follow-up", color: "#6b7280" },
+  { key: "posa", icon: "==", label: "Posa in Opera", desc: "Installazione infissi", color: "#059669" },
+  { key: "riparazione", icon: "*", label: "Riparazione", desc: "Intervento riparazione", color: "#dc2626" },
+  { key: "followup", icon: "<<", label: "Richiama", desc: "Contatto follow-up", color: "#6b7280" },
 ];
 
 const WORKFLOW_NUOVO = [
-  { key: "sopralluogo", label: "Sopralluogo", icon: "►", color: "#2563eb" },
-  { key: "misure", label: "Misure", icon: "┼", color: "#d97706" },
+  { key: "sopralluogo", label: "Sopralluogo", icon: ">", color: "#2563eb" },
+  { key: "misure", label: "Misure", icon: "+", color: "#d97706" },
   { key: "preventivo", label: "Preventivo", icon: "€", color: "#8b5cf6" },
-  { key: "conferma", label: "Conferma", icon: "✓", color: "#059669" },
+  { key: "conferma", label: "Conferma", icon: "OK", color: "#059669" },
   { key: "fattura", label: "Fattura", icon: "#", color: "#f59e0b" },
-  { key: "posa", label: "Posa", icon: "▣", color: "#10b981" },
+  { key: "posa", label: "Posa", icon: "==", color: "#10b981" },
 ];
 
 const WORKFLOW_RIP = [
-  { key: "sopralluogo", label: "Sopralluogo", icon: "►", color: "#2563eb" },
-  { key: "riparazione", label: "Riparazione", icon: "⚙", color: "#dc2626" },
+  { key: "sopralluogo", label: "Sopralluogo", icon: ">", color: "#2563eb" },
+  { key: "riparazione", label: "Riparazione", icon: "*", color: "#dc2626" },
   { key: "fattura", label: "Fattura", icon: "#", color: "#f59e0b" },
 ];
 
@@ -92,9 +92,9 @@ function canAdvance(pratica: any) {
 }
 
 const STATUS: Record<string, {label:string;color:string;bg:string;icon:string}> = {
-  da_fare: { label: "Da fare", color: "#ef4444", bg: "#fef2f2", icon: "○" },
-  in_corso: { label: "In corso", color: "#d97706", bg: "#fffbeb", icon: "◐" },
-  completato: { label: "Completato", color: "#059669", bg: "#ecfdf5", icon: "●" },
+  da_fare: { label: "Da fare", color: "#ef4444", bg: "#fef2f2", icon: "O" },
+  in_corso: { label: "In corso", color: "#d97706", bg: "#fffbeb", icon: "~" },
+  completato: { label: "Completato", color: "#059669", bg: "#ecfdf5", icon: "X" },
 };
 
 const DEFAULT_TASKS: Record<string, string[]> = {
@@ -118,7 +118,7 @@ const ROLES: Record<string,{label:string;icon:string;color:string;bg:string;perm
 const SISTEMI = ["Finestra 1 anta","Finestra 2 ante","Balcone 1 anta","Balcone 2 ante","Scorrevole","Vasistas","Fisso","Portoncino","Vetrata composta","Vetrata fissa","Lamiera","Cassonetto"];
 const PHOTO_TYPES = [{k:"panoramica",l:"Panoram.",i:"[P]"},{k:"soglia",l:"Soglia",i:"[S]"},{k:"nodo",l:"Nodo",i:"[N]"},{k:"cassonetto",l:"Cassone.",i:"[C]"},{k:"imbotto",l:"Imbotto",i:"[I]"},{k:"contesto",l:"Contesto",i:"[X]"}];
 const PROBLEMI = ["Ferramenta rotta","Guarnizioni usurate","Vetro rotto","Maniglia rotta","Chiusura difettosa","Infiltrazione acqua","Infiltrazione aria","Condensa","Tapparella bloccata","Cerniera rotta","Altro"];
-const URGENZE = [{k:"bassa",l:"Bassa",c:"#059669",i:"▽"},{k:"media",l:"Media",c:"#d97706",i:"◇"},{k:"alta",l:"Alta",c:"#ef4444",i:"△"},{k:"urgente",l:"Urgente",c:"#7c3aed",i:"▲"}];
+const URGENZE = [{k:"bassa",l:"Bassa",c:"#059669",i:"v"},{k:"media",l:"Media",c:"#d97706",i:"-"},{k:"alta",l:"Alta",c:"#ef4444",i:"^"},{k:"urgente",l:"Urgente",c:"#7c3aed",i:"!"}];
 
 function gid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
 function today() { return new Date().toISOString().split("T")[0]; }
@@ -1155,7 +1155,7 @@ export default function FrameFlowApp() {
   }, [db.clients, clientSearch]);
 
   // ===== AUTH LOADING =====
-  if (authLoading) return <div style={S.loadWrap}><p style={{color:"#fff",fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>◈ FrameFlow</p></div>;
+  if (authLoading) return <div style={S.loadWrap}><p style={{color:"#fff",fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>FRAMEFLOW</p></div>;
 
   // ===== LOGIN / REGISTER =====
   if (!user) {
@@ -1183,7 +1183,7 @@ export default function FrameFlowApp() {
     );
   }
 
-  if (loading) return <div style={S.loadWrap}><p style={{color:"#fff",fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>◈ FrameFlow</p></div>;
+  if (loading) return <div style={S.loadWrap}><p style={{color:"#fff",fontSize:18,fontWeight:800,letterSpacing:"-0.3px"}}>FRAMEFLOW</p></div>;
 
   // ==================== SETUP WIZARD ====================
   if (view==="setup_wizard") {
@@ -1333,11 +1333,11 @@ export default function FrameFlowApp() {
 
   // ==================== BOTTOM NAV ====================
   const allNavItems = [
-    { key: "dashboard", icon: "■", label: "Home" },
-    { key: "calendario", icon: "▦", label: "Agenda" },
-    { key: "pratiche", icon: "▤", label: "Pratiche" },
-    { key: "clienti", icon: "◉", label: "Clienti" },
-    { key: "team", icon: "◎", label: "Team" },
+    { key: "dashboard", icon: "H", label: "Home" },
+    { key: "calendario", icon: "A", label: "Agenda" },
+    { key: "pratiche", icon: "P", label: "Pratiche" },
+    { key: "clienti", icon: "C", label: "Clienti" },
+    { key: "team", icon: "T", label: "Team" },
   ];
   const navItems = allNavItems.filter(n => canSeeNav.includes(n.key));
 
@@ -1441,15 +1441,15 @@ export default function FrameFlowApp() {
       <div style={S.container}>
         <div style={S.header}>
           <div>
-            <h1 style={S.logo}>◈ FrameFlow</h1>
+            <h1 style={S.logo}>FRAMEFLOW</h1>
             <p style={S.subtitle}>Gestione Serramenti</p>
           </div>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:2,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Esci">🚪</button>
-            {isAdmin && <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:2,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Impostazioni"></button>}
-            {(isAdmin || myPermissions.includes("note")) && <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:2,padding:"11px 14px",fontSize:16,cursor:"pointer"}} title="Note"></button>}
-            <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"none",borderRadius:2,padding:"11px 14px",fontSize:16,cursor:"pointer"}}></button>
-            {isAdmin && <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ Nuova</button>}
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            <button onClick={handleLogout} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}} title="Esci">ESCI</button>
+            {isAdmin && <button onClick={()=>setView("impostazioni")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}} title="Impostazioni">SET</button>}
+            {(isAdmin || myPermissions.includes("note")) && <button onClick={()=>setView("notes")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}} title="Note">NOTE</button>}
+            <button onClick={()=>setView("search")} style={{background:"rgba(255,255,255,0.12)",color:"#fff",border:"none",borderRadius:2,padding:"8px 12px",fontSize:11,cursor:"pointer",fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>CERCA</button>
+            {isAdmin && <button onClick={()=>{setClientSearch("");setView("client_pick");}} style={S.addBtn}>+ NUOVA</button>}
           </div>
         </div>
 
@@ -2638,12 +2638,16 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
 function BottomNav({ items, active, onNav }: any) {
   return (
     <div style={S.bottomNav}>
-      {items.map((it: any) => (
-        <button key={it.key} onClick={()=>onNav(it.key)} style={{...S.navItem,color:active===it.key?(THEMES[typeof window!=="undefined"?localStorage.getItem("ff-theme")||"classic":"classic"]||THEMES.classic).primary:"#7a8194"}}>
-          <span style={{fontSize:14,fontWeight:700,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>{it.icon}</span>
-          <span style={{fontSize:9,fontWeight:active===it.key?700:500,letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>{it.label}</span>
+      {items.map((it: any) => {
+        const isActive = active===it.key;
+        const color = isActive ? (THEMES[typeof window!=="undefined"?localStorage.getItem("ff-theme")||"classic":"classic"]||THEMES.classic).primary : "#7a8194";
+        return (
+        <button key={it.key} onClick={()=>onNav(it.key)} style={{...S.navItem,color}}>
+          <span style={{width:28,height:28,borderRadius:2,background:isActive?color+"18":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,fontFamily:"'DM Sans',system-ui,sans-serif"}}>{it.icon}</span>
+          <span style={{fontSize:9,fontWeight:isActive?700:500,letterSpacing:"0.5px",textTransform:"uppercase",fontFamily:"'DM Sans',system-ui,sans-serif"}}>{it.label}</span>
         </button>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -3195,16 +3199,23 @@ function MisureForm({ pratica, client, sistemi, tipologie, vetri, coloriMap, all
             <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>VETRO</label><select value={v.vetro||vetro} onChange={(e: any)=>uv(i,"vetro",e.target.value)} style={S.input}><option value="">{vetro ? `Default: ${vetro}` : "— Seleziona —"}</option>{(vetri||DEFAULT_VETRI).map((vt: string)=><option key={vt}>{vt}</option>)}<option value="__custom">+ Personalizzato</option></select>{v.vetro==="__custom"&&<input onChange={(e: any)=>uv(i,"vetro",e.target.value)} placeholder="Vetro personalizzato..." style={{...S.input,marginTop:4}} autoFocus />}</div>
             <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q.tà" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
             <div style={S.fGroup}><label style={S.fLabel}>Apertura</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{APERTURE.map(a=><button key={a} onClick={()=>uv(i,"apertura",a)} style={{...S.pill,background:v.apertura===a?"#d97706":"#f3f4f6",color:v.apertura===a?"#fff":"#6b7280"}}>{a}</button>)}</div></div>
-            {/* DISEGNO - sempre visibili */}
+            {/* DISEGNO - toggle per attivare */}
             <div style={{marginBottom:12}}>
-              <label style={{fontSize:11,fontWeight:800,color:"#374151",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:8,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>SCHEMA VETRATA</label>
-              <VetrataDesigner design={v.design} onChange={(d: any)=>uv(i,"design",d)} />
-              <div style={{marginTop:12}}>
-                <FreehandCanvas drawing={v.freehandData} onSave={(data: string)=>uv(i,"freehandData",data)} label="DISEGNO A MANO LIBERA" />
+              <label style={{fontSize:10,fontWeight:700,color:"#5c6370",textTransform:"uppercase",letterSpacing:"1px",display:"block",marginBottom:8,fontFamily:"'JetBrains Mono','SF Mono',monospace"}}>STRUMENTI DISEGNO</label>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                <button onClick={()=>uv(i,"showVetrata",!v.showVetrata)} style={{padding:"8px 14px",borderRadius:2,border:v.showVetrata?"2px solid #059669":"1px solid #d5d8de",background:v.showVetrata?"#ecfdf5":"#fafbfc",cursor:"pointer",fontSize:12,fontWeight:700,color:v.showVetrata?"#059669":"#5c6370"}}>
+                  {v.showVetrata?"● ":"○ "}Schema Vetrata
+                </button>
+                <button onClick={()=>uv(i,"showFreehand",!v.showFreehand)} style={{padding:"8px 14px",borderRadius:2,border:v.showFreehand?"2px solid #2563eb":"1px solid #d5d8de",background:v.showFreehand?"#eff6ff":"#fafbfc",cursor:"pointer",fontSize:12,fontWeight:700,color:v.showFreehand?"#2563eb":"#5c6370"}}>
+                  {v.showFreehand?"● ":"○ "}Disegno a Mano
+                </button>
+                <button onClick={()=>uv(i,"showLamiera",!v.showLamiera)} style={{padding:"8px 14px",borderRadius:2,border:v.showLamiera?"2px solid #d97706":"1px solid #d5d8de",background:v.showLamiera?"#fffbeb":"#fafbfc",cursor:"pointer",fontSize:12,fontWeight:700,color:v.showLamiera?"#d97706":"#5c6370"}}>
+                  {v.showLamiera?"● ":"○ "}Disegno Lamiera
+                </button>
               </div>
-              <div style={{marginTop:12}}>
-                <FreehandCanvas drawing={v.lamieraData} onSave={(data: string)=>uv(i,"lamieraData",data)} label="DISEGNO LAMIERA" color="#d97706" />
-              </div>
+              {v.showVetrata && <VetrataDesigner design={v.design} onChange={(d: any)=>uv(i,"design",d)} />}
+              {v.showFreehand && <FreehandCanvas drawing={v.freehandData} onSave={(data: string)=>uv(i,"freehandData",data)} label="DISEGNO A MANO LIBERA" />}
+              {v.showLamiera && <FreehandCanvas drawing={v.lamieraData} onSave={(data: string)=>uv(i,"lamieraData",data)} label="DISEGNO LAMIERA" color="#d97706" />}
             </div>
             {/* FLAG ALTRO COLORE */}
             <div style={{marginBottom:8}}>
