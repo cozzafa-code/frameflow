@@ -63,12 +63,14 @@ const WORKFLOW_NUOVO = [
   { key: "conferma", label: "Conferma", icon: "OK", color: "#059669" },
   { key: "fattura", label: "Fattura", icon: "#", color: "#f59e0b" },
   { key: "posa", label: "Posa", icon: "==", color: "#10b981" },
+  { key: "chiusura", label: "Chiusura", icon: "X", color: "#1a1a2e" },
 ];
 
 const WORKFLOW_RIP = [
   { key: "sopralluogo", label: "Sopralluogo", icon: ">", color: "#2563eb" },
   { key: "riparazione", label: "Riparazione", icon: "*", color: "#dc2626" },
   { key: "fattura", label: "Fattura", icon: "#", color: "#f59e0b" },
+  { key: "chiusura", label: "Chiusura", icon: "X", color: "#1a1a2e" },
 ];
 
 function getWorkflow(tipo: string) { return tipo === "riparazione" ? WORKFLOW_RIP : WORKFLOW_NUOVO; }
@@ -88,6 +90,7 @@ function canAdvance(pratica: any) {
     const act = pratica.actions?.find((a: any) => a.type === "posa");
     return act ? act.tasks.every((t: any) => t.done) : false;
   }
+  if (fase === "chiusura") return true;
   return false;
 }
 
@@ -1055,26 +1058,33 @@ export default function FrameFlowApp() {
   }
 
   function saveMisure(praticaId: string, misureData: any) {
-    updatePratica(praticaId, { misure: misureData });
-    logActivity(praticaId, `Misure salvate (${(misureData.vani||[]).length} vani)`);
+    const p = getPratica(praticaId);
+    const logEntry = { ts: new Date().toISOString(), msg: `Misure salvate (${(misureData.vani||[]).length} vani)`, by: user?.email || "system" };
+    updatePratica(praticaId, { misure: misureData, log: [...(p?.log || []), logEntry] });
     setMisureEdit(null); setSelPratica(praticaId); setView("pratica");
   }
 
   function saveRiparazione(praticaId: string, ripData: any) {
-    updatePratica(praticaId, { riparazione: ripData });
-    logActivity(praticaId, `Riparazione salvata: ${ripData.problema||""}`);
+    const p = getPratica(praticaId);
+    const logEntry = { ts: new Date().toISOString(), msg: `Riparazione salvata: ${ripData.problema||""}`, by: user?.email || "system" };
+    updatePratica(praticaId, { riparazione: ripData, log: [...(p?.log || []), logEntry] });
     setRipEdit(null); setSelPratica(praticaId); setView("pratica");
   }
 
   function savePreventivo(praticaId: string, prevData: any) {
-    updatePratica(praticaId, { preventivo: prevData });
-    logActivity(praticaId, `Preventivo ${prevData.totaleFinale ? "salvato (€" + prevData.totaleFinale.toFixed(2) + ")" : "aggiornato"}`);
+    const p = getPratica(praticaId);
+    const logEntry = { ts: new Date().toISOString(), msg: `Preventivo ${prevData.totaleFinale ? "salvato" : "aggiornato"}`, by: user?.email || "system" };
+    updatePratica(praticaId, { preventivo: prevData, log: [...(p?.log || []), logEntry] });
     setPrevEdit(null); setSelPratica(praticaId); setView("pratica");
   }
 
   function confirmOrder(praticaId: string, firmaImg: string, note: string) {
-    updatePratica(praticaId, { confermaOrdine: { firmata: true, firmaImg, dataConferma: new Date().toISOString(), note } });
-    logActivity(praticaId, "Ordine confermato con firma");
+    const p = getPratica(praticaId);
+    const logEntry = { ts: new Date().toISOString(), msg: "Ordine confermato con firma", by: user?.email || "system" };
+    updatePratica(praticaId, { 
+      confermaOrdine: { firmata: true, firmaImg, dataConferma: new Date().toISOString(), note },
+      log: [...(p?.log || []), logEntry]
+    });
   }
 
   function generateFattura(praticaId: string) {
@@ -1492,15 +1502,29 @@ export default function FrameFlowApp() {
       onOpenPrev={()=>{setPrevEdit(p.id);setView("preventivo");}}
       onOpenEmail={()=>{setEmailDraft(p.id);setView("email");}}
       onStatusChange={(s: string)=>{
+        const p2 = getPratica(p.id);
         const updates: any = {status:s};
         if (s==="completato") updates.completedAt = new Date().toISOString();
+        const logEntry = { ts: new Date().toISOString(), msg: `Stato → ${STATUS[s]?.label||s}`, by: user?.email || "system" };
+        updates.log = [...(p2?.log || []), logEntry];
         updatePratica(p.id, updates);
-        logActivity(p.id, `Stato → ${STATUS[s]?.label||s}`);
       }}
       onConfirmOrder={(firma: string,note: string)=>confirmOrder(p.id,firma,note)}
       onGenerateFattura={()=>generateFattura(p.id)}
       onUpdateFattura={(data: any)=>updateFattura(p.id,data)}
-      onAdvancePhase={()=>{advancePhase(p.id);const wf=getWorkflow(p.tipo);const ci=getPhaseIndex(p.tipo,p.fase||"sopralluogo");if(ci<wf.length-1)logActivity(p.id,`Fase → ${wf[ci+1].label}`);}}
+      onAdvancePhase={()=>{
+        const wf2=getWorkflow(p.tipo);const ci=getPhaseIndex(p.tipo,p.fase||"sopralluogo");
+        if(ci<wf2.length-1){
+          const logEntry={ts:new Date().toISOString(),msg:`Fase → ${wf2[ci+1].label}`,by:user?.email||"system"};
+          // We'll call advancePhase then add log after
+          advancePhase(p.id);
+          // Add log separately (advancePhase already calls updatePratica)
+          setTimeout(()=>{
+            const p3=getPratica(p.id);
+            if(p3) updatePratica(p.id,{log:[...(p3.log||[]),logEntry]});
+          },100);
+        } else { advancePhase(p.id); }
+      }}
       onUpdatePratica={(data: any)=>updatePratica(p.id,data)}
       onAssign={(memberId: string|null)=>assignPratica(p.id,memberId)}
       onDuplica={()=>duplicaPratica(p.id)}
@@ -3038,7 +3062,7 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
           const wf = getWorkflow(p.tipo);
           const curIdx = getPhaseIndex(p.tipo, p.fase || "sopralluogo");
           const canAdv = canAdvance(p);
-          const isComplete = curIdx >= wf.length - 1 && canAdv;
+          const isComplete = p.fase === "chiusura" && p.status === "completato";
           return (
             <div style={{background:"#1a1a2e",borderRadius:2,padding:18,marginBottom:18,color:"#fff"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
@@ -3057,7 +3081,7 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
                   );
                 })}
               </div>
-              {isComplete && <div style={{padding:"14px",background:"rgba(5,150,105,0.2)",borderRadius:2,textAlign:"center",marginBottom:14}}><div style={{fontSize:18,fontWeight:900,color:"#4ade80"}}>🎉 Pratica Completata!</div><p style={{fontSize:12,color:"rgba(255,255,255,0.7)",margin:"6px 0 0"}}>Tutte le fasi sono state completate.</p></div>}
+              {isComplete && <div style={{padding:"14px",background:"rgba(5,150,105,0.2)",borderRadius:2,textAlign:"center",marginBottom:14}}><div style={{fontSize:16,fontWeight:900,color:"#4ade80",fontFamily:"'JetBrains Mono',monospace"}}>PRATICA CHIUSA</div></div>}
               <div style={{background:"rgba(255,255,255,0.08)",borderRadius:2,padding:14}}>
                   <div style={{fontSize:15,fontWeight:800,marginBottom:8}}>{wf[curIdx]?.icon} Fase: {wf[curIdx]?.label}</div>
                   {p.fase==="sopralluogo" && (() => { const act=p.actions?.find((a: any)=>a.type==="sopralluogo"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}<div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <div style={{marginTop:12}}><PhotoGallery photos={p.fotoSopralluogo||[]} label=" Foto Sopralluogo" userId={userId} folder={`sopralluogo/${p.id}`} onUpdate={(photos: string[])=>onUpdatePratica({fotoSopralluogo:photos})} /></div>}</>); })()}
@@ -3067,6 +3091,23 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
                   {p.fase==="riparazione" && (<div>{p.riparazione?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Riparazione compilata</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>{p.riparazione.problema||"—"}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda riparazione.</p>}<button onClick={onOpenRip} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#c44040",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.riparazione?"Modifica":"Compila"} Riparazione</button></div>)}
                   {p.fase==="fattura" && (<div>{p.fattura?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Fattura {p.fattura.numero}</span><span style={{fontSize:11,padding:"2px 8px",borderRadius:2,background:p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",fontWeight:700}}>{p.fattura.statoPagamento==="pagato"?"Pagata":p.fattura.statoPagamento==="acconto"?"Acconto":"Non Pagata"}</span></div><div style={{fontSize:20,fontWeight:900,color:"#4ade80",marginTop:6}}>€ {(p.preventivo?.totaleFinale||p.riparazione?.costoStimato||0).toFixed?.(2)||"0.00"}</div><div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}> PDF</button><button onClick={()=>{setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||""});setShowPaymentEdit(true);}} style={{flex:1,padding:"10px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}> Pagamento</button></div>{showPaymentEdit&&(<div style={{background:"rgba(255,255,255,0.1)",borderRadius:2,padding:14,marginTop:10}}><div style={{display:"flex",gap:6,marginBottom:12}}>{[{k:"non_pagato",l:" Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:" Pagata",c:"#059669"}].map(s=><button key={s.k} onClick={()=>setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:2,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>)}</div>{payForm.stato==="acconto"&&<div style={{marginBottom:10}}><input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} /></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{["Bonifico","Contanti","Assegno","Carta","Ri.Ba."].map(m=><button key={m} onClick={()=>setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:2,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#e07a2f":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>)}</div><div style={{display:"flex",gap:8}}><button onClick={()=>setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button><button onClick={()=>{onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo});setShowPaymentEdit(false);}} style={{flex:2,padding:"10px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}> Salva</button></div></div>)}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Genera la fattura.</p><button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer"}}> Genera Fattura</button></>)}</div>)}
                   {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; const vani=p.misure?.vani||[]; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}<div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <>{vani.length>0 ? vani.map((v: any,vi: number)=>(<div key={vi} style={{marginTop:12,background:"rgba(255,255,255,0.06)",borderRadius:2,padding:10}}><div style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:6}}> Vano {vi+1}{v.ambiente?" — "+v.ambiente:""} ({v.sistema||"Infisso"} {v.l}×{v.h})</div><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_inizio`]||[]} label={` Prima - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_inizio`]:photos}})} /><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_dopo`]||[]} label={` Dopo - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/dopo`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_dopo`]:photos}})} /></div>)) : <><div style={{marginTop:12}}><PhotoGallery photos={p.fotoPosaInizio||[]} label=" Foto Inizio Lavori" userId={userId} folder={`posa/${p.id}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaInizio:photos})} /></div><PhotoGallery photos={p.fotoPosaFine||[]} label=" Foto Fine Lavori" userId={userId} folder={`posa/${p.id}/fine`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaFine:photos})} /></>}</>}</>); })()}
+                  {p.fase==="chiusura" && (<div style={{textAlign:"center",padding:"10px 0"}}>
+                    {p.status==="completato" ? (
+                      <div style={{padding:16,background:"rgba(5,150,105,0.2)",borderRadius:2}}>
+                        <div style={{fontSize:18,fontWeight:900,color:"#4ade80",marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>PRATICA CHIUSA</div>
+                        <div style={{fontSize:12,color:"rgba(255,255,255,0.7)"}}>Completata il {p.completedAt ? new Date(p.completedAt).toLocaleDateString("it-IT") : "—"}</div>
+                        <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:12}}>
+                          <button onClick={()=>exportPratica(p,c)} style={{padding:"10px 20px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}}>STAMPA RIEPILOGO</button>
+                          <button onClick={onStampaCantiere} style={{padding:"10px 20px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}}>SCHEDA CANTIERE</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 12px"}}>Tutte le fasi sono completate. Chiudi la pratica per archiviarla.</p>
+                        <button onClick={()=>{onStatusChange("completato");}} style={{width:"100%",padding:"16px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",letterSpacing:"0.5px",fontFamily:"'JetBrains Mono',monospace"}}>CHIUDI PRATICA</button>
+                      </div>
+                    )}
+                  </div>)}
                   {canAdv && curIdx < wf.length-1 && <button onClick={onAdvancePhase} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}> Avanza a: {wf[curIdx+1].icon} {wf[curIdx+1].label} →</button>}
                   {!canAdv && !isComplete && <div style={{marginTop:10,padding:"10px 14px",background:"rgba(255,255,255,0.05)",borderRadius:2,fontSize:12,color:"rgba(255,255,255,0.5)",textAlign:"center",fontWeight:600}}> Completa questa fase per avanzare</div>}
                 </div>
