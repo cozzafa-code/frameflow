@@ -1203,12 +1203,21 @@ export default function FrameFlowApp() {
   }
 
   function generateFattura(praticaId: string) {
+    const p = getPratica(praticaId);
     // Auto-number: FAT-YYYY-NNNN
     const year = new Date().getFullYear();
-    const existing = db.pratiche.filter((p: any) => p.fattura?.numero?.startsWith(`FAT-${year}`));
+    const existing = db.pratiche.filter((pr: any) => pr.fattura?.numero?.startsWith(`FAT-${year}`));
     const nextNum = existing.length + 1;
     const numero = `FAT-${year}-${String(nextNum).padStart(4,"0")}`;
-    updatePratica(praticaId, { fattura: { numero, data: new Date().toISOString(), statoPagamento: "non_pagato", acconto: 0, metodoPagamento: "", note: "" } });
+    // Copy rate from preventivo if present
+    const rate = p?.preventivo?.ratePagamento || [];
+    const metodo = p?.preventivo?.metodoPagamento || "";
+    const piano = p?.preventivo?.pianoPagamento || "";
+    // Determine initial status based on already-paid rates
+    const anyPaid = rate.some((r: any) => r.pagato);
+    const allPaid = rate.length > 0 && rate.every((r: any) => r.pagato);
+    const stato = allPaid ? "pagato" : anyPaid ? "acconto" : "non_pagato";
+    updatePratica(praticaId, { fattura: { numero, data: new Date().toISOString(), statoPagamento: stato, acconto: 0, metodoPagamento: metodo, pianoPagamento: piano, ratePagamento: rate, note: "" } });
   }
 
   function updateFattura(praticaId: string, fattData: any) {
@@ -1938,6 +1947,34 @@ export default function FrameFlowApp() {
               </div>
             </div>
           )}
+
+          {/* Rate Scadute / Pagamenti Incompleti */}
+          {(() => {
+            const pagIncomplete = db.pratiche.filter((p: any) => {
+              if (p.status === "completato") return false;
+              const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+              return rate.some((r: any) => !r.pagato && new Date(r.scadenza) < new Date());
+            });
+            if (pagIncomplete.length === 0) return null;
+            const totScaduto = pagIncomplete.reduce((s: number, p: any) => {
+              const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+              return s + rate.filter((r: any) => !r.pagato && new Date(r.scadenza) < new Date()).reduce((ss: number, r: any) => ss + r.importo, 0);
+            }, 0);
+            return (
+              <div style={{...S.alertCard, borderLeftColor:"#d97706",background:"#fffbeb"}}>
+                <span style={{fontSize:20}}>💰</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:14,fontWeight:700,color:"#92400e"}}>{pagIncomplete.length} pagament{pagIncomplete.length>1?"i":"o"} scadut{pagIncomplete.length>1?"i":"o"} · € {totScaduto.toFixed(0)}</div>
+                  <div style={{fontSize:12,color:"#b45309"}}>
+                    {pagIncomplete.slice(0,3).map((p: any) => {
+                      const c = getClient(p.clientId);
+                      return `${p.numero} (${c?.nome||"?"})`;
+                    }).join(", ")}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Upcoming Appuntamenti (not yet converted) */}
           {(()=>{
@@ -3799,25 +3836,128 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
                   {p.fase==="preventivo" && (<div>{p.preventivo?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Preventivo compilato</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Totale: € {(p.preventivo.totaleFinale||0).toFixed(2)}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Prepara il preventivo.</p>}<button onClick={onOpenPrev} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#6b4c8a",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.preventivo?"Modifica":"Compila"} Preventivo</button></div>)}
                   {p.fase==="conferma" && (<div>{p.confermaOrdine?.firmata?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Ordine confermato</div>{p.confermaOrdine.firmaImg&&<img src={p.confermaOrdine.firmaImg} alt="Firma" style={{height:40,borderRadius:6,background:"#fff",padding:3,marginTop:6}} />}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Raccogli la firma del cliente.</p><div style={{marginBottom:10}}><input value={orderNote} onChange={(e: any)=>setOrderNote(e.target.value)} placeholder="Note ordine..." style={{width:"100%",padding:"10px 14px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} /></div>{!showSignPad?<button onClick={()=>setShowSignPad(true)} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}> Firma Conferma</button>:<SignaturePad onSave={(img: string)=>{onConfirmOrder(img,orderNote);setShowSignPad(false);}} onCancel={()=>setShowSignPad(false)} />}</>)}</div>)}
                   {p.fase==="riparazione" && (<div>{p.riparazione?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Riparazione compilata</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>{p.riparazione.problema||"—"}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda riparazione.</p>}<button onClick={onOpenRip} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#c44040",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.riparazione?"Modifica":"Compila"} Riparazione</button></div>)}
-                  {p.fase==="fattura" && (<div>{p.fattura?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Fattura {p.fattura.numero}</span><span style={{fontSize:11,padding:"2px 8px",borderRadius:2,background:p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",fontWeight:700}}>{p.fattura.statoPagamento==="pagato"?"Pagata":p.fattura.statoPagamento==="acconto"?"Acconto":"Non Pagata"}</span></div><div style={{fontSize:20,fontWeight:900,color:"#4ade80",marginTop:6}}>€ {(p.preventivo?.totaleFinale||p.riparazione?.costoStimato||0).toFixed?.(2)||"0.00"}</div><div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}> PDF</button><button onClick={()=>{setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||""});setShowPaymentEdit(true);}} style={{flex:1,padding:"10px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}> Pagamento</button></div>{showPaymentEdit&&(<div style={{background:"rgba(255,255,255,0.1)",borderRadius:2,padding:14,marginTop:10}}><div style={{display:"flex",gap:6,marginBottom:12}}>{[{k:"non_pagato",l:" Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:" Pagata",c:"#059669"}].map(s=><button key={s.k} onClick={()=>setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:2,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>)}</div>{payForm.stato==="acconto"&&<div style={{marginBottom:10}}><input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} /></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{["Bonifico","Contanti","Assegno","Carta","Ri.Ba."].map(m=><button key={m} onClick={()=>setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:2,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#e07a2f":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>)}</div><div style={{display:"flex",gap:8}}><button onClick={()=>setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button><button onClick={()=>{onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo});setShowPaymentEdit(false);}} style={{flex:2,padding:"10px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}> Salva</button></div></div>)}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Genera la fattura.</p><button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer"}}> Genera Fattura</button></>)}</div>)}
-                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; const vani=p.misure?.vani||[]; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small /><div data-tasks="posa">{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}</div><div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <>{vani.length>0 ? vani.map((v: any,vi: number)=>(<div key={vi} style={{marginTop:12,background:"rgba(255,255,255,0.06)",borderRadius:2,padding:10}}><div style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:6}}> Vano {vi+1}{v.ambiente?" — "+v.ambiente:""} ({v.sistema||"Infisso"} {v.l}×{v.h})</div><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_inizio`]||[]} label={` Prima - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_inizio`]:photos}})} /><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_dopo`]||[]} label={` Dopo - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/dopo`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_dopo`]:photos}})} /></div>)) : <><div style={{marginTop:12}}><PhotoGallery photos={p.fotoPosaInizio||[]} label=" Foto Inizio Lavori" userId={userId} folder={`posa/${p.id}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaInizio:photos})} /></div><PhotoGallery photos={p.fotoPosaFine||[]} label=" Foto Fine Lavori" userId={userId} folder={`posa/${p.id}/fine`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaFine:photos})} /></>}</>}</>); })()}
-                  {p.fase==="chiusura" && (<div style={{textAlign:"center",padding:"10px 0"}}>
-                    {p.status==="completato" ? (
-                      <div style={{padding:16,background:"rgba(5,150,105,0.2)",borderRadius:2}}>
-                        <div style={{fontSize:18,fontWeight:900,color:"#4ade80",marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>PRATICA CHIUSA</div>
-                        <div style={{fontSize:12,color:"rgba(255,255,255,0.7)"}}>Completata il {p.completedAt ? new Date(p.completedAt).toLocaleDateString("it-IT") : "—"}</div>
-                        <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:12}}>
-                          <button onClick={()=>exportPratica(p,c)} style={{padding:"10px 20px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}}>STAMPA RIEPILOGO</button>
-                          <button onClick={onStampaCantiere} style={{padding:"10px 20px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}}>SCHEDA CANTIERE</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 12px"}}>Tutte le fasi sono completate. Chiudi la pratica per archiviarla.</p>
-                        <button onClick={()=>{onStatusChange("completato");}} style={{width:"100%",padding:"16px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",letterSpacing:"0.5px",fontFamily:"'JetBrains Mono',monospace"}}>CHIUDI PRATICA</button>
-                      </div>
-                    )}
+                  {p.fase==="fattura" && (<div>
+                    {p.fattura ? (<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Fattura {p.fattura.numero}</span></div>
+                      <div style={{fontSize:20,fontWeight:900,color:"#4ade80",marginTop:6}}>€ {(p.preventivo?.totaleFinale||p.riparazione?.costoStimato||0).toFixed?.(2)||"0.00"}</div>
+                      {/* PIANO PAGAMENTI / RATE */}
+                      {(() => {
+                        const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+                        const totale = p.preventivo?.totaleFinale || p.riparazione?.costoStimato || 0;
+                        const pagatoTot = rate.filter((r:any) => r.pagato).reduce((s:number,r:any) => s+r.importo, 0);
+                        const tuttePagate = rate.length > 0 && rate.every((r:any) => r.pagato);
+                        const metodoDefault = p.preventivo?.metodoPagamento || "";
+                        if (rate.length === 0) {
+                          // Fallback: vecchio sistema senza rate
+                          return (<>
+                            <div style={{marginTop:8,padding:"6px 10px",borderRadius:2,fontSize:12,fontWeight:700,background:p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",display:"inline-block"}}>{p.fattura.statoPagamento==="pagato"?"✓ Pagata":p.fattura.statoPagamento==="acconto"?"⏳ Acconto":"✗ Non Pagata"}</div>
+                            <div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}> PDF</button><button onClick={()=>{setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||""});setShowPaymentEdit(true);}} style={{flex:1,padding:"10px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}> Pagamento</button></div>
+                            {showPaymentEdit&&(<div style={{background:"rgba(255,255,255,0.1)",borderRadius:2,padding:14,marginTop:10}}><div style={{display:"flex",gap:6,marginBottom:12}}>{[{k:"non_pagato",l:"✗ Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:"✓ Pagata",c:"#059669"}].map(s=><button key={s.k} onClick={()=>setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:2,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>)}</div>{payForm.stato==="acconto"&&<div style={{marginBottom:10}}><input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} /></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{["Bonifico","Contanti","Assegno","Carta","Ri.Ba."].map(m=><button key={m} onClick={()=>setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:2,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#e07a2f":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>)}</div><div style={{display:"flex",gap:8}}><button onClick={()=>setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button><button onClick={()=>{onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo});setShowPaymentEdit(false);}} style={{flex:2,padding:"10px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}> Salva</button></div></div>)}
+                          </>);
+                        }
+                        return (<>
+                          {/* Barra progresso pagamenti */}
+                          <div style={{marginTop:10,marginBottom:6}}>
+                            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"rgba(255,255,255,0.7)",marginBottom:4}}>
+                              <span>Incassato: € {pagatoTot.toFixed(2)}</span>
+                              <span>Rimanente: € {(totale - pagatoTot).toFixed(2)}</span>
+                            </div>
+                            <div style={{height:8,background:"rgba(255,255,255,0.1)",borderRadius:4,overflow:"hidden"}}>
+                              <div style={{height:"100%",width:`${totale>0?(pagatoTot/totale*100):0}%`,background:tuttePagate?"#059669":"#e07a2f",borderRadius:4,transition:"width 0.4s"}} />
+                            </div>
+                          </div>
+                          {/* Lista rate */}
+                          {rate.map((r: any, ri: number) => {
+                            const isScaduta = !r.pagato && new Date(r.scadenza) < new Date();
+                            return (
+                              <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px",marginTop:6,borderRadius:2,background:r.pagato?"rgba(5,150,105,0.15)":isScaduta?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.06)",border:r.pagato?"1px solid rgba(5,150,105,0.4)":isScaduta?"1px solid rgba(239,68,68,0.4)":"1px solid rgba(255,255,255,0.1)"}}>
+                                <button onClick={() => {
+                                  const newRate = [...rate];
+                                  newRate[ri] = {...newRate[ri], pagato: !newRate[ri].pagato, dataPagamento: !newRate[ri].pagato ? new Date().toISOString().split("T")[0] : null};
+                                  const allPaid = newRate.every((r:any) => r.pagato);
+                                  const anyPaid = newRate.some((r:any) => r.pagato);
+                                  onUpdateFattura({ratePagamento: newRate, statoPagamento: allPaid ? "pagato" : anyPaid ? "acconto" : "non_pagato", acconto: newRate.filter((r:any) => r.pagato).reduce((s:number,r:any) => s+r.importo, 0)});
+                                }} style={{width:28,height:28,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,fontWeight:700,flexShrink:0,background:r.pagato?"#059669":"transparent",border:r.pagato?"2px solid #059669":"2px solid rgba(255,255,255,0.3)",color:r.pagato?"#fff":"transparent",transition:"all 0.2s"}}>✓</button>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{fontSize:12,fontWeight:700,color:r.pagato?"#4ade80":isScaduta?"#fca5a5":"#fff"}}>{r.label}</div>
+                                  <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>Scad. {new Date(r.scadenza).toLocaleDateString("it-IT")} · {r.metodo || metodoDefault}{isScaduta && !r.pagato ? " · ⚠ SCADUTA" : ""}</div>
+                                </div>
+                                <div style={{fontSize:14,fontWeight:800,color:r.pagato?"#4ade80":"#fff",textAlign:"right"}}>€ {r.importo.toFixed(2)}</div>
+                              </div>
+                            );
+                          })}
+                          <div style={{display:"flex",gap:8,marginTop:10}}>
+                            <button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}> PDF</button>
+                          </div>
+                          {tuttePagate && <div style={{marginTop:10,padding:"10px",background:"rgba(5,150,105,0.3)",borderRadius:2,textAlign:"center",fontSize:13,fontWeight:800,color:"#4ade80"}}>✓ TUTTO PAGATO</div>}
+                        </>);
+                      })()}
+                    </div>) : (<>
+                      <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Genera la fattura.</p>
+                      <button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer"}}> Genera Fattura</button>
+                    </>)}
                   </div>)}
+                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; const vani=p.misure?.vani||[]; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small /><div data-tasks="posa">{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}</div><div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <>{vani.length>0 ? vani.map((v: any,vi: number)=>(<div key={vi} style={{marginTop:12,background:"rgba(255,255,255,0.06)",borderRadius:2,padding:10}}><div style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:6}}> Vano {vi+1}{v.ambiente?" — "+v.ambiente:""} ({v.sistema||"Infisso"} {v.l}×{v.h})</div><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_inizio`]||[]} label={` Prima - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_inizio`]:photos}})} /><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_dopo`]||[]} label={` Dopo - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/dopo`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_dopo`]:photos}})} /></div>)) : <><div style={{marginTop:12}}><PhotoGallery photos={p.fotoPosaInizio||[]} label=" Foto Inizio Lavori" userId={userId} folder={`posa/${p.id}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaInizio:photos})} /></div><PhotoGallery photos={p.fotoPosaFine||[]} label=" Foto Fine Lavori" userId={userId} folder={`posa/${p.id}/fine`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaFine:photos})} /></>}</>}</>); })()}
+                  {p.fase==="chiusura" && (() => {
+                    const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+                    const hasPiano = rate.length > 0;
+                    const tuttePagate = hasPiano ? rate.every((r:any) => r.pagato) : (p.fattura?.statoPagamento === "pagato");
+                    const pagIncompleto = p.fattura && !tuttePagate;
+                    const pagatoTot = rate.filter((r:any) => r.pagato).reduce((s:number,r:any) => s+r.importo, 0);
+                    const totale = p.preventivo?.totaleFinale || p.riparazione?.costoStimato || 0;
+                    
+                    return (<div style={{padding:"10px 0"}}>
+                      {p.status==="completato" ? (
+                        <div style={{padding:16,background:"rgba(5,150,105,0.2)",borderRadius:2,textAlign:"center"}}>
+                          <div style={{fontSize:18,fontWeight:900,color:"#4ade80",marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>PRATICA CHIUSA</div>
+                          <div style={{fontSize:12,color:"rgba(255,255,255,0.7)"}}>Completata il {p.completedAt ? new Date(p.completedAt).toLocaleDateString("it-IT") : "—"}</div>
+                          <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:12}}>
+                            <button onClick={()=>exportPratica(p,c)} style={{padding:"10px 20px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}}>STAMPA RIEPILOGO</button>
+                            <button onClick={onStampaCantiere} style={{padding:"10px 20px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}}>SCHEDA CANTIERE</button>
+                          </div>
+                        </div>
+                      ) : pagIncompleto ? (
+                        <div>
+                          {/* MONTATO MA PAGAMENTO INCOMPLETO */}
+                          <div style={{background:"rgba(217,119,6,0.2)",border:"2px solid rgba(217,119,6,0.5)",borderRadius:2,padding:16,marginBottom:12}}>
+                            <div style={{fontSize:16,fontWeight:900,color:"#fbbf24",marginBottom:6,textAlign:"center"}}>⚠ MONTATO — PAGAMENTO INCOMPLETO</div>
+                            <div style={{fontSize:12,color:"rgba(255,255,255,0.7)",textAlign:"center",marginBottom:12}}>Non puoi chiudere la pratica finché il pagamento non è completato.</div>
+                            {hasPiano && (
+                              <div style={{marginBottom:10}}>
+                                <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"rgba(255,255,255,0.7)",marginBottom:4}}>
+                                  <span>Incassato: € {pagatoTot.toFixed(2)}</span>
+                                  <span style={{color:"#fca5a5",fontWeight:700}}>Manca: € {(totale - pagatoTot).toFixed(2)}</span>
+                                </div>
+                                <div style={{height:8,background:"rgba(255,255,255,0.1)",borderRadius:4,overflow:"hidden"}}>
+                                  <div style={{height:"100%",width:`${totale>0?(pagatoTot/totale*100):0}%`,background:"#d97706",borderRadius:4}} />
+                                </div>
+                              </div>
+                            )}
+                            {/* Rate non pagate */}
+                            {rate.filter((r:any) => !r.pagato).map((r: any, ri: number) => {
+                              const isScaduta = new Date(r.scadenza) < new Date();
+                              return (
+                                <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",marginTop:4,borderRadius:2,background:isScaduta?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.05)",border:isScaduta?"1px solid rgba(239,68,68,0.3)":"1px solid rgba(255,255,255,0.1)"}}>
+                                  <div style={{fontSize:16}}>⏳</div>
+                                  <div style={{flex:1}}>
+                                    <div style={{fontSize:12,fontWeight:700,color:isScaduta?"#fca5a5":"#fff"}}>{r.label}</div>
+                                    <div style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>Scad. {new Date(r.scadenza).toLocaleDateString("it-IT")}{isScaduta ? " · ⚠ SCADUTA" : ""}</div>
+                                  </div>
+                                  <div style={{fontSize:13,fontWeight:800,color:isScaduta?"#fca5a5":"#fbbf24"}}>€ {r.importo.toFixed(2)}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div style={{background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:2,padding:12,textAlign:"center",fontSize:13,fontWeight:700,color:"#fca5a5"}}>🔒 Chiusura bloccata — Completa i pagamenti dalla fase Fattura</div>
+                        </div>
+                      ) : (
+                        <div style={{textAlign:"center"}}>
+                          <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 12px"}}>Tutte le fasi sono completate{tuttePagate ? " e i pagamenti saldati" : ""}. Chiudi la pratica per archiviarla.</p>
+                          <button onClick={()=>{onStatusChange("completato");}} style={{width:"100%",padding:"16px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:16,fontWeight:900,cursor:"pointer",letterSpacing:"0.5px",fontFamily:"'JetBrains Mono',monospace"}}>CHIUDI PRATICA</button>
+                        </div>
+                      )}
+                    </div>);
+                  })()}
                   {canAdv && curIdx < wf.length-1 && <button onClick={onAdvancePhase} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}> Avanza a: {wf[curIdx+1].icon} {wf[curIdx+1].label} →</button>}
                   {!canAdv && !isComplete && <div style={{marginTop:10,padding:"10px 14px",background:"rgba(255,255,255,0.05)",borderRadius:2,fontSize:12,color:"rgba(255,255,255,0.5)",textAlign:"center",fontWeight:600}}> Completa questa fase per avanzare</div>}
                 </div>
@@ -4281,6 +4421,36 @@ function RipForm({ pratica, client, userId, onSave, onBack }: any) {
   );
 }
 
+// ==================== PAYMENT PLAN TEMPLATES ====================
+const PIANI_PAGAMENTO = [
+  { key: "unica", label: "Unica Soluzione", desc: "100% a fine lavori", rate: [{label:"Saldo",perc:100,offset:0,trigger:"posa"}] },
+  { key: "50_50", label: "50% + 50%", desc: "Acconto + Saldo", rate: [{label:"Acconto alla conferma",perc:50,offset:0,trigger:"conferma"},{label:"Saldo a fine lavori",perc:50,offset:0,trigger:"posa"}] },
+  { key: "30_30_40", label: "30% + 30% + 40%", desc: "Acconto + Produzione + Saldo", rate: [{label:"Acconto alla conferma",perc:30,offset:0,trigger:"conferma"},{label:"Alla consegna materiali",perc:30,offset:30,trigger:"produzione"},{label:"Saldo a fine lavori",perc:40,offset:0,trigger:"posa"}] },
+  { key: "40_60", label: "40% + 60%", desc: "Acconto + Saldo", rate: [{label:"Acconto alla conferma",perc:40,offset:0,trigger:"conferma"},{label:"Saldo a fine lavori",perc:60,offset:0,trigger:"posa"}] },
+  { key: "custom", label: "Personalizzato", desc: "Rate personalizzate", rate: [] },
+];
+
+function generaScadenze(piano: string, totale: number, dataConferma?: string): any[] {
+  const tmpl = PIANI_PAGAMENTO.find(p => p.key === piano);
+  if (!tmpl || tmpl.key === "custom") return [];
+  const baseDate = dataConferma ? new Date(dataConferma) : new Date();
+  return tmpl.rate.map((r, i) => {
+    const d = new Date(baseDate);
+    d.setDate(d.getDate() + r.offset + (i * (r.trigger === "conferma" ? 0 : 7)));
+    return {
+      id: `rata_${i}`,
+      label: r.label,
+      percentuale: r.perc,
+      importo: parseFloat((totale * r.perc / 100).toFixed(2)),
+      scadenza: d.toISOString().split("T")[0],
+      trigger: r.trigger,
+      pagato: false,
+      dataPagamento: null,
+      metodo: "",
+    };
+  });
+}
+
 // ==================== PREVENTIVO FORM ====================
 function PreventivoForm({ pratica, client, userListino, userCategorie, userSistemi, onSave, onBack }: any) {
   const prev = pratica?.preventivo;
@@ -4295,6 +4465,10 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
   const [listino, setListino] = useState<any[]>(prev?.listino || userListino || []);
   const [showListino, setShowListino] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  // Piano Pagamenti
+  const [pianoPag, setPianoPag] = useState(prev?.pianoPagamento || "50_50");
+  const [ratePag, setRatePag] = useState<any[]>(prev?.ratePagamento || []);
+  const [metodoPagDefault, setMetodoPagDefault] = useState(prev?.metodoPagamento || "Bonifico");
 
   // Recalculate all totals on mount (fixes saved data with stale totals)
   useEffect(() => {
@@ -4637,6 +4811,86 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
           </div>
         )}
 
+        {/* Piano Pagamenti */}
+        {totaleFinale > 0 && (
+          <div style={{background:"#f0fdf4",borderRadius:2,padding:16,marginBottom:16,border:"2px solid #059669"}}>
+            <h4 style={{fontSize:14,fontWeight:800,color:"#059669",margin:"0 0 12px"}}>💰 PIANO PAGAMENTI</h4>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
+              {PIANI_PAGAMENTO.map(pp => (
+                <button key={pp.key} onClick={() => {
+                  setPianoPag(pp.key);
+                  if (pp.key !== "custom") {
+                    setRatePag(generaScadenze(pp.key, totaleFinale));
+                  }
+                }} style={{
+                  flex:"1 1 120px",padding:"10px 8px",borderRadius:2,border:pianoPag===pp.key?"2px solid #059669":"1.5px solid #d1d5db",
+                  background:pianoPag===pp.key?"#dcfce7":"#fff",cursor:"pointer",textAlign:"center",minWidth:0
+                }}>
+                  <div style={{fontSize:12,fontWeight:800,color:pianoPag===pp.key?"#059669":"#374151"}}>{pp.label}</div>
+                  <div style={{fontSize:10,color:"#64748b",marginTop:2}}>{pp.desc}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{marginBottom:10}}>
+              <label style={{fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:6}}>METODO PAGAMENTO</label>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {["Bonifico","Contanti","Assegno","Carta","Ri.Ba.","Finanziamento"].map(m => (
+                  <button key={m} onClick={() => setMetodoPagDefault(m)} style={{
+                    padding:"8px 14px",borderRadius:2,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",
+                    background:metodoPagDefault===m?"#059669":"#f3f4f6",color:metodoPagDefault===m?"#fff":"#6b7280"
+                  }}>{m}</button>
+                ))}
+              </div>
+            </div>
+            {/* Rate generate */}
+            {ratePag.length > 0 && (
+              <div style={{marginTop:12}}>
+                <label style={{fontSize:11,fontWeight:700,color:"#374151",display:"block",marginBottom:8}}>SCADENZARIO RATE</label>
+                {ratePag.map((r: any, ri: number) => (
+                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",marginBottom:6,background:"#fff",borderRadius:2,border:"1.5px solid #d1fae5"}}>
+                    <div style={{width:28,height:28,borderRadius:"50%",background:"#059669",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,flexShrink:0}}>{ri+1}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{r.label}</div>
+                      <div style={{fontSize:11,color:"#64748b"}}>{r.percentuale}% → € {r.importo.toFixed(2)}</div>
+                    </div>
+                    <input type="date" value={r.scadenza} onChange={(e: any) => {
+                      const nr = [...ratePag]; nr[ri] = {...nr[ri], scadenza: e.target.value}; setRatePag(nr);
+                    }} style={{padding:"6px 8px",borderRadius:2,border:"1px solid #d1d5db",fontSize:12,width:130}} />
+                  </div>
+                ))}
+                <div style={{textAlign:"right",fontSize:13,fontWeight:800,color:"#059669",marginTop:4}}>
+                  Totale rate: € {ratePag.reduce((s: number, r: any) => s + r.importo, 0).toFixed(2)}
+                </div>
+              </div>
+            )}
+            {pianoPag === "custom" && (
+              <div style={{marginTop:8}}>
+                <button onClick={() => {
+                  const perc = ratePag.length === 0 ? 100 : Math.max(0, 100 - ratePag.reduce((s: number, r: any) => s + r.percentuale, 0));
+                  const d = new Date(); d.setDate(d.getDate() + (ratePag.length * 30));
+                  setRatePag([...ratePag, {
+                    id: `rata_${ratePag.length}`, label: `Rata ${ratePag.length + 1}`, percentuale: perc,
+                    importo: parseFloat((totaleFinale * perc / 100).toFixed(2)),
+                    scadenza: d.toISOString().split("T")[0], trigger: "custom", pagato: false, dataPagamento: null, metodo: ""
+                  }]);
+                }} style={{width:"100%",padding:"10px",borderRadius:2,border:"2px dashed #059669",background:"transparent",color:"#059669",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ Aggiungi Rata</button>
+                {ratePag.map((r: any, ri: number) => (
+                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:6,marginTop:8,padding:10,background:"#fff",borderRadius:2,border:"1px solid #e2e8f0"}}>
+                    <input value={r.label} onChange={(e: any) => { const nr=[...ratePag]; nr[ri]={...nr[ri],label:e.target.value}; setRatePag(nr); }} placeholder="Nome rata" style={{flex:1,padding:"6px 8px",borderRadius:2,border:"1px solid #d1d5db",fontSize:12}} />
+                    <input type="number" value={r.percentuale} onChange={(e: any) => {
+                      const nr=[...ratePag]; const perc = parseFloat(e.target.value)||0;
+                      nr[ri]={...nr[ri], percentuale: perc, importo: parseFloat((totaleFinale*perc/100).toFixed(2))}; setRatePag(nr);
+                    }} style={{width:60,padding:"6px",borderRadius:2,border:"1px solid #d1d5db",fontSize:12,textAlign:"center"}} />
+                    <span style={{fontSize:11,color:"#64748b"}}>%</span>
+                    <input type="date" value={r.scadenza} onChange={(e: any) => { const nr=[...ratePag]; nr[ri]={...nr[ri],scadenza:e.target.value}; setRatePag(nr); }} style={{padding:"6px 8px",borderRadius:2,border:"1px solid #d1d5db",fontSize:12,width:130}} />
+                    <button onClick={() => setRatePag(ratePag.filter((_:any,i:number)=>i!==ri))} style={{background:"none",border:"none",color:"#ef4444",fontSize:16,cursor:"pointer",padding:2}}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Condizioni */}
         <Field label="Condizioni" value={condizioni} onChange={setCondizioni} placeholder="Condizioni del preventivo..." textarea rows={4} />
         <div style={{display:"flex",gap:8}}>
@@ -4652,7 +4906,7 @@ function PreventivoForm({ pratica, client, userListino, userCategorie, userSiste
           const imp = sub - sv;
           const iv = imp * (iva || 22) / 100;
           const tf = imp + iv;
-          onSave({ prodotti: fixedProdotti, sconto, iva, condizioni, validita, noteP, listino, totaleFinale: parseFloat(tf.toFixed(2)) });
+          onSave({ prodotti: fixedProdotti, sconto, iva, condizioni, validita, noteP, listino, totaleFinale: parseFloat(tf.toFixed(2)), pianoPagamento: pianoPag, ratePagamento: ratePag.map((r:any) => ({...r, importo: parseFloat((tf * r.percentuale / 100).toFixed(2)), metodo: r.metodo || metodoPagDefault})), metodoPagamento: metodoPagDefault });
         }} style={{...S.saveBtn,background:"#6b4c8a"}}> Salva Preventivo</button>
         {pratica?.preventivo && (
           <div style={{display:"flex",gap:8,marginTop:8}}>
