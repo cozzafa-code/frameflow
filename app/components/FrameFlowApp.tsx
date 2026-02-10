@@ -742,6 +742,7 @@ export default function FrameFlowApp() {
         body { font-size: 14px; }
         [style*="padding: 20px"], [style*="padding:20"] { padding: 12px !important; }
       }
+      ${AUTOFLOW_CSS}
     `;
     // Ensure viewport meta is correct
     let viewport = document.querySelector('meta[name="viewport"]');
@@ -2434,7 +2435,7 @@ export default function FrameFlowApp() {
         </div>
         <div style={{padding:16}}>
           {/* New/Edit Appuntamento Form */}
-          {appForm && <div style={{background:"#faf5ff",borderRadius:2,border:"2px solid #7c3aed",padding:16,marginBottom:16}}>
+          {appForm && <div data-vano="appuntamento" style={{background:"#faf5ff",borderRadius:2,border:"2px solid #7c3aed",padding:16,marginBottom:16}}>
             <h4 style={{fontSize:14,fontWeight:800,color:"#7c3aed",margin:"0 0 12px"}}>{appForm.id ? "Modifica" : "Nuovo"} Appuntamento</h4>
             <div style={{display:"flex",gap:8,marginBottom:8,flexWrap:"wrap"}}>
               <div style={{flex:"1 1 120px",minWidth:0}}><label style={S.fLabel}>Data</label><input type="date" value={appForm.data} onChange={e=>setAppForm({...appForm,data:e.target.value})} style={S.input} /></div>
@@ -2448,7 +2449,7 @@ export default function FrameFlowApp() {
             </div>
             <div style={{marginBottom:8}}>
               <label style={S.fLabel}>Cliente</label>
-              <select value={appForm.client_id} onChange={e=>setAppForm({...appForm,client_id:e.target.value,indirizzo:db.clients.find((c:any)=>c.id===e.target.value)?.indirizzo||appForm.indirizzo})} style={S.input}>
+              <select value={appForm.client_id} onChange={e=>{setAppForm({...appForm,client_id:e.target.value,indirizzo:db.clients.find((c:any)=>c.id===e.target.value)?.indirizzo||appForm.indirizzo});autoAdvanceField(e.target);}} style={S.input}>
                 <option value="">— Seleziona cliente —</option>
                 {db.clients.map((c: any)=><option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
@@ -2456,7 +2457,7 @@ export default function FrameFlowApp() {
             <div style={{marginBottom:8}}><label style={S.fLabel}>Indirizzo</label><input value={appForm.indirizzo} onChange={e=>setAppForm({...appForm,indirizzo:e.target.value})} style={S.input} placeholder="Via..." /></div>
             {teamMembers.length > 1 && <div style={{marginBottom:8}}>
               <label style={S.fLabel}>Assegnato a</label>
-              <select value={appForm.assegnato_a||""} onChange={e=>setAppForm({...appForm,assegnato_a:e.target.value||null})} style={S.input}>
+              <select value={appForm.assegnato_a||""} onChange={e=>{setAppForm({...appForm,assegnato_a:e.target.value||null});autoAdvanceField(e.target);}} style={S.input}>
                 <option value="">— Non assegnato —</option>
                 {teamMembers.map((m: any)=><option key={m.id} value={m.id}>{m.nome} ({(ROLES[m.ruolo]||ROLES.admin).label})</option>)}
               </select>
@@ -3464,102 +3465,56 @@ function SettingsView({ userSettings, appTheme, onChangeTheme, onSave, onBack }:
   );
 }
 
-// ==================== FIELD NAVIGATOR (ASSISTIVE TOUCH STYLE) ====================
-function FieldNavigator() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [pos, setPos] = useState({x:0,y:0});
-  const dragRef = useRef<{sx:number,sy:number,px:number,py:number,moved:boolean}|null>(null);
-  const tapRef = useRef(0);
+// ==================== AUTO-FLOW HELPERS ====================
+// Flash animation for next task/field highlight
+const AUTOFLOW_CSS = `
+@keyframes ff-flash { 0%{background:#fef3c7;transform:scale(1.02)} 50%{background:#fde68a;transform:scale(1.02)} 100%{background:#fff;transform:scale(1)} }
+.ff-flash { animation: ff-flash 0.8s ease-out !important; }
+@keyframes ff-pulse { 0%{box-shadow:0 0 0 0 rgba(224,122,47,0.5)} 70%{box-shadow:0 0 0 8px rgba(224,122,47,0)} 100%{box-shadow:0 0 0 0 rgba(224,122,47,0)} }
+.ff-pulse { animation: ff-pulse 0.6s ease-out !important; }
+`;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mobile = window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    setIsMobile(mobile);
-    if (!mobile) return;
-    const dy = Math.round(window.innerHeight * 0.5);
-    const dx = window.innerWidth - 52;
-    try { const s = localStorage.getItem("ff-fld-pos"); if(s){const p=JSON.parse(s);setPos(p);return;} } catch(e){}
-    setPos({x:dx,y:dy});
-  }, []);
+function scrollToNextUndone(currentEl: HTMLElement) {
+  if (typeof document === "undefined") return;
+  // Find all task rows in the same container
+  const container = currentEl.closest("[data-tasks]");
+  if (!container) return;
+  const allRows = Array.from(container.querySelectorAll("[data-task-done='false']")) as HTMLElement[];
+  if (allRows.length === 0) return;
+  // Get the first undone task that comes after current
+  const currentIdx = Array.from(container.querySelectorAll("[data-task-id]")).indexOf(currentEl);
+  const nextUndone = allRows.find(el => {
+    const idx = Array.from(container.querySelectorAll("[data-task-id]")).indexOf(el);
+    return idx > currentIdx;
+  }) || allRows[0]; // wrap to first undone if none after
+  
+  if (nextUndone) {
+    setTimeout(() => {
+      nextUndone.scrollIntoView({ behavior: "smooth", block: "center" });
+      nextUndone.classList.add("ff-flash");
+      setTimeout(() => nextUndone.classList.remove("ff-flash"), 900);
+    }, 150);
+  }
+}
 
-  const getFields = (): HTMLElement[] => {
-    if (typeof document === "undefined") return [];
-    return Array.from(document.querySelectorAll(
-      "input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]), textarea, select"
-    )).filter(el => {
-      const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && !(el as HTMLInputElement).disabled;
-    }) as HTMLElement[];
-  };
-
-  const goNext = () => {
-    if (typeof document === "undefined") return;
-    const fields = getFields();
-    if (fields.length === 0) return;
-    const cur = document.activeElement as HTMLElement;
-    let idx = fields.indexOf(cur);
-    idx = idx === -1 ? 0 : idx + 1;
-    if (idx >= fields.length) {
-      // Last field: blur and done
-      cur?.blur();
-      return;
-    }
-    fields[idx].focus();
-    fields[idx].scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
-  const onTS = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    dragRef.current = {sx:t.clientX,sy:t.clientY,px:pos.x,py:pos.y,moved:false};
-  };
-  const onTM = (e: React.TouchEvent) => {
-    if (!dragRef.current) return;
-    const t = e.touches[0];
-    const dx = t.clientX - dragRef.current.sx;
-    const dy = t.clientY - dragRef.current.sy;
-    if (Math.abs(dx)>6||Math.abs(dy)>6) dragRef.current.moved = true;
-    if (!dragRef.current.moved) return;
-    e.preventDefault();
-    const nx = Math.max(0,Math.min(window.innerWidth-48, dragRef.current.px+dx));
-    const ny = Math.max(40,Math.min(window.innerHeight-48, dragRef.current.py+dy));
-    setPos({x:nx,y:ny});
-  };
-  const onTE = () => {
-    if (dragRef.current?.moved) {
-      try { localStorage.setItem("ff-fld-pos", JSON.stringify(pos)); } catch(e){}
-    } else {
-      goNext();
-    }
-    dragRef.current = null;
-  };
-
-  if (!isMobile) return null;
-
-  return (
-    <div
-      onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
-      style={{
-        position:"fixed", zIndex:9999, left:pos.x, top:pos.y,
-        width:44, height:44, borderRadius:"50%",
-        background:"rgba(224,122,47,0.45)",
-        border:"2px solid rgba(224,122,47,0.7)",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        boxShadow:"0 2px 12px rgba(0,0,0,0.2)",
-        touchAction:"none", cursor:"pointer",
-        WebkitTapHighlightColor:"transparent",
-        backdropFilter:"blur(4px)", WebkitBackdropFilter:"blur(4px)",
-        transition: "transform 0.1s",
-      }}
-    >
-      <span style={{fontSize:18,color:"#fff",fontWeight:900,lineHeight:1,pointerEvents:"none"}}>⇥</span>
-    </div>
-  );
+function autoAdvanceField(currentEl: HTMLElement) {
+  if (typeof document === "undefined") return;
+  const container = currentEl.closest("[data-vano]");
+  if (!container) return;
+  const fields = Array.from(container.querySelectorAll("input:not([type=hidden]):not([type=file]):not([type=checkbox]), select, textarea")) as HTMLElement[];
+  const idx = fields.indexOf(currentEl);
+  if (idx >= 0 && idx < fields.length - 1) {
+    setTimeout(() => {
+      fields[idx + 1].focus();
+      fields[idx + 1].scrollIntoView({ behavior: "smooth", block: "center" });
+      fields[idx + 1].classList.add("ff-pulse");
+      setTimeout(() => fields[idx + 1].classList.remove("ff-pulse"), 700);
+    }, 80);
+  }
 }
 
 function BottomNav({ items, active, onNav }: any) {
   return (
-    <>
-    <FieldNavigator />
     <div style={S.bottomNav}>
       {items.map((it: any) => {
         const isActive = active===it.key;
@@ -3572,7 +3527,6 @@ function BottomNav({ items, active, onNav }: any) {
         );
       })}
     </div>
-    </>
   );
 }
 
@@ -3863,13 +3817,13 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
               {isComplete && <div style={{padding:"14px",background:"rgba(5,150,105,0.2)",borderRadius:2,textAlign:"center",marginBottom:14}}><div style={{fontSize:16,fontWeight:900,color:"#4ade80",fontFamily:"'JetBrains Mono',monospace"}}>PRATICA CHIUSA</div></div>}
               <div style={{background:"rgba(255,255,255,0.08)",borderRadius:2,padding:14}}>
                   <div style={{fontSize:15,fontWeight:800,marginBottom:8}}>{wf[curIdx]?.icon} Fase: {wf[curIdx]?.label}</div>
-                  {p.fase==="sopralluogo" && (() => { const act=p.actions?.find((a: any)=>a.type==="sopralluogo"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}<div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <div style={{marginTop:12}}><PhotoGallery photos={p.fotoSopralluogo||[]} label=" Foto Sopralluogo" userId={userId} folder={`sopralluogo/${p.id}`} onUpdate={(photos: string[])=>onUpdatePratica({fotoSopralluogo:photos})} /></div>}</>); })()}
+                  {p.fase==="sopralluogo" && (() => { const act=p.actions?.find((a: any)=>a.type==="sopralluogo"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small /><div data-tasks="sopralluogo">{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}</div><div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <div style={{marginTop:12}}><PhotoGallery photos={p.fotoSopralluogo||[]} label=" Foto Sopralluogo" userId={userId} folder={`sopralluogo/${p.id}`} onUpdate={(photos: string[])=>onUpdatePratica({fotoSopralluogo:photos})} /></div>}</>); })()}
                   {p.fase==="misure" && (<div>{p.misure?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Misure compilate</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Vani: {p.misure.vani?.length||0}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda misure.</p>}<button onClick={onOpenMisure} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#d4820e",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.misure?"Modifica":"Compila"} Misure</button></div>)}
                   {p.fase==="preventivo" && (<div>{p.preventivo?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Preventivo compilato</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>Totale: € {(p.preventivo.totaleFinale||0).toFixed(2)}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Prepara il preventivo.</p>}<button onClick={onOpenPrev} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#6b4c8a",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.preventivo?"Modifica":"Compila"} Preventivo</button></div>)}
                   {p.fase==="conferma" && (<div>{p.confermaOrdine?.firmata?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Ordine confermato</div>{p.confermaOrdine.firmaImg&&<img src={p.confermaOrdine.firmaImg} alt="Firma" style={{height:40,borderRadius:6,background:"#fff",padding:3,marginTop:6}} />}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Raccogli la firma del cliente.</p><div style={{marginBottom:10}}><input value={orderNote} onChange={(e: any)=>setOrderNote(e.target.value)} placeholder="Note ordine..." style={{width:"100%",padding:"10px 14px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}} /></div>{!showSignPad?<button onClick={()=>setShowSignPad(true)} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}> Firma Conferma</button>:<SignaturePad onSave={(img: string)=>{onConfirmOrder(img,orderNote);setShowSignPad(false);}} onCancel={()=>setShowSignPad(false)} />}</>)}</div>)}
                   {p.fase==="riparazione" && (<div>{p.riparazione?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12,marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Riparazione compilata</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:4}}>{p.riparazione.problema||"—"}</div></div>):<p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Compila la scheda riparazione.</p>}<button onClick={onOpenRip} style={{width:"100%",padding:"12px",borderRadius:2,border:"none",background:"#c44040",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer"}}> {p.riparazione?"Modifica":"Compila"} Riparazione</button></div>)}
                   {p.fase==="fattura" && (<div>{p.fattura?(<div style={{background:"rgba(5,150,105,0.2)",borderRadius:2,padding:12}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:700,color:"#4ade80"}}> Fattura {p.fattura.numero}</span><span style={{fontSize:11,padding:"2px 8px",borderRadius:2,background:p.fattura.statoPagamento==="pagato"?"#059669":p.fattura.statoPagamento==="acconto"?"#d97706":"#ef4444",fontWeight:700}}>{p.fattura.statoPagamento==="pagato"?"Pagata":p.fattura.statoPagamento==="acconto"?"Acconto":"Non Pagata"}</span></div><div style={{fontSize:20,fontWeight:900,color:"#4ade80",marginTop:6}}>€ {(p.preventivo?.totaleFinale||p.riparazione?.costoStimato||0).toFixed?.(2)||"0.00"}</div><div style={{display:"flex",gap:8,marginTop:10}}><button onClick={()=>exportFattura(p,c)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}> PDF</button><button onClick={()=>{setPayForm({stato:p.fattura.statoPagamento,acconto:p.fattura.acconto||0,metodo:p.fattura.metodoPagamento||""});setShowPaymentEdit(true);}} style={{flex:1,padding:"10px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:12,fontWeight:800,cursor:"pointer"}}> Pagamento</button></div>{showPaymentEdit&&(<div style={{background:"rgba(255,255,255,0.1)",borderRadius:2,padding:14,marginTop:10}}><div style={{display:"flex",gap:6,marginBottom:12}}>{[{k:"non_pagato",l:" Non Pagata",c:"#ef4444"},{k:"acconto",l:"⏳ Acconto",c:"#d97706"},{k:"pagato",l:" Pagata",c:"#059669"}].map(s=><button key={s.k} onClick={()=>setPayForm({...payForm,stato:s.k})} style={{flex:1,padding:"10px 4px",borderRadius:2,border:"none",fontSize:11,fontWeight:800,cursor:"pointer",background:payForm.stato===s.k?s.c:"rgba(255,255,255,0.1)",color:payForm.stato===s.k?"#fff":"rgba(255,255,255,0.7)"}}>{s.l}</button>)}</div>{payForm.stato==="acconto"&&<div style={{marginBottom:10}}><input type="number" value={payForm.acconto} onChange={(e: any)=>setPayForm({...payForm,acconto:parseFloat(e.target.value)||0})} style={{width:"100%",padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:16,fontWeight:800,outline:"none",boxSizing:"border-box"}} /></div>}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{["Bonifico","Contanti","Assegno","Carta","Ri.Ba."].map(m=><button key={m} onClick={()=>setPayForm({...payForm,metodo:m})} style={{padding:"8px 14px",borderRadius:2,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",background:payForm.metodo===m?"#e07a2f":"rgba(255,255,255,0.1)",color:payForm.metodo===m?"#fff":"rgba(255,255,255,0.7)"}}>{m}</button>)}</div><div style={{display:"flex",gap:8}}><button onClick={()=>setShowPaymentEdit(false)} style={{flex:1,padding:"10px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.3)",background:"transparent",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Annulla</button><button onClick={()=>{onUpdateFattura({statoPagamento:payForm.stato,acconto:payForm.acconto,metodoPagamento:payForm.metodo});setShowPaymentEdit(false);}} style={{flex:2,padding:"10px",borderRadius:2,border:"none",background:"#2d8a4e",color:"#fff",fontSize:12,fontWeight:800,cursor:"pointer"}}> Salva</button></div></div>)}</div>):(<><p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:"0 0 8px"}}>Genera la fattura.</p><button onClick={onGenerateFattura} style={{width:"100%",padding:"14px",borderRadius:2,border:"none",background:"#e07a2f",color:"#1e293b",fontSize:15,fontWeight:800,cursor:"pointer"}}> Genera Fattura</button></>)}</div>)}
-                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; const vani=p.misure?.vani||[]; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small />{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}<div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <>{vani.length>0 ? vani.map((v: any,vi: number)=>(<div key={vi} style={{marginTop:12,background:"rgba(255,255,255,0.06)",borderRadius:2,padding:10}}><div style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:6}}> Vano {vi+1}{v.ambiente?" — "+v.ambiente:""} ({v.sistema||"Infisso"} {v.l}×{v.h})</div><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_inizio`]||[]} label={` Prima - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_inizio`]:photos}})} /><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_dopo`]||[]} label={` Dopo - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/dopo`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_dopo`]:photos}})} /></div>)) : <><div style={{marginTop:12}}><PhotoGallery photos={p.fotoPosaInizio||[]} label=" Foto Inizio Lavori" userId={userId} folder={`posa/${p.id}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaInizio:photos})} /></div><PhotoGallery photos={p.fotoPosaFine||[]} label=" Foto Fine Lavori" userId={userId} folder={`posa/${p.id}/fine`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaFine:photos})} /></>}</>}</>); })()}
+                  {p.fase==="posa" && (() => { const act=p.actions?.find((a: any)=>a.type==="posa"); if(!act) return null; const dn=act.tasks.filter((t: any)=>t.done).length; const vani=p.misure?.vani||[]; return (<><ProgressBar progress={act.tasks.length?Math.round(dn/act.tasks.length*100):0} done={dn} total={act.tasks.length} small /><div data-tasks="posa">{act.tasks.map((t: any)=><TaskRow key={t.id} task={t} onToggle={()=>onToggleTask(act.id,t.id)} onDelete={()=>{if(confirm("Rimuovere '"+t.text+"'?"))onRemoveTask(act.id,t.id);}} small />)}</div><div style={{display:"flex",gap:6,marginTop:8}}><input value={newTaskText} onChange={(e: any)=>setNewTaskText(e.target.value)} onKeyDown={(e: any)=>{if(e.key==="Enter"&&newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} placeholder="+ Aggiungi task..." style={{flex:1,padding:"8px 12px",borderRadius:2,border:"1.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.1)",color:"#fff",fontSize:13,outline:"none"}} /><button onClick={()=>{if(newTaskText.trim()){onAddTask(act.id,newTaskText);setNewTaskText("");}}} style={{padding:"8px 14px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>+</button></div>{userId && <>{vani.length>0 ? vani.map((v: any,vi: number)=>(<div key={vi} style={{marginTop:12,background:"rgba(255,255,255,0.06)",borderRadius:2,padding:10}}><div style={{fontSize:12,fontWeight:700,color:"#fbbf24",marginBottom:6}}> Vano {vi+1}{v.ambiente?" — "+v.ambiente:""} ({v.sistema||"Infisso"} {v.l}×{v.h})</div><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_inizio`]||[]} label={` Prima - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_inizio`]:photos}})} /><PhotoGallery photos={(p.fotoPosaVani||{})[`${vi}_dopo`]||[]} label={` Dopo - Vano ${vi+1}`} userId={userId} folder={`posa/${p.id}/vano${vi}/dopo`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaVani:{...(p.fotoPosaVani||{}), [`${vi}_dopo`]:photos}})} /></div>)) : <><div style={{marginTop:12}}><PhotoGallery photos={p.fotoPosaInizio||[]} label=" Foto Inizio Lavori" userId={userId} folder={`posa/${p.id}/inizio`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaInizio:photos})} /></div><PhotoGallery photos={p.fotoPosaFine||[]} label=" Foto Fine Lavori" userId={userId} folder={`posa/${p.id}/fine`} onUpdate={(photos: string[])=>onUpdatePratica({fotoPosaFine:photos})} /></>}</>}</>); })()}
                   {p.fase==="chiusura" && (<div style={{textAlign:"center",padding:"10px 0"}}>
                     {p.status==="completato" ? (
                       <div style={{padding:16,background:"rgba(5,150,105,0.2)",borderRadius:2}}>
@@ -4241,20 +4195,20 @@ function MisureForm({ pratica, client, sistemi, tipologie, vetri, coloriMap, all
         <Field label="Cantiere" value={cantiere} onChange={setCantiere} placeholder="Rif. cantiere" />
         <Field label="Indirizzo" value={indirizzo} onChange={setIndirizzo} placeholder="Indirizzo" />
         {/* === DATI GENERALI IN ALTO === */}
-        <div style={{background:"#fdf3eb",borderRadius:2,padding:16,marginBottom:16,border:"2px solid #f59e0b"}}>
+        <div style={{background:"#fdf3eb",borderRadius:2,padding:16,marginBottom:16,border:"2px solid #f59e0b"}} data-vano="commessa">
           <h4 style={{fontSize:14,fontWeight:800,color:"#92400e",margin:"0 0 12px"}}>IMPOSTAZIONI COMMESSA</h4>
           <div style={{display:"flex",gap:12}}>
-            <div style={{flex:1}}><label style={S.fLabel}>Materiale</label><select value={materialeId} onChange={(e: any)=>setMaterialeId(e.target.value)} style={S.input}><option value="">— Seleziona —</option>{(sistemi||DEFAULT_SISTEMI).map((s: any)=><option key={s.id} value={s.id}>{s.icon} {s.nome}</option>)}</select></div>
-            <div style={{flex:1}}><label style={S.fLabel}>Piano di Salita</label><select value={piano} onChange={(e: any)=>setPiano(e.target.value)} autoComplete="off" name="floor-level" style={S.input}><option value="">—</option>{["Terra","1°","2°","3°","4°","5°","6°","7°","8°","9°","10°","11°","12°","13°"].map(p=><option key={p}>{p}</option>)}</select></div>
+            <div style={{flex:1}}><label style={S.fLabel}>Materiale</label><select value={materialeId} onChange={(e: any)=>{setMaterialeId(e.target.value);autoAdvanceField(e.target);}} style={S.input}><option value="">— Seleziona —</option>{(sistemi||DEFAULT_SISTEMI).map((s: any)=><option key={s.id} value={s.id}>{s.icon} {s.nome}</option>)}</select></div>
+            <div style={{flex:1}}><label style={S.fLabel}>Piano di Salita</label><select value={piano} onChange={(e: any)=>{setPiano(e.target.value);autoAdvanceField(e.target);}} autoComplete="off" name="floor-level" style={S.input}><option value="">—</option>{["Terra","1°","2°","3°","4°","5°","6°","7°","8°","9°","10°","11°","12°","13°"].map(p=><option key={p}>{p}</option>)}</select></div>
             <div style={{flex:1}}><label style={S.fLabel}>Mezzi di Salita</label><input value={mezziSalita} onChange={(e: any)=>setMezziSalita(e.target.value)} placeholder="Es. piattaforma aerea, a mano..." style={S.input} /></div>
           </div>
           <div style={{display:"flex",gap:12}}>
-            <div style={{flex:1}}><label style={S.fLabel}>Colore Int. (default)</label><select value={coloreInt} onChange={(e: any)=>setColoreInt(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreInt==="__custom"&&<input value="" onChange={(e: any)=>setColoreInt(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
-            <div style={{flex:1}}><label style={S.fLabel}>Colore Est. (default)</label><select value={coloreEst} onChange={(e: any)=>setColoreEst(e.target.value)} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreEst==="__custom"&&<input value="" onChange={(e: any)=>setColoreEst(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+            <div style={{flex:1}}><label style={S.fLabel}>Colore Int. (default)</label><select value={coloreInt} onChange={(e: any)=>{setColoreInt(e.target.value);autoAdvanceField(e.target);}} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreInt==="__custom"&&<input value="" onChange={(e: any)=>setColoreInt(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+            <div style={{flex:1}}><label style={S.fLabel}>Colore Est. (default)</label><select value={coloreEst} onChange={(e: any)=>{setColoreEst(e.target.value);autoAdvanceField(e.target);}} style={S.input}><option value="">—</option>{coloriPerMat.map((c: string)=><option key={c}>{c}</option>)}<option value="__custom">+ Personalizzato</option></select>{coloreEst==="__custom"&&<input value="" onChange={(e: any)=>setColoreEst(e.target.value)} placeholder="Inserisci colore..." style={{...S.input,marginTop:4}} autoFocus />}</div>
           </div>
           <div style={{marginTop:8}}>
             <label style={S.fLabel}>VETRO (DEFAULT)</label>
-            <select value={vetro} onChange={(e: any)=>setVetro(e.target.value)} style={S.input}>
+            <select value={vetro} onChange={(e: any)=>{setVetro(e.target.value);autoAdvanceField(e.target);}} style={S.input}>
               <option value="">— Seleziona vetro —</option>
               {(vetri||DEFAULT_VETRI).map((v: string)=><option key={v}>{v}</option>)}
               <option value="__custom">+ Personalizzato</option>
@@ -4264,11 +4218,11 @@ function MisureForm({ pratica, client, sistemi, tipologie, vetri, coloriMap, all
         </div>
         <h3 style={{...S.sectionTitle,marginTop:20}}>Vani ({vani.length})</h3>
         {vani.map((v: any,i: number)=>(
-          <div key={v.id} style={S.vanoCard}>
+          <div key={v.id} data-vano={i} style={S.vanoCard}>
             <div style={S.vanoHdr}><span style={S.vanoNum}>{i+1}</span><span style={{fontSize:15,fontWeight:700,flex:1}}>Vano {i+1}</span>{vani.length>1 && <button onClick={()=>setVani(vani.filter((_: any,j: number)=>j!==i))} style={S.vanoRm}>×</button>}</div>
             <Field label="Ambiente" value={v.ambiente} onChange={(val: string)=>uv(i,"ambiente",val)} placeholder="Soggiorno, Camera..." />
-            <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>Tipologia</label><select value={v.sistema||sistema} onChange={(e: any)=>uv(i,"sistema",e.target.value)} style={S.input}><option value="">—</option>{useTipologie.map((s: string)=><option key={s}>{s}</option>)}</select></div>
-            <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>VETRO</label><select value={v.vetro||vetro} onChange={(e: any)=>uv(i,"vetro",e.target.value)} style={S.input}><option value="">{vetro ? `Default: ${vetro}` : "— Seleziona —"}</option>{(vetri||DEFAULT_VETRI).map((vt: string)=><option key={vt}>{vt}</option>)}<option value="__custom">+ Personalizzato</option></select>{v.vetro==="__custom"&&<input onChange={(e: any)=>uv(i,"vetro",e.target.value)} placeholder="Vetro personalizzato..." style={{...S.input,marginTop:4}} autoFocus />}</div>
+            <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>Tipologia</label><select value={v.sistema||sistema} onChange={(e: any)=>{uv(i,"sistema",e.target.value);autoAdvanceField(e.target);}} style={S.input}><option value="">—</option>{useTipologie.map((s: string)=><option key={s}>{s}</option>)}</select></div>
+            <div style={{flex:1,marginBottom:8}}><label style={S.fLabel}>VETRO</label><select value={v.vetro||vetro} onChange={(e: any)=>{uv(i,"vetro",e.target.value);autoAdvanceField(e.target);}} style={S.input}><option value="">{vetro ? `Default: ${vetro}` : "— Seleziona —"}</option>{(vetri||DEFAULT_VETRI).map((vt: string)=><option key={vt}>{vt}</option>)}<option value="__custom">+ Personalizzato</option></select>{v.vetro==="__custom"&&<input onChange={(e: any)=>uv(i,"vetro",e.target.value)} placeholder="Vetro personalizzato..." style={{...S.input,marginTop:4}} autoFocus />}</div>
             <div style={{display:"flex",gap:8}}><Field label="L (mm)" value={v.l} onChange={(val: string)=>uv(i,"l",val)} type="number" placeholder="Larg." style={{flex:1}} /><Field label="H (mm)" value={v.h} onChange={(val: string)=>uv(i,"h",val)} type="number" placeholder="Alt." style={{flex:1}} /><Field label="Q.tà" value={v.q} onChange={(val: string)=>uv(i,"q",val)} type="number" style={{flex:"0 0 60px"}} /></div>
             <div style={S.fGroup}><label style={S.fLabel}>Apertura</label><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{APERTURE.map(a=><button key={a} onClick={()=>uv(i,"apertura",a)} style={{...S.pill,background:v.apertura===a?"#d97706":"#f3f4f6",color:v.apertura===a?"#fff":"#6b7280"}}>{a}</button>)}</div></div>
             {/* DISEGNO - toggle per attivare */}
@@ -4908,9 +4862,17 @@ function Field({ label, value, onChange, placeholder, type, style, autoFocus, te
 }
 function InfoRow({ icon, val }: any) { return <div style={{display:"flex",alignItems:"flex-start",gap:10}}><span style={{fontSize:16,width:24,textAlign:"center",flexShrink:0}}>{icon}</span><span style={{fontSize:15,color:"#374151",lineHeight:1.4}}>{val}</span></div>; }
 function TaskRow({ task, onToggle, onDelete, small }: any) {
-  return (<div style={{display:"flex",alignItems:"center",gap:10,padding:small?"7px 10px":"10px 12px",borderRadius:2,marginBottom:4,border:"1px solid #e2e8f0",background:task.done?"#f0fdf4":"#fff"}}>
-    <button onClick={onToggle} style={{width:small?22:26,height:small?22:26,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:13,fontWeight:700,flexShrink:0,background:task.done?"#059669":"#fff",border:task.done?"2px solid #059669":"2px solid #d1d5db",color:task.done?"#fff":"transparent"}}>✓</button>
-    <span style={{flex:1,fontSize:small?13:14,textDecoration:task.done?"line-through":"none",color:task.done?"#9ca3af":"#1f2937"}}>{task.text}</span>
+  const handleToggle = (e: any) => {
+    const el = e.currentTarget.closest("[data-task-id]");
+    onToggle();
+    // If marking as done, scroll to next undone
+    if (!task.done && el) {
+      scrollToNextUndone(el);
+    }
+  };
+  return (<div data-task-id={task.id} data-task-done={String(task.done)} style={{display:"flex",alignItems:"center",gap:10,padding:small?"7px 10px":"10px 12px",borderRadius:2,marginBottom:4,border:task.done?"1px solid #bbf7d0":"2px solid #e2e8f0",background:task.done?"#f0fdf4":"#fff",transition:"all 0.3s ease"}}>
+    <button onClick={handleToggle} style={{width:small?24:28,height:small?24:28,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,fontWeight:700,flexShrink:0,background:task.done?"#059669":"#fff",border:task.done?"2px solid #059669":"2px solid #d1d5db",color:task.done?"#fff":"transparent",transition:"all 0.2s"}}>✓</button>
+    <span style={{flex:1,fontSize:small?13:14,textDecoration:task.done?"line-through":"none",color:task.done?"#9ca3af":"#1f2937",transition:"all 0.3s"}}>{task.text}</span>
     {onDelete && <button onClick={onDelete} style={{background:"none",border:"none",color:"#ef4444",fontSize:16,cursor:"pointer",padding:"2px 4px",opacity:0.6}}>×</button>}
   </div>);
 }
