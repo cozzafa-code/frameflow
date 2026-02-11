@@ -4026,7 +4026,18 @@ function PraticaDetail({ pratica: p, client: c, userId, teamMembers, isAdmin, pe
                               );
                             })}
                           </div>
-                          <div style={{background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:2,padding:12,textAlign:"center",fontSize:13,fontWeight:700,color:"#fca5a5"}}>🔒 Chiusura bloccata — Completa i pagamenti dalla fase Fattura</div>
+                          <div style={{display:"flex",gap:8,marginTop:12}}>
+                            <button onClick={()=>{
+                              // Segna tutto come pagato direttamente
+                              const newRate = rate.map((r:any) => ({...r, pagato: true, dataPagamento: new Date().toISOString().split("T")[0]}));
+                              if (hasPiano) {
+                                onUpdateFattura({ratePagamento: newRate, statoPagamento: "pagato", acconto: totale});
+                              } else {
+                                onUpdateFattura({statoPagamento: "pagato", acconto: totale});
+                              }
+                            }} style={{flex:1,padding:"16px",borderRadius:2,border:"none",background:"#059669",color:"#fff",fontSize:15,fontWeight:900,cursor:"pointer",letterSpacing:"0.5px"}}>✓ SEGNA COME PAGATO</button>
+                          </div>
+                          <div style={{background:"rgba(239,68,68,0.15)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:2,padding:12,textAlign:"center",fontSize:12,fontWeight:600,color:"#fca5a5",marginTop:8}}>Oppure gestisci le singole rate dalla fase Fattura</div>
                         </div>
                       ) : (
                         <div style={{textAlign:"center"}}>
