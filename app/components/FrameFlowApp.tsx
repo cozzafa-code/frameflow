@@ -1522,7 +1522,14 @@ export default function FrameFlowApp() {
       list = list.filter((p: any) => p.assegnatoA === myMember.id);
     }
     if (filter!=="tutti") list = list.filter((p: any)=>p.status===filter);
-    if (filterFase!=="tutte") list = list.filter((p: any)=>p.fase===filterFase);
+    if (filterFase==="_pag_incompleto") {
+      list = list.filter((p: any) => {
+        if (!p.fattura) return false;
+        const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+        if (rate.length > 0) return !rate.every((r: any) => r.pagato);
+        return p.fattura.statoPagamento !== "pagato";
+      });
+    } else if (filterFase!=="tutte") list = list.filter((p: any)=>p.fase===filterFase);
     if (filterTipo!=="tutti") list = list.filter((p: any)=>p.tipo===filterTipo);
     if (search) {
       const s = search.toLowerCase();
@@ -1948,30 +1955,52 @@ export default function FrameFlowApp() {
             </div>
           )}
 
-          {/* Rate Scadute / Pagamenti Incompleti */}
+          {/* ===== DA INCASSARE - SEZIONE DASHBOARD ===== */}
           {(() => {
-            const pagIncomplete = db.pratiche.filter((p: any) => {
+            const daIncassare = db.pratiche.filter((p: any) => {
               if (p.status === "completato") return false;
+              if (!p.fattura) return false;
               const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
-              return rate.some((r: any) => !r.pagato && new Date(r.scadenza) < new Date());
+              if (rate.length > 0) return !rate.every((r: any) => r.pagato);
+              return p.fattura.statoPagamento !== "pagato";
             });
-            if (pagIncomplete.length === 0) return null;
-            const totScaduto = pagIncomplete.reduce((s: number, p: any) => {
+            if (daIncassare.length === 0) return null;
+            const totDaIncassare = daIncassare.reduce((s: number, p: any) => {
               const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
-              return s + rate.filter((r: any) => !r.pagato && new Date(r.scadenza) < new Date()).reduce((ss: number, r: any) => ss + r.importo, 0);
+              const totale = p.preventivo?.totaleFinale || p.riparazione?.costoStimato || 0;
+              if (rate.length > 0) return s + rate.filter((r: any) => !r.pagato).reduce((ss: number, r: any) => ss + r.importo, 0);
+              return s + totale;
             }, 0);
             return (
-              <div style={{...S.alertCard, borderLeftColor:"#d97706",background:"#fffbeb"}}>
-                <span style={{fontSize:20}}>💰</span>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:700,color:"#92400e"}}>{pagIncomplete.length} pagament{pagIncomplete.length>1?"i":"o"} scadut{pagIncomplete.length>1?"i":"o"} · € {totScaduto.toFixed(0)}</div>
-                  <div style={{fontSize:12,color:"#b45309"}}>
-                    {pagIncomplete.slice(0,3).map((p: any) => {
-                      const c = getClient(p.clientId);
-                      return `${p.numero} (${c?.nome||"?"})`;
-                    }).join(", ")}
-                  </div>
+              <div style={{marginBottom:14,padding:16,background:"linear-gradient(135deg,#fef3c7,#fff7ed)",border:"2px solid #f59e0b",borderRadius:2,cursor:"pointer"}} onClick={()=>{setFilterFase("_pag_incompleto");setView("pratiche");}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <div style={{fontSize:15,fontWeight:900,color:"#92400e"}}>💰 DA INCASSARE</div>
+                  <div style={{fontSize:24,fontWeight:900,color:"#dc2626"}}>€ {totDaIncassare.toFixed(0)}</div>
                 </div>
+                {daIncassare.map((p: any) => {
+                  const c = getClient(p.clientId);
+                  const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+                  const totale = p.preventivo?.totaleFinale || p.riparazione?.costoStimato || 0;
+                  const pagato = rate.filter((r:any) => r.pagato).reduce((s:number,r:any) => s+r.importo, 0);
+                  const manca = rate.length > 0 ? rate.filter((r:any) => !r.pagato).reduce((s:number,r:any) => s+r.importo, 0) : totale;
+                  const perc = totale > 0 ? Math.round(pagato / totale * 100) : 0;
+                  const scaduta = rate.some((r:any) => !r.pagato && new Date(r.scadenza) < new Date());
+                  return (
+                    <div key={p.id} onClick={(e)=>{e.stopPropagation();setSelPratica(p.id);setView("pratica");}} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",marginBottom:4,background:"#fff",borderRadius:2,border:scaduta?"2px solid #ef4444":"1px solid #fde68a",cursor:"pointer"}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#0f172a"}}>{p.numero} · {c?.nome||"?"}</div>
+                        <div style={{height:4,background:"#e2e8f0",borderRadius:2,marginTop:4,overflow:"hidden"}}>
+                          <div style={{height:"100%",width:`${perc}%`,background:perc>0?"#d97706":"#ef4444",borderRadius:2}} />
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right",flexShrink:0}}>
+                        <div style={{fontSize:14,fontWeight:800,color:"#dc2626"}}>€ {manca.toFixed(0)}</div>
+                        {scaduta && <div style={{fontSize:9,color:"#ef4444",fontWeight:700}}>⚠ SCADUTA</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{marginTop:6,textAlign:"center",fontSize:11,color:"#92400e",fontWeight:600}}>Tocca per vedere dettagli →</div>
               </div>
             );
           })()}
@@ -2539,7 +2568,7 @@ export default function FrameFlowApp() {
 
   // ==================== PRATICHE LIST ====================
   if (view === "pratiche") {
-    const FASI = [{k:"tutte",l:"Tutte"},{k:"sopralluogo",l:"Sopralluogo"},{k:"preventivo",l:"Preventivo"},{k:"misure",l:"Misure"},{k:"ordine",l:"Ordine"},{k:"produzione",l:"Produzione"},{k:"posa",l:"Posa"},{k:"chiusura",l:"Chiusura"}];
+    const FASI = [{k:"tutte",l:"Tutte"},{k:"sopralluogo",l:"Sopralluogo"},{k:"preventivo",l:"Preventivo"},{k:"misure",l:"Misure"},{k:"ordine",l:"Ordine"},{k:"produzione",l:"Produzione"},{k:"posa",l:"Posa"},{k:"chiusura",l:"Chiusura"},{k:"_pag_incompleto",l:"💰 Da Incassare"}];
     const TIPI = [{k:"tutti",l:"Tutti"},{k:"nuovo",l:"Nuovo"},{k:"sostituzione",l:"Sostituz."},{k:"riparazione",l:"Riparaz."}];
     return (
       <div style={S.container}>
@@ -2555,6 +2584,46 @@ export default function FrameFlowApp() {
             </button>
           ))}
         </div>
+        {/* ===== SEZIONE DA INCASSARE ===== */}
+        {(() => {
+          const daIncassare = db.pratiche.filter((p: any) => {
+            if (p.status === "completato") return false;
+            if (!p.fattura) return false;
+            const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+            if (rate.length > 0) return !rate.every((r: any) => r.pagato);
+            return p.fattura.statoPagamento !== "pagato";
+          });
+          if (daIncassare.length === 0) return null;
+          const totDaIncassare = daIncassare.reduce((s: number, p: any) => {
+            const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+            const totale = p.preventivo?.totaleFinale || p.riparazione?.costoStimato || 0;
+            if (rate.length > 0) {
+              return s + rate.filter((r: any) => !r.pagato).reduce((ss: number, r: any) => ss + r.importo, 0);
+            }
+            return s + totale;
+          }, 0);
+          return (
+            <div style={{margin:"0 16px 12px",padding:14,background:"linear-gradient(135deg,#fef3c7,#fff7ed)",border:"2px solid #f59e0b",borderRadius:2,cursor:"pointer"}} onClick={()=>setFilterFase("_pag_incompleto")}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <div style={{fontSize:15,fontWeight:900,color:"#92400e"}}>💰 DA INCASSARE</div>
+                  <div style={{fontSize:12,color:"#b45309",marginTop:2}}>{daIncassare.length} pratich{daIncassare.length>1?"e":"a"} con pagamento incompleto</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:22,fontWeight:900,color:"#dc2626"}}>€ {totDaIncassare.toFixed(0)}</div>
+                  <div style={{fontSize:10,color:"#92400e",fontWeight:600}}>da incassare</div>
+                </div>
+              </div>
+              <div style={{marginTop:8,display:"flex",gap:4,flexWrap:"wrap"}}>
+                {daIncassare.slice(0,5).map((p: any) => {
+                  const c = getClient(p.clientId);
+                  return <span key={p.id} style={{fontSize:10,padding:"3px 8px",borderRadius:2,background:"#fff",border:"1px solid #fbbf24",color:"#92400e",fontWeight:600}}>{p.numero} · {c?.nome?.split(" ")[0]||"?"}</span>;
+                })}
+                {daIncassare.length > 5 && <span style={{fontSize:10,padding:"3px 8px",color:"#92400e",fontWeight:700}}>+{daIncassare.length-5} altre</span>}
+              </div>
+            </div>
+          );
+        })()}
         {/* Filtri avanzati */}
         <div style={{padding:"0 16px 6px",display:"flex",gap:6,flexWrap:"wrap"}}>
           <select value={filterFase} onChange={e=>setFilterFase(e.target.value)} style={{...S.input,flex:1,fontSize:12,padding:"8px 10px",fontWeight:600}}>
@@ -2590,6 +2659,15 @@ export default function FrameFlowApp() {
                 <span style={{fontSize:12,color:"#7a8194"}}>{dateLabel(p.data)} {p.ora}</span>
                 {p.preventivo?.totaleFinale && <span style={{fontSize:12,color:"#2d8a4e",fontWeight:700}}>€ {p.preventivo.totaleFinale.toFixed(0)}</span>}
                 {p.actions.length>0 && <span style={S.praticaActions}>{p.actions.length} az.</span>}
+                {(() => {
+                  if (!p.fattura) return null;
+                  const rate = p.preventivo?.ratePagamento || p.fattura?.ratePagamento || [];
+                  const isPaid = rate.length > 0 ? rate.every((r:any) => r.pagato) : p.fattura.statoPagamento === "pagato";
+                  const isPartial = rate.length > 0 ? rate.some((r:any) => r.pagato) && !isPaid : p.fattura.statoPagamento === "acconto";
+                  if (isPaid) return <span style={{fontSize:10,padding:"2px 6px",borderRadius:2,background:"#dcfce7",color:"#059669",fontWeight:700}}>✓ Pagato</span>;
+                  if (isPartial) return <span style={{fontSize:10,padding:"2px 6px",borderRadius:2,background:"#fef3c7",color:"#92400e",fontWeight:700}}>⏳ Parziale</span>;
+                  return <span style={{fontSize:10,padding:"2px 6px",borderRadius:2,background:"#fef2f2",color:"#dc2626",fontWeight:700}}>💰 Da pagare</span>;
+                })()}
               </div>
               {totalTasks>0 && <div style={S.progRow}><div style={S.progBar}><div style={{...S.progFill,width:`${prog}%`,background:prog===100?"#2d8a4e":"#e07a2f"}} /></div><span style={{fontSize:12,color:"#7a8194",fontWeight:600}}>{doneTasks}/{totalTasks}</span></div>}
             </button>
